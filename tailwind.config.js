@@ -7,12 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        lomas: {
-          red: '#D32F2F',    // Rojo de los botones "Nuevo Alumno"
-          black: '#121212',  // Negro de la sidebar
-          bg: '#F8F9FA'      // Gris de fondo
-        }
-      }
+        'brand-red': '#D62828',
+        'brand-green': '#25D366',
+        'brand-black': '#050505',
+        'brand-dark': '#0A0A0A',
+        'brand-gray': '#9CA3AF',
+      },
+      fontFamily: {
+        heading: ['Teko', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+      },
     },
   },
   plugins: [],
