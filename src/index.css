@@ -1,14 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Teko:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --color-brand-red: #D62828;
+  --color-brand-green: #25D366;
+  --color-brand-black: #050505;
+  --color-brand-dark: #0A0A0A;
+  --color-brand-gray: #9CA3AF;
+
+  --font-heading: 'Teko', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
 
 @layer base {
   body {
     @apply font-body antialiased bg-brand-black text-white;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading uppercase;
   }
 }
