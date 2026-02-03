@@ -1,16 +1,16 @@
-import { PublicLayout } from "../../components/layout/PublicLayout";
+
 import { HeroSection } from "./components/HeroSection";
+import { AboutSection } from "./components/AboutSection";
 import { DisciplinesSection } from "./components/DisciplinesSection";
-import { MembershipSection } from "./components/MembershipSection";
 import { ScheduleSection } from "./components/ScheduleSection";
 
 export default function LandingPage() {
     return (
-        <PublicLayout>
+        <>
             <HeroSection />
+            <AboutSection />
             <DisciplinesSection />
-            <MembershipSection />
-            <ScheduleSection />
-        </PublicLayout>
+            <ScheduleSection id="horarios-general" />
+        </>
     );
 }
