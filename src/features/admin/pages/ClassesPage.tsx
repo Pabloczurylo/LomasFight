@@ -1,4 +1,8 @@
 import { Plus, Search, Clock, MoreHorizontal } from "lucide-react";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import { Select } from "../../../components/ui/Select";
+import { Badge } from "../../../components/ui/Badge";
 
 const MOCK_SCHEDULE = [
     {
@@ -8,6 +12,7 @@ const MOCK_SCHEDULE = [
         time: "18:00 - 19:30",
         duration: "90 min",
         discipline: "KICKBOXING",
+        variant: "red",
     },
     {
         id: 2,
@@ -16,6 +21,7 @@ const MOCK_SCHEDULE = [
         time: "20:00 - 21:00",
         duration: "60 min",
         discipline: "BOXEO",
+        variant: "default",
     },
     {
         id: 3,
@@ -24,6 +30,7 @@ const MOCK_SCHEDULE = [
         time: "09:00 - 10:30",
         duration: "90 min",
         discipline: "MUAY THAI",
+        variant: "red",
     },
     {
         id: 4,
@@ -32,6 +39,7 @@ const MOCK_SCHEDULE = [
         time: "19:00 - 20:30",
         duration: "90 min",
         discipline: "KICKBOXING",
+        variant: "red",
     },
     {
         id: 5,
@@ -40,8 +48,9 @@ const MOCK_SCHEDULE = [
         time: "17:00 - 18:30",
         duration: "90 min",
         discipline: "BOXEO",
+        variant: "default",
     },
-];
+] as const;
 
 export default function ClassesPage() {
     return (
@@ -52,28 +61,29 @@ export default function ClassesPage() {
                     <h1 className="text-2xl font-heading font-bold uppercase tracking-wide">CRONOGRAMA DE CLASES</h1>
                     <p className="text-gray-500 mt-1">Control centralizado de disciplinas, días y horarios de entrenamiento.</p>
                 </div>
-                <button className="bg-brand-red text-white py-2 px-6 rounded-lg font-heading font-semibold tracking-wide uppercase flex items-center gap-2 hover:bg-red-700 transition-colors shadow-lg shadow-brand-red/20">
+                <Button>
                     <Plus className="w-5 h-5" />
                     Añadir Horario
-                </button>
+                </Button>
             </div>
 
             {/* Filters Bar */}
             <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                        type="text"
+                    <Input
                         placeholder="Buscar por disciplina o día..."
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg text-sm border-none focus:ring-0 outline-none"
+                        className="pl-10 border-none focus-visible:ring-0 bg-transparent"
                     />
                 </div>
-                <select className="bg-gray-50 px-4 py-2 rounded-lg text-sm border-none outline-none font-medium text-gray-700 md:w-64">
-                    <option>Todas las Disciplinas</option>
-                    <option>Kickboxing</option>
-                    <option>Boxeo</option>
-                    <option>Muay Thai</option>
-                </select>
+                <div className="md:w-64">
+                    <Select className="border-none bg-transparent focus:ring-0">
+                        <option>Todas las Disciplinas</option>
+                        <option>Kickboxing</option>
+                        <option>Boxeo</option>
+                        <option>Muay Thai</option>
+                    </Select>
+                </div>
             </div>
 
             {/* Table */}
@@ -106,9 +116,9 @@ export default function ClassesPage() {
                                         <div className="text-gray-500 italic">{item.duration}</div>
                                     </td>
                                     <td className="py-5 px-6">
-                                        <span className="inline-block px-3 py-1 rounded-md bg-red-50 text-brand-red text-xs font-bold uppercase tracking-wider border border-red-100">
+                                        <Badge variant={item.variant}>
                                             {item.discipline}
-                                        </span>
+                                        </Badge>
                                     </td>
                                     <td className="py-5 px-6 text-right">
                                         <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -125,12 +135,12 @@ export default function ClassesPage() {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-sm text-gray-500 font-medium uppercase tracking-wide">Mostrando 5 de 12 registros de horarios</span>
                     <div className="flex gap-2">
-                        <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors shadow-sm">
+                        <Button variant="outline" size="sm" className="font-semibold text-gray-600 border-gray-200">
                             Anterior
-                        </button>
-                        <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors shadow-sm">
+                        </Button>
+                        <Button variant="outline" size="sm" className="font-semibold text-gray-600 border-gray-200">
                             Siguiente
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
