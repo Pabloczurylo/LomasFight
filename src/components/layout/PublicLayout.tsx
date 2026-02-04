@@ -1,17 +1,13 @@
-import { ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 
-interface PublicLayoutProps {
-    children: ReactNode;
-}
-
-export function PublicLayout({ children }: PublicLayoutProps) {
+export function PublicLayout() {
     return (
         <div className="min-h-screen bg-white">
             <Navbar />
             <main>
-                {children}
+                <Outlet />
             </main>
             <Footer />
         </div>
