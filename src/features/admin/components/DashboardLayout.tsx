@@ -19,7 +19,7 @@ export function DashboardLayout() {
             <div className="flex-1 flex flex-col lg:ml-64 min-h-screen transition-all duration-300">
                 <AdminHeader onMenuClick={() => setIsMobileOpen(true)} />
 
-                <main className="flex-1 pt-16 p-4 md:p-8 overflow-y-auto">
+                <main className="flex-1 mt-16 p-4 md:p-8 overflow-y-auto">
                     <Outlet />
                 </main>
             </div>
