@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alumno } from '../types';
 import { cn } from '../../../lib/utils';
 import { Search, Plus } from 'lucide-react';
+import AddStudentModal from '../components/AddStudentModal';
 
 const MOCK_ALUMNOS: Alumno[] = [
     {
@@ -64,17 +65,32 @@ const MOCK_ALUMNOS: Alumno[] = [
 
 export default function AlumnosPage() {
     const [searchTerm, setSearchTerm] = useState('');
+    const [alumnos, setAlumnos] = useState<Alumno[]>(MOCK_ALUMNOS);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const filteredAlumnos = MOCK_ALUMNOS.filter((alumno) =>
+    const filteredAlumnos = alumnos.filter((alumno) =>
         alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         alumno.apellido.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handleAddStudent = (newStudentData: Omit<Alumno, 'id' | 'fechaRegistro'>) => {
+        const newStudent: Alumno = {
+            ...newStudentData,
+            id: Date.now().toString(),
+            fechaRegistro: new Date().toISOString().split('T')[0],
+        };
+        setAlumnos((prev) => [...prev, newStudent]);
+        setIsModalOpen(false);
+    };
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
                 <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Alumnos</h2>
-                <button className="flex items-center justify-center gap-2 bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto">
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center justify-center gap-2 bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
+                >
                     <Plus size={20} />
                     <span>Agregar Alumno</span>
                 </button>
@@ -88,7 +104,7 @@ export default function AlumnosPage() {
                     <input
                         type="text"
                         placeholder="Buscar por nombre o apellido..."
-                        className="pl-10 w-full sm:w-80 rounded-lg border border-gray-300 focus:border-brand-red focus:ring-1 focus:ring-brand-red py-2"
+                        className="pl-10 w-full sm:w-80 rounded-lg border border-gray-300 focus:border-brand-red focus:ring-1 focus:ring-brand-red py-2 text-gray-900 placeholder:text-gray-500"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -137,6 +153,12 @@ export default function AlumnosPage() {
                     </table>
                 </div>
             </div>
+
+            <AddStudentModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onAddStudent={handleAddStudent}
+            />
         </div>
     );
 }
