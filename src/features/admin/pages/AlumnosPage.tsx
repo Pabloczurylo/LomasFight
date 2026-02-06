@@ -72,15 +72,15 @@ export default function AlumnosPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
                 <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Alumnos</h2>
-                <button className="flex items-center gap-2 bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <button className="flex items-center justify-center gap-2 bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto">
                     <Plus size={20} />
                     <span>Agregar Alumno</span>
                 </button>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
                 <div className="mb-6 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-400" />
@@ -94,8 +94,8 @@ export default function AlumnosPage() {
                     />
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                <div className="w-full overflow-x-auto shadow-inner rounded-lg">
+                    <table className="w-full min-w-[600px] text-left">
                         <thead>
                             <tr className="border-b border-gray-100">
                                 <th className="pb-3 font-bold text-gray-500">Nombre</th>

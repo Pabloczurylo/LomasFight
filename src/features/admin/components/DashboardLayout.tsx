@@ -16,7 +16,7 @@ export function DashboardLayout() {
             <MobileSidebar isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col lg:ml-64 min-h-screen transition-all duration-300">
+            <div className="flex-1 flex flex-col lg:ml-64 min-h-screen transition-all duration-300 max-w-full overflow-x-hidden">
                 <AdminHeader onMenuClick={() => setIsMobileOpen(true)} />
 
                 <main className="flex-1 mt-16 p-4 md:p-8 overflow-y-auto">
