@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { Alumno } from '../types';
 
-interface AddStudentModalProps {
+interface StudentModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAddStudent: (student: Omit<Alumno, 'id' | 'fechaRegistro'>) => void;
+    onSave: (student: Omit<Alumno, 'id' | 'fechaRegistro'>) => void;
+    initialData?: Alumno;
 }
 
-export default function AddStudentModal({ isOpen, onClose, onAddStudent }: AddStudentModalProps) {
+export default function StudentModal({ isOpen, onClose, onSave, initialData }: StudentModalProps) {
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [disciplina, setDisciplina] = useState<Alumno['disciplina']>('Kickboxing');
@@ -20,6 +21,25 @@ export default function AddStudentModal({ isOpen, onClose, onAddStudent }: AddSt
         nombre: '',
         apellido: '',
     });
+
+    // Sync state with initialData when it changes or modal opens
+    useEffect(() => {
+        if (isOpen) {
+            if (initialData) {
+                setNombre(initialData.nombre);
+                setApellido(initialData.apellido);
+                setDisciplina(initialData.disciplina);
+                setEstadoPago(initialData.estadoPago);
+            } else {
+                // Reset for add mode
+                setNombre('');
+                setApellido('');
+                setDisciplina('Kickboxing');
+                setEstadoPago('pendiente');
+            }
+            setErrors({ nombre: '', apellido: '' });
+        }
+    }, [isOpen, initialData]);
 
     if (!isOpen) return null;
 
@@ -45,21 +65,17 @@ export default function AddStudentModal({ isOpen, onClose, onAddStudent }: AddSt
         e.preventDefault();
 
         if (validate()) {
-            onAddStudent({
+            onSave({
                 nombre,
                 apellido,
                 disciplina,
                 estadoPago,
             });
-            // Reset form
-            setNombre('');
-            setApellido('');
-            setDisciplina('Kickboxing');
-            setEstadoPago('pendiente');
-            setErrors({ nombre: '', apellido: '' });
             onClose();
         }
     };
+
+    const isEditing = !!initialData;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -67,7 +83,7 @@ export default function AddStudentModal({ isOpen, onClose, onAddStudent }: AddSt
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 className="text-xl font-heading font-bold text-gray-900">
-                        Nuevo Alumno
+                        {isEditing ? 'Editar Alumno' : 'Nuevo Alumno'}
                     </h3>
                     <button
                         onClick={onClose}
@@ -188,7 +204,7 @@ export default function AddStudentModal({ isOpen, onClose, onAddStudent }: AddSt
                             type="submit"
                             className="flex-1 px-4 py-2.5 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/20 transition-all"
                         >
-                            Guardar
+                            {isEditing ? 'Guardar Cambios' : 'Guardar'}
                         </button>
                     </div>
                 </form>

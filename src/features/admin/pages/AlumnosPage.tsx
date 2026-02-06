@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Alumno } from '../types';
 import { cn } from '../../../lib/utils';
-import { Search, Plus } from 'lucide-react';
-import AddStudentModal from '../components/AddStudentModal';
+import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
+import StudentModal from '../components/StudentModal';
 
 const MOCK_ALUMNOS: Alumno[] = [
     {
@@ -67,19 +67,46 @@ export default function AlumnosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [alumnos, setAlumnos] = useState<Alumno[]>(MOCK_ALUMNOS);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState<Alumno | undefined>(undefined);
 
     const filteredAlumnos = alumnos.filter((alumno) =>
         alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         alumno.apellido.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleAddStudent = (newStudentData: Omit<Alumno, 'id' | 'fechaRegistro'>) => {
-        const newStudent: Alumno = {
-            ...newStudentData,
-            id: Date.now().toString(),
-            fechaRegistro: new Date().toISOString().split('T')[0],
-        };
-        setAlumnos((prev) => [...prev, newStudent]);
+    const handleAddClick = () => {
+        setSelectedStudent(undefined);
+        setIsModalOpen(true);
+    };
+
+    const handleEditClick = (alumno: Alumno) => {
+        setSelectedStudent(alumno);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteClick = (id: string) => {
+        if (window.confirm('¿Estás seguro de que deseas eliminar este alumno?')) {
+            setAlumnos((prev) => prev.filter((a) => a.id !== id));
+        }
+    };
+
+    const handleSaveStudent = (studentData: Omit<Alumno, 'id' | 'fechaRegistro'>) => {
+        if (selectedStudent) {
+            // Edit mode
+            setAlumnos((prev) => prev.map((a) =>
+                a.id === selectedStudent.id
+                    ? { ...a, ...studentData }
+                    : a
+            ));
+        } else {
+            // Add mode
+            const newStudent: Alumno = {
+                ...studentData,
+                id: Date.now().toString(),
+                fechaRegistro: new Date().toISOString().split('T')[0],
+            };
+            setAlumnos((prev) => [...prev, newStudent]);
+        }
         setIsModalOpen(false);
     };
 
@@ -88,7 +115,7 @@ export default function AlumnosPage() {
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
                 <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Alumnos</h2>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleAddClick}
                     className="flex items-center justify-center gap-2 bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
                 >
                     <Plus size={20} />
@@ -118,6 +145,7 @@ export default function AlumnosPage() {
                                 <th className="pb-3 font-bold text-gray-500">Disciplina</th>
                                 <th className="pb-3 font-bold text-gray-500">Estado de Pago</th>
                                 <th className="pb-3 font-bold text-gray-500">Fecha Registro</th>
+                                <th className="pb-3 font-bold text-gray-500 text-right"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -140,11 +168,29 @@ export default function AlumnosPage() {
                                         </span>
                                     </td>
                                     <td className="py-4 text-gray-500">{alumno.fechaRegistro}</td>
+                                    <td className="py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleEditClick(alumno)}
+                                                className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Editar"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(alumno.id)}
+                                                className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {filteredAlumnos.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="py-8 text-center text-gray-500">
+                                    <td colSpan={5} className="py-8 text-center text-gray-500">
                                         No se encontraron alumnos.
                                     </td>
                                 </tr>
@@ -154,10 +200,11 @@ export default function AlumnosPage() {
                 </div>
             </div>
 
-            <AddStudentModal
+            <StudentModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onAddStudent={handleAddStudent}
+                onSave={handleSaveStudent}
+                initialData={selectedStudent}
             />
         </div>
     );
