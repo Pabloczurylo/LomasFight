@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { CalendarGrid } from "../components/CalendarGrid";
-import { addDays, formatDate, getStartOfWeek } from "../../../lib/dateUtils";
 
 // Mock data adapted for the grid
 const MOCK_SCHEDULE = [
@@ -73,39 +72,7 @@ const MOCK_SCHEDULE = [
 ] as const;
 
 export default function ClassesPage() {
-    const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<'week' | 'day'>('week');
-
-    const handlePrev = () => {
-        setCurrentDate(prev => addDays(prev, view === 'week' ? -7 : -1));
-    };
-
-    const handleNext = () => {
-        setCurrentDate(prev => addDays(prev, view === 'week' ? 7 : 1));
-    };
-
-    const handleToday = () => {
-        setCurrentDate(new Date());
-    };
-
-    // Date Range String for Header
-    const weekStart = getStartOfWeek(currentDate);
-    // Show 6 days (Mon-Sat)
-    const weekEnd = addDays(weekStart, 5);
-
-    // Format: "15 - 20 de Mayo, 2024"
-    const getRangeString = () => {
-        if (view === 'day') return formatDate(currentDate);
-
-        const startDay = weekStart.getDate();
-        const endDay = weekEnd.getDate();
-        const month = weekStart.toLocaleDateString('es-ES', { month: 'long' });
-        const year = weekStart.getFullYear();
-        // Capitalize month
-        const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
-
-        return `${startDay} - ${endDay} de ${monthCap}, ${year}`;
-    };
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -141,28 +108,12 @@ export default function ClassesPage() {
                     </div>
                 </div>
 
-                {/* Navigation Bar */}
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-                        <button onClick={handlePrev} className="p-1.5 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <span className="text-lg font-heading font-bold text-gray-900 min-w-[180px] text-center">
-                            {getRangeString()}
-                        </span>
-                        <button onClick={handleNext} className="p-1.5 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-900 transition-colors">
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
+                {/* Legend / Filters - Moved up since Nav bar is gone */}
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <span className="text-sm font-heading font-bold text-gray-900 uppercase tracking-wide pl-2">
+                        Horarios Semanales
+                    </span>
 
-                        <button
-                            onClick={handleToday}
-                            className="hidden md:block ml-2 px-3 py-1 text-[10px] font-bold text-brand-red border border-red-100 bg-red-50 rounded-full hover:bg-red-100 transition-colors uppercase tracking-wide"
-                        >
-                            Hoy
-                        </button>
-                    </div>
-
-                    {/* Legend / Filters */}
                     <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[10px] font-medium uppercase tracking-wide text-gray-600">
                         <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-red-50 border border-red-100"></span>
@@ -183,7 +134,6 @@ export default function ClassesPage() {
             {/* Calendar Grid */}
             <div className="flex-1 min-h-0 bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 overflow-hidden flex flex-col">
                 <CalendarGrid
-                    currentDate={currentDate}
                     view={view}
                     events={MOCK_SCHEDULE as any}
                 />
