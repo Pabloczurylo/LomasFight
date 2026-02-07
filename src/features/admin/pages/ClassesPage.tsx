@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { CalendarGrid } from "../components/CalendarGrid";
+import AddClassModal from "../components/AddClassModal";
 
 // Mock data adapted for the grid
 const MOCK_SCHEDULE = [
@@ -73,6 +74,12 @@ const MOCK_SCHEDULE = [
 
 export default function ClassesPage() {
     const [view, setView] = useState<'week' | 'day'>('week');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    const handleSaveClass = (data: any) => {
+        console.log("Nueva clase guardada:", data);
+        // Aquí iría la lógica para guardar en backend o actualizar estado
+    };
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -101,7 +108,11 @@ export default function ClassesPage() {
                             </button>
                         </div>
 
-                        <Button size="sm" className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-500/30 uppercase tracking-wider font-bold transition-all hover:translate-y-[-1px] text-xs h-8">
+                        <Button
+                            size="sm"
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-500/30 uppercase tracking-wider font-bold transition-all hover:translate-y-[-1px] text-xs h-8"
+                        >
                             <Plus className="w-4 h-4 mr-1.5" />
                             Añadir Horario
                         </Button>
@@ -138,6 +149,12 @@ export default function ClassesPage() {
                     events={MOCK_SCHEDULE as any}
                 />
             </div>
+
+            <AddClassModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSave={handleSaveClass}
+            />
         </div>
     );
 }
