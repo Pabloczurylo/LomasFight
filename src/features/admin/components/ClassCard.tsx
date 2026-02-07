@@ -42,18 +42,18 @@ export function ClassCard({ discipline, time, instructor, variant = "default", o
         <div
             onClick={onClick}
             className={cn(
-                "p-3 rounded-lg border text-sm cursor-pointer transition-all hover:brightness-95 flex flex-col gap-1 shadow-sm h-full",
+                "p-1.5 rounded-md border text-xs cursor-pointer transition-all hover:brightness-95 flex flex-col gap-0.5 shadow-sm h-full",
                 variants[variant] || variants.default
             )}
         >
-            <div className="font-bold uppercase tracking-wide text-[10px] leading-tight opacity-90">
+            <div className="font-bold uppercase tracking-wide text-[9px] leading-tight opacity-90 truncate">
                 {discipline}
             </div>
-            <div className={cn("font-semibold text-xs", variant === 'kickboxing' ? 'text-gray-900' : timeColor)}>
+            <div className={cn("font-semibold text-[10px]", variant === 'kickboxing' ? 'text-gray-900' : timeColor)}>
                 {time}
             </div>
             {instructor && (
-                <div className={cn("text-[10px] italic mt-auto", variant === 'kickboxing' ? 'text-gray-500' : subTextColor)}>
+                <div className={cn("text-[9px] italic mt-auto truncate", variant === 'kickboxing' ? 'text-gray-500' : subTextColor)}>
                     {instructor}
                 </div>
             )}

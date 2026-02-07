@@ -60,16 +60,16 @@ export function CalendarGrid({ currentDate, view, events }: CalendarGridProps) {
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Header: Days */}
             <div className="flex border-b border-gray-100">
-                <div className="w-16 flex-shrink-0 border-r border-gray-100"></div>
+                <div className="w-12 flex-shrink-0 border-r border-gray-100"></div>
                 <div className={`flex-1 grid ${view === 'week' ? 'grid-cols-6' : 'grid-cols-1'} divide-x divide-gray-100`}>
                     {days.map((date, i) => (
-                        <div key={i} className="py-4 text-center">
-                            <div className={cn("text-xs font-bold uppercase tracking-wider mb-1",
+                        <div key={i} className="py-2 text-center">
+                            <div className={cn("text-[10px] font-bold uppercase tracking-wider mb-0.5",
                                 date.toDateString() === new Date().toDateString() ? "text-brand-red" : "text-gray-500"
                             )}>
                                 {daysShort[date.getDay()]}
                             </div>
-                            <div className={cn("text-xl font-heading font-bold",
+                            <div className={cn("text-lg font-heading font-bold",
                                 date.toDateString() === new Date().toDateString() ? "text-brand-red" : "text-gray-900"
                             )}>
                                 {date.getDate()}
@@ -83,13 +83,13 @@ export function CalendarGrid({ currentDate, view, events }: CalendarGridProps) {
             <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                 <div className="flex min-h-[600px]">
                     {/* Time Column */}
-                    <div className="w-16 flex-shrink-0 border-r border-gray-100 bg-gray-50/30 text-xs text-gray-400 font-medium text-center custom-time-labels">
+                    <div className="w-12 flex-shrink-0 border-r border-gray-100 bg-gray-50/30 text-[10px] text-gray-400 font-medium text-center custom-time-labels">
                         {Array.from({ length: TOTAL_HOURS }).map((_, i) => {
                             const hour = START_HOUR + i;
                             // Show label for even hours, but ALWAYS render the container to maintain height alignment
                             const showLabel = hour % 2 === 0 || hour === START_HOUR;
                             return (
-                                <div key={i} className="h-24 relative border-b border-gray-50 flex items-start justify-center pt-2">
+                                <div key={i} className="h-[4.5rem] relative border-b border-gray-50 flex items-start justify-center pt-1.5">
                                     {showLabel ? `${hour.toString().padStart(2, '0')}:00` : ''}
                                 </div>
                             )
@@ -109,7 +109,7 @@ export function CalendarGrid({ currentDate, view, events }: CalendarGridProps) {
                                 <div key={colIndex} className="relative bg-white">
                                     {/* Grid Lines (Horizontal) - corresponding to Time Column */}
                                     {/* FIXED: Ensure repeat matches TOTAL_SLOTS exactly */}
-                                    <div className="absolute inset-0 grid" style={{ gridTemplateRows: `repeat(${TOTAL_SLOTS}, minmax(3rem, 1fr))` }}>
+                                    <div className="absolute inset-0 grid" style={{ gridTemplateRows: `repeat(${TOTAL_SLOTS}, minmax(2.25rem, 1fr))` }}>
                                         {Array.from({ length: TOTAL_SLOTS }).map((_, idx) => (
                                             <div key={idx} className="border-b border-gray-50/50 box-border"></div>
                                         ))}
