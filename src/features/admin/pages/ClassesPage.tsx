@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { CalendarGrid } from "../components/CalendarGrid";
+import AddClassModal from "../components/AddClassModal";
 
 // Mock data adapted for the grid
 const MOCK_SCHEDULE = [
@@ -72,7 +73,43 @@ const MOCK_SCHEDULE = [
 ] as const;
 
 export default function ClassesPage() {
+    const [schedule, setSchedule] = useState<any[]>(() => {
+        const saved = localStorage.getItem('class_schedule');
+        return saved ? JSON.parse(saved) : (MOCK_SCHEDULE as unknown as any[]);
+    });
+
+    // Save to localStorage whenever schedule changes
+    useEffect(() => {
+        localStorage.setItem('class_schedule', JSON.stringify(schedule));
+    }, [schedule]);
     const [view, setView] = useState<'week' | 'day'>('week');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    const handleSaveClass = (data: any) => {
+        // Transform modal data to calendar events
+        // data = { discipline, instructor, days: [], startTime, endTime, capacity }
+
+        const newEvents = data.days.map((day: string, index: number) => {
+            const variantMap: Record<string, string> = {
+                'KICKBOXING': 'kickboxing',
+                'BOXEO': 'boxeo',
+                'MUAY_THAI': 'muaythai',
+                'JIU_JITSU': 'jiujitsu',
+                'MMA': 'mma'
+            };
+
+            return {
+                id: Date.now() + index, // Simple ID generation
+                day: day,
+                time: `${data.startTime} - ${data.endTime}`,
+                discipline: data.discipline.replace('_', ' '), // "MUAY_THAI" -> "MUAY THAI"
+                instructor: data.instructor,
+                variant: variantMap[data.discipline] || 'default'
+            };
+        });
+
+        setSchedule(prev => [...prev, ...newEvents]);
+    };
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -101,7 +138,11 @@ export default function ClassesPage() {
                             </button>
                         </div>
 
-                        <Button size="sm" className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-500/30 uppercase tracking-wider font-bold transition-all hover:translate-y-[-1px] text-xs h-8">
+                        <Button
+                            size="sm"
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-500/30 uppercase tracking-wider font-bold transition-all hover:translate-y-[-1px] text-xs h-8"
+                        >
                             <Plus className="w-4 h-4 mr-1.5" />
                             Añadir Horario
                         </Button>
@@ -135,9 +176,15 @@ export default function ClassesPage() {
             <div className="flex-1 min-h-0 bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 overflow-hidden flex flex-col">
                 <CalendarGrid
                     view={view}
-                    events={MOCK_SCHEDULE as any}
+                    events={schedule}
                 />
             </div>
+
+            <AddClassModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSave={handleSaveClass}
+            />
         </div>
     );
 }
