@@ -20,3 +20,17 @@ export interface Profesor {
     especialidad: string;
     imagen: string;
 }
+
+export interface Pago {
+    id: string;
+    alumnoId: string;
+    alumnoNombre: string;
+    disciplinaId: string;
+    disciplinaNombre: string;
+    monto: number;
+    mes: string;
+    anio: number;
+    fechaPago: string; // ISO YYYY-MM-DD
+    metodoPago: 'Efectivo' | 'Transferencia' | 'Tarjeta';
+    estado: 'Pagado' | 'Pendiente' | 'Vencido';
+}

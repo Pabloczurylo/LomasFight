@@ -4,6 +4,7 @@ import DashboardHome from "../pages/DashboardHome";
 import ClassesPage from "../pages/ClassesPage";
 import AlumnosPage from "../pages/AlumnosPage";
 import DisciplinasPage from "../pages/DisciplinasPage";
+import PagosPage from "../pages/PagosPage";
 
 export function AdminRoutes() {
     return (
@@ -13,7 +14,7 @@ export function AdminRoutes() {
                 <Route path="alumnos" element={<AlumnosPage />} />
                 <Route path="clases" element={<ClassesPage />} />
                 <Route path="disciplinas" element={<DisciplinasPage />} />
-                <Route path="pagos" element={<div>Gestión de Pagos (Próximamente)</div>} />
+                <Route path="pagos" element={<PagosPage />} />
                 <Route path="settings" element={<div>Configuración (Próximamente)</div>} />
             </Route>
         </Routes>

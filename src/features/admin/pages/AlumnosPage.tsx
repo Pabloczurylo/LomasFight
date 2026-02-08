@@ -75,7 +75,7 @@ export default function AlumnosPage() {
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
     const [pendingStudentData, setPendingStudentData] = useState<Omit<Alumno, 'id' | 'fechaRegistro'> | null>(null);
-    const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
+    const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
 
     const filteredAlumnos = alumnos.filter((alumno) =>
         alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,29 +107,30 @@ export default function AlumnosPage() {
 
     const handleSaveStudent = (studentData: Omit<Alumno, 'id' | 'fechaRegistro'>) => {
         if (selectedStudent) {
-            // Edit mode
-            setAlumnos((prev) => prev.map((a) =>
-                a.id === selectedStudent.id
-                    ? { ...a, ...studentData }
-                    : a
-            ));
-            setIsModalOpen(false);
-        } else {
-            // Add mode - Ask for confirmation
+            // Edit mode - Ask for confirmation
             setPendingStudentData(studentData);
-            setIsCreateConfirmOpen(true);
-        }
-    };
-
-    const confirmCreate = () => {
-        if (pendingStudentData) {
+            setIsSaveConfirmOpen(true);
+        } else {
+            // Add mode - Save immediately
             const newStudent: Alumno = {
-                ...pendingStudentData,
+                ...studentData,
                 id: Date.now().toString(),
                 fechaRegistro: new Date().toISOString().split('T')[0],
             };
             setAlumnos((prev) => [...prev, newStudent]);
-            setIsCreateConfirmOpen(false);
+            setIsModalOpen(false);
+        }
+    };
+
+    const confirmSave = () => {
+        if (pendingStudentData && selectedStudent) {
+            // Edit mode
+            setAlumnos((prev) => prev.map((a) =>
+                a.id === selectedStudent.id
+                    ? { ...a, ...pendingStudentData }
+                    : a
+            ));
+            setIsSaveConfirmOpen(false);
             setPendingStudentData(null);
             setIsModalOpen(false);
         }
@@ -230,6 +231,10 @@ export default function AlumnosPage() {
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveStudent}
                 initialData={selectedStudent}
+                onDelete={selectedStudent ? () => {
+                    handleDeleteClick(selectedStudent);
+                    setIsModalOpen(false); // Close the edit modal when delete confirmation opens
+                } : undefined}
             />
 
             {/* Modal de confirmación para eliminar */}
@@ -242,13 +247,13 @@ export default function AlumnosPage() {
                 type="danger"
             />
 
-            {/* Modal de confirmación para crear */}
+            {/* Modal de confirmación para crear/editar */}
             <ConfirmModal
-                isOpen={isCreateConfirmOpen}
-                onClose={() => setIsCreateConfirmOpen(false)}
-                onConfirm={confirmCreate}
-                title="Confirmar Registro"
-                message="¿Deseas registrar a este nuevo alumno?"
+                isOpen={isSaveConfirmOpen}
+                onClose={() => setIsSaveConfirmOpen(false)}
+                onConfirm={confirmSave}
+                title="Confirmar Edición"
+                message="¿Deseas guardar los cambios realizados?"
                 type="success"
             />
         </div>

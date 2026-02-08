@@ -84,6 +84,7 @@ export default function ClassesPage() {
     }, [schedule]);
     const [view, setView] = useState<'week' | 'day'>('week');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingClass, setEditingClass] = useState<any | null>(null);
 
     const handleSaveClass = (data: any) => {
         // Transform modal data to calendar events
@@ -108,8 +109,60 @@ export default function ClassesPage() {
             };
         });
 
-        setSchedule(prev => [...prev, ...newEvents]);
+        if (editingClass) {
+            // Remove the *single* instance being edited from the schedule array
+            // Optimization: If the user changes days, this logic here might trigger "Add new events" only
+            // But if we want to "Edit this class", usually means this specific slot.
+            // However, the modal returns "Days: [Mon, Wed]".
+            // If I edit Monday class, and select Mon, Wed. It should update Mon, and add Wed.
+            // AND remove the 'old' Monday class.
+
+            // Simplest approach: Remove the OLD event ID. Add ALL new events.
+            setSchedule(prev => {
+                const filtered = prev.filter(e => e.id !== editingClass.id);
+                return [...filtered, ...newEvents];
+            });
+            setEditingClass(null);
+        } else {
+            setSchedule(prev => [...prev, ...newEvents]);
+        }
     };
+
+    const handleEventClick = (classItem: any) => {
+        // Prepare initial data for modal
+        // We need: discipline, instructor, days (array), startTime, endTime
+        const [start, end] = classItem.time.split(' - ');
+
+        // Reverse map discipline to value (or just use string if compatible)
+        // "MUAY THAI" -> "MUAY_THAI" for select value match if needed
+        let discValue = classItem.discipline;
+        if (discValue === 'MUAY THAI') discValue = 'MUAY_THAI';
+        if (discValue === 'JIU JITSU') discValue = 'JIU_JITSU'; // Assuming Jiu Jitsu mock data usage
+
+        const initialData = {
+            id: classItem.id, // Keep track of ID for deletion/update logic
+            discipline: discValue,
+            instructor: classItem.instructor,
+            days: [classItem.day], // Pre-select ONLY the current day
+            startTime: start,
+            endTime: end
+        };
+
+        setEditingClass(initialData);
+        setIsAddModalOpen(true);
+    };
+
+    const handleDeleteClass = () => {
+        if (!editingClass) return;
+        setSchedule(prev => prev.filter(e => e.id !== editingClass.id));
+        setEditingClass(null);
+        setIsAddModalOpen(false);
+    };
+
+    const handleCloseModal = () => {
+        setIsAddModalOpen(false);
+        setEditingClass(null);
+    }
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)]">
@@ -140,7 +193,10 @@ export default function ClassesPage() {
 
                         <Button
                             size="sm"
-                            onClick={() => setIsAddModalOpen(true)}
+                            onClick={() => {
+                                setEditingClass(null);
+                                setIsAddModalOpen(true);
+                            }}
                             className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-500/30 uppercase tracking-wider font-bold transition-all hover:translate-y-[-1px] text-xs h-8"
                         >
                             <Plus className="w-4 h-4 mr-1.5" />
@@ -177,13 +233,16 @@ export default function ClassesPage() {
                 <CalendarGrid
                     view={view}
                     events={schedule}
+                    onEventClick={handleEventClick}
                 />
             </div>
 
             <AddClassModal
                 isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
+                onClose={handleCloseModal}
                 onSave={handleSaveClass}
+                initialData={editingClass}
+                onDelete={editingClass ? handleDeleteClass : undefined}
             />
         </div>
     );
