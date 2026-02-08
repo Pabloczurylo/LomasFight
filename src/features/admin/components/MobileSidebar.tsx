@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Calendar, CreditCard, Settings, LogOut, X } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, CreditCard, Settings, LogOut, X, Dumbbell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 
@@ -6,6 +6,7 @@ const NAV_ITEMS = [
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
     { name: "Alumnos", path: "/admin/alumnos", icon: Users },
     { name: "Clases", path: "/admin/clases", icon: Calendar },
+    { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
     { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
     { name: "Configuración", path: "/admin/settings", icon: Settings },
 ];
