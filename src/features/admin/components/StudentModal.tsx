@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { Alumno } from '../types';
 
@@ -8,9 +8,10 @@ interface StudentModalProps {
     onClose: () => void;
     onSave: (student: Omit<Alumno, 'id' | 'fechaRegistro'>) => void;
     initialData?: Alumno;
+    onDelete?: () => void;
 }
 
-export default function StudentModal({ isOpen, onClose, onSave, initialData }: StudentModalProps) {
+export default function StudentModal({ isOpen, onClose, onSave, initialData, onDelete }: StudentModalProps) {
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [disciplina, setDisciplina] = useState<Alumno['disciplina']>('Kickboxing');
@@ -193,6 +194,16 @@ export default function StudentModal({ isOpen, onClose, onSave, initialData }: S
 
                     {/* Actions */}
                     <div className="flex gap-3 pt-4 border-t border-gray-50 mt-2">
+                        {isEditing && onDelete && (
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                className="px-4 py-2.5 border border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-50 hover:text-red-700 transition-colors flex items-center gap-2"
+                            >
+                                <Trash2 size={18} />
+                                Eliminar
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={onClose}
