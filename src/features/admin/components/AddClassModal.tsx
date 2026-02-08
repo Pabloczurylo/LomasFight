@@ -23,7 +23,7 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
-    const [capacity, setCapacity] = useState(20);
+
 
     if (!isOpen) return null;
 
@@ -43,7 +43,7 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
             days: selectedDays,
             startTime,
             endTime,
-            capacity
+
         });
         onClose();
     };
@@ -182,29 +182,7 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
                         </div>
                     </div>
 
-                    {/* Cupo Máximo */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-gray-800 tracking-wide">Cupo Máximo</label>
-                        <div className="flex items-center border border-gray-200 rounded-xl p-1 bg-white">
-                            <button
-                                type="button"
-                                onClick={() => setCapacity(Math.max(1, capacity - 1))}
-                                className="w-12 h-10 flex items-center justify-center text-gray-400 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path></svg>
-                            </button>
-                            <div className="flex-1 text-center font-black text-lg text-gray-900 border-x border-gray-100 h-6 flex items-center justify-center">
-                                {capacity}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setCapacity(capacity + 1)}
-                                className="w-12 h-10 flex items-center justify-center text-gray-400 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                                <Plus className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
+
 
                     {/* Footer Buttons */}
                     <div className="flex gap-4 pt-6 mt-2">
