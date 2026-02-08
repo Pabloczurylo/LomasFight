@@ -252,8 +252,8 @@ export default function AlumnosPage() {
                 isOpen={isSaveConfirmOpen}
                 onClose={() => setIsSaveConfirmOpen(false)}
                 onConfirm={confirmSave}
-                title={selectedStudent ? "Confirmar Edición" : "Confirmar Registro"}
-                message={selectedStudent ? "¿Deseas guardar los cambios realizados?" : "¿Deseas registrar a este nuevo alumno?"}
+                title="Confirmar Edición"
+                message="¿Deseas guardar los cambios realizados?"
                 type="success"
             />
         </div>
