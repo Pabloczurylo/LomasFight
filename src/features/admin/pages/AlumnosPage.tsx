@@ -3,6 +3,7 @@ import { Alumno } from '../types';
 import { cn } from '../../../lib/utils';
 import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
 import StudentModal from '../components/StudentModal';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 const MOCK_ALUMNOS: Alumno[] = [
     {
@@ -69,6 +70,13 @@ export default function AlumnosPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Alumno | undefined>(undefined);
 
+    // Estados para ConfirmModals
+    const [studentToDelete, setStudentToDelete] = useState<Alumno | null>(null);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+    const [pendingStudentData, setPendingStudentData] = useState<Omit<Alumno, 'id' | 'fechaRegistro'> | null>(null);
+    const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
+
     const filteredAlumnos = alumnos.filter((alumno) =>
         alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         alumno.apellido.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,9 +92,16 @@ export default function AlumnosPage() {
         setIsModalOpen(true);
     };
 
-    const handleDeleteClick = (id: string) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar este alumno?')) {
-            setAlumnos((prev) => prev.filter((a) => a.id !== id));
+    const handleDeleteClick = (alumno: Alumno) => {
+        setStudentToDelete(alumno);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (studentToDelete) {
+            setAlumnos((prev) => prev.filter((a) => a.id !== studentToDelete.id));
+            setIsDeleteConfirmOpen(false);
+            setStudentToDelete(null);
         }
     };
 
@@ -98,16 +113,26 @@ export default function AlumnosPage() {
                     ? { ...a, ...studentData }
                     : a
             ));
+            setIsModalOpen(false);
         } else {
-            // Add mode
+            // Add mode - Ask for confirmation
+            setPendingStudentData(studentData);
+            setIsCreateConfirmOpen(true);
+        }
+    };
+
+    const confirmCreate = () => {
+        if (pendingStudentData) {
             const newStudent: Alumno = {
-                ...studentData,
+                ...pendingStudentData,
                 id: Date.now().toString(),
                 fechaRegistro: new Date().toISOString().split('T')[0],
             };
             setAlumnos((prev) => [...prev, newStudent]);
+            setIsCreateConfirmOpen(false);
+            setPendingStudentData(null);
+            setIsModalOpen(false);
         }
-        setIsModalOpen(false);
     };
 
     return (
@@ -178,7 +203,7 @@ export default function AlumnosPage() {
                                                 <Pencil size={18} />
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteClick(alumno.id)}
+                                                onClick={() => handleDeleteClick(alumno)}
                                                 className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Eliminar"
                                             >
@@ -205,6 +230,26 @@ export default function AlumnosPage() {
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveStudent}
                 initialData={selectedStudent}
+            />
+
+            {/* Modal de confirmación para eliminar */}
+            <ConfirmModal
+                isOpen={isDeleteConfirmOpen}
+                onClose={() => setIsDeleteConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Eliminar Alumno"
+                message={`¿Estás seguro de que deseas eliminar a ${studentToDelete?.nombre} ${studentToDelete?.apellido}? Esta acción no se puede deshacer.`}
+                type="danger"
+            />
+
+            {/* Modal de confirmación para crear */}
+            <ConfirmModal
+                isOpen={isCreateConfirmOpen}
+                onClose={() => setIsCreateConfirmOpen(false)}
+                onConfirm={confirmCreate}
+                title="Confirmar Registro"
+                message="¿Deseas registrar a este nuevo alumno?"
+                type="success"
             />
         </div>
     );
