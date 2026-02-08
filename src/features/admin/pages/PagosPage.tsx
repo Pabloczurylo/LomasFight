@@ -73,8 +73,6 @@ export default function PagosPage() {
 
     // Métricas
     const metrics = useMemo(() => {
-        const currentMonth = new Date().toLocaleString('es-ES', { month: 'long' });
-
         // 1. Total Mensual (Current Month)
         // Note: Using hardcoded 'Febrero' for demo consistency with mock data, 
         // in real app use capitalizedMonth
@@ -130,7 +128,7 @@ export default function PagosPage() {
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                    className="flex items-center gap-2 px-4 py-3 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
                 >
                     <Plus className="w-5 h-5" />
                     REGISTRAR PAGO
@@ -180,7 +178,7 @@ export default function PagosPage() {
                             placeholder="Buscar alumno..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red"
                         />
                     </div>
 
@@ -189,7 +187,7 @@ export default function PagosPage() {
                         <select
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="px-4 py-2 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
+                            className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
                         >
                             {MESES.map(mes => (
                                 <option key={mes} value={mes}>{mes}</option>
@@ -199,26 +197,28 @@ export default function PagosPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left min-w-[800px]">
                         <thead>
                             <tr className="border-b border-gray-100">
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Alumno</th>
+                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider pl-4">Alumno</th>
                                 <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Disciplina</th>
                                 <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Monto</th>
+                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider hidden md:table-cell">Método</th>
                                 <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Mes/Año</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Fecha Pago</th>
+                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider hidden md:table-cell">Fecha Pago</th>
                                 <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Estado</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {filteredPagos.map((pago) => (
                                 <tr key={pago.id} className="group hover:bg-gray-50 transition-colors">
-                                    <td className="py-4 font-medium text-gray-900">{pago.alumnoNombre}</td>
-                                    <td className="py-4 text-gray-600">{pago.disciplinaNombre}</td>
-                                    <td className="py-4 font-medium text-gray-900">{formatCurrency(pago.monto)}</td>
-                                    <td className="py-4 text-gray-600">{pago.mes} {pago.anio}</td>
-                                    <td className="py-4 text-gray-600">{pago.fechaPago}</td>
-                                    <td className="py-4">
+                                    <td className="py-5 pl-4 font-bold text-gray-900">{pago.alumnoNombre}</td>
+                                    <td className="py-5 text-gray-600">{pago.disciplinaNombre}</td>
+                                    <td className="py-5 font-bold text-gray-900">{formatCurrency(pago.monto)}</td>
+                                    <td className="py-5 text-gray-600 hidden md:table-cell">{pago.metodoPago}</td>
+                                    <td className="py-5 text-gray-600">{pago.mes} {pago.anio}</td>
+                                    <td className="py-5 text-gray-600 hidden md:table-cell">{pago.fechaPago}</td>
+                                    <td className="py-5">
                                         <span className={cn(
                                             "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
                                             pago.estado === 'Pagado' && "bg-green-100 text-green-700",
