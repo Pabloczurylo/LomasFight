@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { X, Plus, Dumbbell, User, Clock, Hourglass } from 'lucide-react'; // Icons based on mockup
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Dumbbell, User, Clock, Hourglass, Trash2 } from 'lucide-react'; // Icons based on mockup
 import { cn } from '../../../lib/utils';
 
 interface AddClassModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: any) => void;
+    initialData?: any | null; // Data for editing
+    onDelete?: () => void;
 }
 
 const DAYS = [
@@ -17,12 +19,30 @@ const DAYS = [
     { label: 'SÁB', value: 'SÁBADO' },
 ];
 
-export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
+export default function AddClassModal({ isOpen, onClose, onSave, initialData, onDelete }: AddClassModalProps) {
     const [discipline, setDiscipline] = useState('');
     const [instructor, setInstructor] = useState('');
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
+
+    // Load initial data when modal opens or initialData changes
+    useEffect(() => {
+        if (isOpen && initialData) {
+            setDiscipline(initialData.discipline || '');
+            setInstructor(initialData.instructor || '');
+            setSelectedDays(initialData.days || []);
+            setStartTime(initialData.startTime || '');
+            setEndTime(initialData.endTime || '');
+        } else if (isOpen && !initialData) {
+            // Reset fields for new class
+            setDiscipline('');
+            setInstructor('');
+            setSelectedDays([]);
+            setStartTime('');
+            setEndTime('');
+        }
+    }, [isOpen, initialData]);
 
 
     if (!isOpen) return null;
@@ -48,6 +68,8 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
         onClose();
     };
 
+    const isEditing = !!initialData;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             {/* Modal Container */}
@@ -61,7 +83,7 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
                                 <Plus className="w-5 h-5 text-brand-red stroke-[3]" />
                             </div>
                             <h2 className="text-xl font-heading font-black tracking-widest uppercase text-gray-900">
-                                AGREGAR NUEVA CLASE
+                                {isEditing ? 'EDITAR CLASE' : 'AGREGAR NUEVA CLASE'}
                             </h2>
                         </div>
                         <button
@@ -72,7 +94,7 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
                         </button>
                     </div>
                     <p className="text-gray-500 text-sm font-medium ml-9">
-                        Ingresa los detalles para programar una nueva sesión de entrenamiento.
+                        {isEditing ? 'Modifica los detalles de la clase existente.' : 'Ingresa los detalles para programar una nueva sesión de entrenamiento.'}
                     </p>
                 </div>
 
@@ -186,13 +208,30 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
 
                     {/* Footer Buttons */}
                     <div className="flex gap-4 pt-6 mt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 font-bold tracking-wide rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all uppercase text-sm"
-                        >
-                            Cancelar
-                        </button>
+                        {isEditing && onDelete ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (confirm("¿Estás seguro de que quieres eliminar esta clase?")) {
+                                        onDelete();
+                                        onClose();
+                                    }
+                                }}
+                                className="flex-1 px-4 py-3 border border-red-200 text-red-500 font-bold tracking-wide rounded-xl hover:bg-red-50 hover:text-red-700 transition-all uppercase text-sm flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Eliminar
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 font-bold tracking-wide rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all uppercase text-sm"
+                            >
+                                Cancelar
+                            </button>
+                        )}
+
                         <button
                             type="submit"
                             className="flex-1 px-4 py-3 bg-brand-red text-white font-bold tracking-wide rounded-xl hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/30 transition-all uppercase text-sm flex items-center justify-center gap-2 group"
@@ -200,7 +239,7 @@ export default function AddClassModal({ isOpen, onClose, onSave }: AddClassModal
                             <span className="bg-white/20 p-0.5 rounded-sm">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                             </span>
-                            Guardar Clase
+                            {isEditing ? 'Guardar Cambios' : 'Guardar Clase'}
                         </button>
                     </div>
 

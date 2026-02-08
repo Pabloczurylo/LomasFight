@@ -13,6 +13,7 @@ interface CalendarEvent {
 interface CalendarGridProps {
     view: 'week' | 'day';
     events: CalendarEvent[];
+    onEventClick: (classItem: CalendarEvent) => void;
 }
 
 const START_HOUR = 8;
@@ -23,7 +24,7 @@ const TOTAL_SLOTS = TOTAL_HOURS * SLOTS_PER_HOUR; // 30 slots
 
 const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 
-export function CalendarGrid({ view, events }: CalendarGridProps) {
+export function CalendarGrid({ view, events, onEventClick }: CalendarGridProps) {
 
     const days = useMemo(() => {
         if (view === 'day') {
@@ -110,11 +111,12 @@ export function CalendarGrid({ view, events }: CalendarGridProps) {
                                         return (
                                             <div
                                                 key={idx}
-                                                className="absolute w-[95%] left-[2.5%] z-10 transition-all hover:z-20 p-0.5"
+                                                className="absolute w-[95%] left-[2.5%] z-10 transition-all hover:z-20 p-0.5 cursor-pointer"
                                                 style={{
                                                     top: `${topPercent}%`,
                                                     height: `${heightPercent}%`,
                                                 }}
+                                                onClick={() => onEventClick(evt)}
                                             >
                                                 <ClassCard
                                                     discipline={evt.discipline}
