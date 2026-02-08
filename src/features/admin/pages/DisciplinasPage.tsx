@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
+import DisciplinaModal from '../components/DisciplinaModal';
+import ProfesorModal from '../components/ProfesorModal';
 import { Disciplina, Profesor } from '../types';
 
 const MOCK_DISCIPLINAS: Disciplina[] = [
@@ -28,19 +30,19 @@ const MOCK_PROFESORES: Profesor[] = [
     {
         id: '1',
         nombre: 'Martín Silva',
-        especialidad: 'Head Coach - Kickboxing',
+        especialidad: 'Kickboxing',
         imagen: 'https://i.pravatar.cc/150?u=martin'
     },
     {
         id: '2',
         nombre: 'Laura González',
-        especialidad: 'Instructora de Boxeo',
+        especialidad: 'Boxeo',
         imagen: 'https://i.pravatar.cc/150?u=laura'
     },
     {
         id: '3',
         nombre: 'Carlos Ruiz',
-        especialidad: 'Maestro de Muay Thai',
+        especialidad: 'Muay Thai',
         imagen: 'https://i.pravatar.cc/150?u=carlos'
     }
 ];
@@ -62,6 +64,23 @@ export default function DisciplinasPage() {
         name: null
     });
 
+    const [disciplinaModal, setDisciplinaModal] = useState<{
+        isOpen: boolean;
+        data: Disciplina | null;
+    }>({
+        isOpen: false,
+        data: null
+    });
+
+    const [profesorModal, setProfesorModal] = useState<{
+        isOpen: boolean;
+        data: Profesor | null;
+    }>({
+        isOpen: false,
+        data: null
+    });
+
+    // Delete Handlers
     const handleDeleteClick = (type: 'disciplina' | 'profesor', id: string, name: string) => {
         setDeleteModal({
             isOpen: true,
@@ -80,6 +99,28 @@ export default function DisciplinasPage() {
         setDeleteModal({ isOpen: false, type: null, id: null, name: null });
     };
 
+    // Disciplina Handlers
+    const handleSaveDisciplina = (disciplina: Disciplina) => {
+        if (disciplinaModal.data) {
+            // Edit
+            setDisciplinas(prev => prev.map(d => d.id === disciplina.id ? disciplina : d));
+        } else {
+            // Create
+            setDisciplinas(prev => [...prev, disciplina]);
+        }
+    };
+
+    // Profesor Handlers
+    const handleSaveProfesor = (profesor: Profesor) => {
+        if (profesorModal.data) {
+            // Edit
+            setProfesores(prev => prev.map(p => p.id === profesor.id ? profesor : p));
+        } else {
+            // Create
+            setProfesores(prev => [...prev, profesor]);
+        }
+    };
+
     return (
         <div className="space-y-12 pb-12">
             {/* Sección Disciplinas */}
@@ -89,7 +130,10 @@ export default function DisciplinasPage() {
                         <h2 className="text-3xl font-heading font-bold text-gray-900">Disciplinas</h2>
                         <p className="text-gray-600">Gestiona las disciplinas disponibles en el gimnasio</p>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md">
+                    <button
+                        onClick={() => setDisciplinaModal({ isOpen: true, data: null })}
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                    >
                         <Plus className="w-5 h-5" />
                         AÑADIR NUEVA DISCIPLINA
                     </button>
@@ -118,7 +162,10 @@ export default function DisciplinasPage() {
                                 </p>
 
                                 <div className="flex gap-3 pt-4 border-t border-gray-100">
-                                    <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <button
+                                        onClick={() => setDisciplinaModal({ isOpen: true, data: disciplina })}
+                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                    >
                                         <Edit2 className="w-4 h-4" />
                                         EDITAR
                                     </button>
@@ -143,7 +190,10 @@ export default function DisciplinasPage() {
                         <h2 className="text-3xl font-heading font-bold text-gray-900">Profesores</h2>
                         <p className="text-gray-600">Gestiona al equipo de entrenadores</p>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md">
+                    <button
+                        onClick={() => setProfesorModal({ isOpen: true, data: null })}
+                        className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                    >
                         <Plus className="w-5 h-5" />
                         AGREGAR PROFESOR
                     </button>
@@ -169,7 +219,10 @@ export default function DisciplinasPage() {
                             </p>
 
                             <div className="flex gap-2 justify-center">
-                                <button className="p-2 text-gray-400 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors">
+                                <button
+                                    onClick={() => setProfesorModal({ isOpen: true, data: profesor })}
+                                    className="p-2 text-gray-400 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
+                                >
                                     <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
@@ -184,7 +237,7 @@ export default function DisciplinasPage() {
                 </div>
             </section>
 
-            {/* Delete Confirmation Modal */}
+            {/* Modals */}
             <ConfirmModal
                 isOpen={deleteModal.isOpen}
                 onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
@@ -192,6 +245,21 @@ export default function DisciplinasPage() {
                 title={`Eliminar ${deleteModal.type === 'disciplina' ? 'Disciplina' : 'Profesor'}`}
                 message={`¿Estás seguro que deseas eliminar a ${deleteModal.name}? Esta acción no se puede deshacer.`}
                 type="danger"
+            />
+
+            <DisciplinaModal
+                isOpen={disciplinaModal.isOpen}
+                onClose={() => setDisciplinaModal({ ...disciplinaModal, isOpen: false })}
+                onSave={handleSaveDisciplina}
+                initialData={disciplinaModal.data}
+            />
+
+            <ProfesorModal
+                isOpen={profesorModal.isOpen}
+                onClose={() => setProfesorModal({ ...profesorModal, isOpen: false })}
+                onSave={handleSaveProfesor}
+                disciplinas={disciplinas}
+                initialData={profesorModal.data}
             />
         </div>
     );
