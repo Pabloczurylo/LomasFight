@@ -3,6 +3,7 @@ import LandingPage from "./features/landing/LandingPage";
 import DisciplineDetailPage from "./features/landing/pages/DisciplineDetailPage";
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { AdminRoutes } from "./features/admin/routes/AdminRoutes";
+import LoginPage from "./features/auth/pages/LoginPage";
 
 function App() {
   return (
@@ -10,6 +11,9 @@ function App() {
       <Routes>
         {/* Admin Routes - Isolated from Public Layout */}
         <Route path="/admin/*" element={<AdminRoutes />} />
+
+        {/* Auth Routes */}
+        <Route path="/login" element={<LoginPage />} />
 
         {/* Public Routes - Wrapped in PublicLayout */}
         <Route element={<PublicLayout />}>
