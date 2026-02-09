@@ -1,4 +1,4 @@
-import { Bell, Search, Menu } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 
 
 interface AdminHeaderProps {
@@ -20,15 +20,6 @@ export function AdminHeader({ onMenuClick, title = "Dashboard" }: AdminHeaderPro
             </div>
 
             <div className="flex items-center gap-4">
-                {/* Search Bar - Hidden on small mobile */}
-                <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-64 border border-transparent focus-within:border-brand-red/50 focus-within:bg-white transition-all">
-                    <Search className="w-4 h-4 text-gray-400 mr-2" />
-                    <input
-                        type="text"
-                        placeholder="Buscar..."
-                        className="bg-transparent border-none outline-none text-sm w-full font-body"
-                    />
-                </div>
 
                 <div className="flex items-center gap-2">
                     <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-full relative">

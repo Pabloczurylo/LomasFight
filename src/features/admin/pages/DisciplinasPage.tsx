@@ -1,51 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import DisciplinaModal from '../components/DisciplinaModal';
 import ProfesorModal from '../components/ProfesorModal';
 import { Disciplina, Profesor } from '../types';
-
-const MOCK_DISCIPLINAS: Disciplina[] = [
-    {
-        id: '1',
-        nombre: 'Kickboxing',
-        descripcion: 'Entrenamiento de alta intensidad que combina técnicas de boxeo con patadas de artes marciales.',
-        imagen: 'https://images.unsplash.com/photo-1555597673-b21d5c935865?auto=format&fit=crop&q=80&w=600'
-    },
-    {
-        id: '2',
-        nombre: 'Boxeo',
-        descripcion: 'Deporte de combate en el que dos personas luchan utilizando únicamente sus puños con guantes.',
-        imagen: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&q=80&w=600'
-    },
-    {
-        id: '3',
-        nombre: 'Muay Thai',
-        descripcion: 'Arte marcial tailandés conocido como "el arte de las ocho extremidades".',
-        imagen: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=600'
-    }
-];
-
-const MOCK_PROFESORES: Profesor[] = [
-    {
-        id: '1',
-        nombre: 'Martín Silva',
-        especialidad: 'Kickboxing',
-        imagen: 'https://i.pravatar.cc/150?u=martin'
-    },
-    {
-        id: '2',
-        nombre: 'Laura González',
-        especialidad: 'Boxeo',
-        imagen: 'https://i.pravatar.cc/150?u=laura'
-    },
-    {
-        id: '3',
-        nombre: 'Carlos Ruiz',
-        especialidad: 'Muay Thai',
-        imagen: 'https://i.pravatar.cc/150?u=carlos'
-    }
-];
+import { MOCK_DISCIPLINAS, MOCK_PROFESORES } from '../data/mockData';
 
 export default function DisciplinasPage() {
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>(MOCK_DISCIPLINAS);
@@ -199,38 +158,42 @@ export default function DisciplinasPage() {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {profesores.map((profesor) => (
-                        <div key={profesor.id} className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
-                            <div className="relative w-24 h-24 mx-auto mb-4">
+                        <div key={profesor.id} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
+                            <div className="relative h-64 overflow-hidden">
                                 <img
                                     src={profesor.imagen}
                                     alt={profesor.nombre}
-                                    className="w-full h-full rounded-full object-cover border-4 border-gray-50 shadow-sm"
+                                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                                 />
-                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full" title="Activo"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             </div>
 
-                            <h3 className="text-lg font-heading font-bold text-gray-900 mb-1">
-                                {profesor.nombre}
-                            </h3>
-                            <p className="text-sm font-medium text-brand-red mb-6">
-                                {profesor.especialidad}
-                            </p>
+                            <div className="p-6">
+                                <h3 className="text-xl font-heading font-bold text-gray-900 mb-1">
+                                    {profesor.nombre}
+                                </h3>
+                                <p className="text-sm font-bold text-brand-red mb-6 uppercase tracking-wide">
+                                    {profesor.especialidad}
+                                </p>
 
-                            <div className="flex gap-2 justify-center">
-                                <button
-                                    onClick={() => setProfesorModal({ isOpen: true, data: profesor })}
-                                    className="p-2 text-gray-400 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteClick('profesor', profesor.id, profesor.nombre)}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex gap-3 pt-4 border-t border-gray-100">
+                                    <button
+                                        onClick={() => setProfesorModal({ isOpen: true, data: profesor })}
+                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        EDITAR
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteClick('profesor', profesor.id, profesor.nombre)}
+                                        className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        ELIMINAR
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

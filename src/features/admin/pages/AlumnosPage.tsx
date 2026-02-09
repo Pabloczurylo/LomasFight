@@ -5,64 +5,8 @@ import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
 import StudentModal from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 
-const MOCK_ALUMNOS: Alumno[] = [
-    {
-        id: '1',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-        disciplina: 'Kickboxing',
-        estadoPago: 'al día',
-        fechaRegistro: '2023-01-15',
-    },
-    {
-        id: '2',
-        nombre: 'María',
-        apellido: 'Gómez',
-        disciplina: 'Boxeo',
-        estadoPago: 'pendiente',
-        fechaRegistro: '2023-02-20',
-    },
-    {
-        id: '3',
-        nombre: 'Carlos',
-        apellido: 'López',
-        disciplina: 'Fuerza',
-        estadoPago: 'vencido',
-        fechaRegistro: '2023-03-10',
-    },
-    {
-        id: '4',
-        nombre: 'Ana',
-        apellido: 'Martínez',
-        disciplina: 'Kickboxing',
-        estadoPago: 'al día',
-        fechaRegistro: '2023-04-05',
-    },
-    {
-        id: '5',
-        nombre: 'Pedro',
-        apellido: 'Sánchez',
-        disciplina: 'Boxeo',
-        estadoPago: 'al día',
-        fechaRegistro: '2023-05-12',
-    },
-    {
-        id: '6',
-        nombre: 'Laura',
-        apellido: 'Rodríguez',
-        disciplina: 'Fuerza',
-        estadoPago: 'vencido',
-        fechaRegistro: '2023-06-25',
-    },
-    {
-        id: '7',
-        nombre: 'Sofía',
-        apellido: 'Fernández',
-        disciplina: 'Kickboxing',
-        estadoPago: 'pendiente',
-        fechaRegistro: '2023-07-30',
-    },
-];
+
+import { MOCK_ALUMNOS } from '../data/mockData';
 
 export default function AlumnosPage() {
     const [searchTerm, setSearchTerm] = useState('');

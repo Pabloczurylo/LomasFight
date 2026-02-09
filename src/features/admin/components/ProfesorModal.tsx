@@ -131,12 +131,13 @@ export default function ProfesorModal({ isOpen, onClose, onSave, disciplinas, in
 
                         {!imagen ? (
                             <div className="flex items-center justify-center w-full">
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                         <svg className="w-8 h-8 mb-3 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
                                             <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
                                         </svg>
                                         <p className="mb-1 text-sm text-gray-500"><span className="font-semibold">Subir foto</span></p>
+                                        <p className="text-xs text-gray-400">PNG, JPG (Rectangular recomendado)</p>
                                     </div>
                                     <input
                                         type="file"
@@ -153,23 +154,21 @@ export default function ProfesorModal({ isOpen, onClose, onSave, disciplinas, in
                                 </label>
                             </div>
                         ) : (
-                            <div className="flex justify-center">
-                                <div className="relative w-32 h-32 rounded-full overflow-hidden group border-4 border-gray-100 shadow-sm">
-                                    <img
-                                        src={imagen}
-                                        alt="Preview"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
-                                        <button
-                                            type="button"
-                                            onClick={() => setImagen('')}
-                                            className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50 transition-colors transform hover:scale-110"
-                                            title="Eliminar foto"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
+                            <div className="w-full h-48 rounded-lg overflow-hidden group border-2 border-gray-100 shadow-sm relative">
+                                <img
+                                    src={imagen}
+                                    alt="Preview"
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setImagen('')}
+                                        className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50 transition-colors transform hover:scale-110"
+                                        title="Eliminar foto"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </div>
                         )}

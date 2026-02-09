@@ -1,64 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Plus, Search, DollarSign, AlertCircle, CreditCard, Calendar } from 'lucide-react';
-import { Pago, Alumno, Disciplina } from '../types';
+import { Pago } from '../types';
 import { cn } from '../../../lib/utils';
 import RegistroPagoModal from '../components/RegistroPagoModal';
 
-// MOCK DATA - To be replaced with real data fetching
-const MOCK_PAGOS: Pago[] = [
-    {
-        id: '1',
-        alumnoId: '1',
-        alumnoNombre: 'Juan Pérez',
-        disciplinaId: '1',
-        disciplinaNombre: 'Kickboxing',
-        monto: 15000,
-        mes: 'Febrero',
-        anio: 2024,
-        fechaPago: '2024-02-05',
-        metodoPago: 'Efectivo',
-        estado: 'Pagado'
-    },
-    {
-        id: '2',
-        alumnoId: '2',
-        alumnoNombre: 'María Gómez',
-        disciplinaId: '2',
-        disciplinaNombre: 'Boxeo',
-        monto: 12000,
-        mes: 'Febrero',
-        anio: 2024,
-        fechaPago: '2024-02-06',
-        metodoPago: 'Transferencia',
-        estado: 'Pagado'
-    },
-    {
-        id: '3',
-        alumnoId: '3',
-        alumnoNombre: 'Carlos López',
-        disciplinaId: '3',
-        disciplinaNombre: 'Fuerza',
-        monto: 10000,
-        mes: 'Enero',
-        anio: 2024,
-        fechaPago: '2024-01-10',
-        metodoPago: 'Efectivo',
-        estado: 'Vencido'
-    }
-];
-
-// Necesitamos mock alumnos y disciplinas para el modal
-const MOCK_ALUMNOS: Alumno[] = [
-    { id: '1', nombre: 'Juan', apellido: 'Pérez', disciplina: 'Kickboxing', estadoPago: 'al día', fechaRegistro: '2023-01-15' },
-    { id: '2', nombre: 'María', apellido: 'Gómez', disciplina: 'Boxeo', estadoPago: 'pendiente', fechaRegistro: '2023-02-20' },
-    { id: '3', nombre: 'Carlos', apellido: 'López', disciplina: 'Fuerza', estadoPago: 'vencido', fechaRegistro: '2023-03-10' },
-];
-
-const MOCK_DISCIPLINAS: Disciplina[] = [
-    { id: '1', nombre: 'Kickboxing', descripcion: '', imagen: '' },
-    { id: '2', nombre: 'Boxeo', descripcion: '', imagen: '' },
-    { id: '3', nombre: 'Fuerza', descripcion: '', imagen: '' },
-];
+import { MOCK_PAGOS, MOCK_ALUMNOS, MOCK_DISCIPLINAS } from '../data/mockData';
 
 const MESES = [
     'Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
