@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Calendar, CreditCard, Settings, LogOut, Dumbbell } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, CreditCard, LogOut, Dumbbell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../../lib/utils"; // Assuming utils exist, or I will use clsx/tailwind-merge directly if needed
 
@@ -8,7 +8,6 @@ const NAV_ITEMS = [
     { name: "Clases", path: "/admin/clases", icon: Calendar },
     { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
     { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
-    { name: "Configuración", path: "/admin/settings", icon: Settings },
 ];
 
 export function Sidebar() {

@@ -4,73 +4,7 @@ import { Button } from "../../../components/ui/Button";
 import { CalendarGrid } from "../components/CalendarGrid";
 import AddClassModal from "../components/AddClassModal";
 
-// Mock data adapted for the grid
-const MOCK_SCHEDULE = [
-    {
-        id: 1,
-        day: "LUNES",
-        time: "18:00 - 19:30",
-        discipline: "KICKBOXING",
-        variant: "kickboxing",
-        instructor: "Prof. Sanchez"
-    },
-    {
-        id: 2,
-        day: "LUNES",
-        time: "20:00 - 21:00",
-        discipline: "BOXEO",
-        variant: "boxeo",
-    },
-    {
-        id: 3,
-        day: "MARTES",
-        time: "09:00 - 10:30",
-        discipline: "MUAY THAI",
-        variant: "muaythai",
-    },
-    {
-        id: 4,
-        day: "MIÉRCOLES",
-        time: "19:00 - 20:30",
-        discipline: "KICKBOXING",
-        variant: "kickboxing",
-    },
-    {
-        id: 5,
-        day: "JUEVES",
-        time: "17:00 - 18:30",
-        discipline: "BOXEO",
-        variant: "boxeo",
-    },
-    {
-        id: 6,
-        day: "JUEVES",
-        time: "09:00 - 10:30",
-        discipline: "MUAY THAI",
-        variant: "muaythai",
-    },
-    {
-        id: 7,
-        day: "SÁBADO",
-        time: "09:00 - 11:30",
-        discipline: "SEMINARIO MUAY THAI",
-        variant: "muaythai",
-    },
-    {
-        id: 8,
-        day: "VIERNES",
-        time: "18:00 - 19:30",
-        discipline: "KICKBOXING",
-        variant: "kickboxing"
-    },
-    {
-        id: 9,
-        day: "VIERNES",
-        time: "20:00 - 21:00",
-        discipline: "BOXEO",
-        variant: "boxeo"
-    }
-] as const;
+import { MOCK_SCHEDULE } from "../data/mockData";
 
 export default function ClassesPage() {
     const [schedule, setSchedule] = useState<any[]>(() => {
