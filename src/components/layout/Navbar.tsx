@@ -110,9 +110,11 @@ export function Navbar() {
 
                 {/* CTA */}
                 <div className="hidden md:block">
-                    <Button variant="whatsapp" size="sm">
-                        WHATSAPP
-                    </Button>
+                    <Link to="/login">
+                        <Button variant="primary" size="sm">
+                            INICIAR SESIÓN
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -153,9 +155,11 @@ export function Navbar() {
                             </a>
                         );
                     })}
-                    <Button variant="whatsapp" className="w-full mt-4">
-                        WHATSAPP
-                    </Button>
+                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="primary" className="w-full mt-4">
+                            INICIAR SESIÓN
+                        </Button>
+                    </Link>
                 </div>
             )}
         </nav>
