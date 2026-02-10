@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { Alumno } from '../types';
+import { useState, useEffect } from 'react';
+import { Alumno, ClienteBackend } from '../types';
 import { cn } from '../../../lib/utils';
-import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import StudentModal from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
-
-
-import { MOCK_ALUMNOS } from '../data/mockData';
+import { api } from '../../../services/api';
 
 export default function AlumnosPage() {
     const [searchTerm, setSearchTerm] = useState('');
-    const [alumnos, setAlumnos] = useState<Alumno[]>(MOCK_ALUMNOS);
+    const [alumnos, setAlumnos] = useState<Alumno[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Alumno | undefined>(undefined);
 
@@ -20,6 +20,34 @@ export default function AlumnosPage() {
 
     const [pendingStudentData, setPendingStudentData] = useState<Omit<Alumno, 'id' | 'fechaRegistro'> | null>(null);
     const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchAlumnos = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const response = await api.get<ClienteBackend[]>('/clientes');
+
+                const mappedAlumnos: Alumno[] = response.data.map(cliente => ({
+                    id: String(cliente.id_cliente),
+                    nombre: cliente.nombre,
+                    apellido: cliente.apellido,
+                    disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
+                    estadoPago: cliente.fecha_ultimo_pago ? 'al día' : 'pendiente', // Logic to be refined
+                    fechaRegistro: cliente.fecha_ultimo_pago ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] // Fallback
+                }));
+
+                setAlumnos(mappedAlumnos);
+            } catch (err) {
+                console.error('Error fetching alumnos:', err);
+                setError('Error al cargar los alumnos. Por favor, intente nuevamente.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAlumnos();
+    }, []);
 
     const filteredAlumnos = alumnos.filter((alumno) =>
         alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,6 +107,22 @@ export default function AlumnosPage() {
             setIsModalOpen(false);
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-brand-red" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-64 text-red-600">
+                <p>{error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
