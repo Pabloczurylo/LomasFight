@@ -6,6 +6,13 @@ import StudentModal from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
 
+// Mapeo temporal de disciplinas (Debería venir del backend)
+const DISCIPLINA_ID_MAP: Record<string, number> = {
+    'Kickboxing': 3,
+    'Boxeo': 4,
+    'Fuerza': 5
+};
+
 export default function AlumnosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
@@ -21,31 +28,31 @@ export default function AlumnosPage() {
     const [pendingStudentData, setPendingStudentData] = useState<Omit<Alumno, 'id' | 'fechaRegistro'> | null>(null);
     const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
 
+    const fetchAlumnos = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await api.get<ClienteBackend[]>('/clientes');
+
+            const mappedAlumnos: Alumno[] = response.data.map(cliente => ({
+                id: String(cliente.id_cliente),
+                nombre: cliente.nombre,
+                apellido: cliente.apellido,
+                disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
+                estadoPago: cliente.fecha_ultimo_pago ? 'al día' : 'pendiente',
+                fechaRegistro: cliente.fecha_ultimo_pago ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            }));
+
+            setAlumnos(mappedAlumnos);
+        } catch (err) {
+            console.error('Error fetching alumnos:', err);
+            setError('Error al cargar los alumnos. Por favor, intente nuevamente.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchAlumnos = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-                const response = await api.get<ClienteBackend[]>('/clientes');
-
-                const mappedAlumnos: Alumno[] = response.data.map(cliente => ({
-                    id: String(cliente.id_cliente),
-                    nombre: cliente.nombre,
-                    apellido: cliente.apellido,
-                    disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
-                    estadoPago: cliente.fecha_ultimo_pago ? 'al día' : 'pendiente', // Logic to be refined
-                    fechaRegistro: cliente.fecha_ultimo_pago ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] // Fallback
-                }));
-
-                setAlumnos(mappedAlumnos);
-            } catch (err) {
-                console.error('Error fetching alumnos:', err);
-                setError('Error al cargar los alumnos. Por favor, intente nuevamente.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchAlumnos();
     }, []);
 
@@ -77,20 +84,34 @@ export default function AlumnosPage() {
         }
     };
 
-    const handleSaveStudent = (studentData: Omit<Alumno, 'id' | 'fechaRegistro'>) => {
+    const handleSaveStudent = async (studentData: Omit<Alumno, 'id' | 'fechaRegistro'>) => {
         if (selectedStudent) {
             // Edit mode - Ask for confirmation
             setPendingStudentData(studentData);
             setIsSaveConfirmOpen(true);
         } else {
-            // Add mode - Save immediately
-            const newStudent: Alumno = {
-                ...studentData,
-                id: Date.now().toString(),
-                fechaRegistro: new Date().toISOString().split('T')[0],
-            };
-            setAlumnos((prev) => [...prev, newStudent]);
-            setIsModalOpen(false);
+            // Add mode - Save immediately to Backend
+            try {
+                const payload = {
+                    nombre: studentData.nombre,
+                    apellido: studentData.apellido,
+                    id_disciplina: Number(DISCIPLINA_ID_MAP[studentData.disciplina] || 3),
+                    // Optional fields
+                    dni: null,
+                    fecha_nacimiento: null,
+                    grupo_sanguineo: null,
+                    id_profesor_que_cargo: null
+                };
+
+                await api.post('/clientes', payload);
+
+                // Refresh list
+                await fetchAlumnos();
+                setIsModalOpen(false);
+            } catch (error) {
+                console.error('Error creating student:', error);
+                alert('Error al crear el alumno. Por favor intente nuevamente.');
+            }
         }
     };
 
