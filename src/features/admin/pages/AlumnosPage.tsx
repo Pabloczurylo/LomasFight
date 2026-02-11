@@ -122,17 +122,33 @@ export default function AlumnosPage() {
         }
     };
 
-    const confirmSave = () => {
+    const confirmSave = async () => {
         if (pendingStudentData && selectedStudent) {
-            // Edit mode
-            setAlumnos((prev) => prev.map((a) =>
-                a.id === selectedStudent.id
-                    ? { ...a, ...pendingStudentData }
-                    : a
-            ));
-            setIsSaveConfirmOpen(false);
-            setPendingStudentData(null);
-            setIsModalOpen(false);
+            try {
+                // Edit mode
+                const payload = {
+                    nombre: pendingStudentData.nombre,
+                    apellido: pendingStudentData.apellido,
+                    id_disciplina: Number(DISCIPLINA_ID_MAP[pendingStudentData.disciplina] || 3),
+                    // Mantener otros campos si es necesario o enviarlos como están
+                    dni: null,
+                    fecha_nacimiento: null,
+                    grupo_sanguineo: null,
+                    id_profesor_que_cargo: null
+                };
+
+                // selectedStudent.id mapea a id_cliente
+                await api.put(`/clientes/${selectedStudent.id}`, payload);
+
+                await fetchAlumnos();
+
+                setIsSaveConfirmOpen(false);
+                setPendingStudentData(null);
+                setIsModalOpen(false);
+            } catch (error) {
+                console.error('Error updating student:', error);
+                alert('Error al actualizar el alumno. Por favor intente nuevamente.');
+            }
         }
     };
 
