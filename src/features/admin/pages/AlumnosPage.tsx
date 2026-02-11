@@ -76,11 +76,18 @@ export default function AlumnosPage() {
         setIsDeleteConfirmOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (studentToDelete) {
-            setAlumnos((prev) => prev.filter((a) => a.id !== studentToDelete.id));
-            setIsDeleteConfirmOpen(false);
-            setStudentToDelete(null);
+            try {
+                // studentToDelete.id corresponde a id_cliente según el mapeo en fetchAlumnos
+                await api.delete(`/clientes/${studentToDelete.id}`);
+                await fetchAlumnos();
+                setStudentToDelete(null);
+                setIsDeleteConfirmOpen(false);
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                alert('Error al eliminar el alumno. Por favor intente nuevamente.');
+            }
         }
     };
 
