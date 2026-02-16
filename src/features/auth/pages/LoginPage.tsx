@@ -1,11 +1,55 @@
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { Mail, Lock, CheckSquare, Square, Trophy } from "lucide-react";
+import { Mail, Lock, CheckSquare, Square, Trophy, AlertCircle } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { api } from "../../../services/api";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
     const [rememberMe, setRememberMe] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setLoading(true);
+
+        try {
+            const response = await api.post("/usuarios/login", {
+                mail_usuario: email,
+                contrasena_usuario: password,
+            });
+
+            const { token, usuario } = response.data;
+
+            if (token && usuario) {
+                localStorage.setItem("token", token);
+                // Saving user object as a JSON string
+                localStorage.setItem("usuario", JSON.stringify(usuario));
+
+                // Assuming the response structure is correct based on requirements
+                // Redirect to admin dashboard
+                navigate("/admin/alumnos");
+            } else {
+                setError("Respuesta inesperada del servidor.");
+            }
+        } catch (err) {
+            console.error("Login error:", err);
+            if (err instanceof AxiosError && err.response) {
+                // Use backend error message if available
+                setError(err.response.data.message || "Usuario o contraseña incorrectos");
+            } else {
+                setError("Error al conectar con el servidor. Intente nuevamente.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex min-h-screen w-full">
@@ -55,8 +99,16 @@ export default function LoginPage() {
                         </p>
                     </div>
 
+                    {/* Error Message */}
+                    {error && (
+                        <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex items-center gap-2 rounded-md animate-pulse">
+                            <AlertCircle size={20} />
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                    )}
+
                     {/* Form */}
-                    <form className="space-y-6">
+                    <form className="space-y-6" onSubmit={handleLogin}>
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700 ml-1">
@@ -67,6 +119,9 @@ export default function LoginPage() {
                                     placeholder="usuario@lomasfight.com"
                                     startIcon={<Mail size={18} />}
                                     className="bg-white"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
@@ -78,6 +133,9 @@ export default function LoginPage() {
                                     placeholder="••••••••"
                                     startIcon={<Lock size={18} />}
                                     className="bg-white"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
                                 />
                             </div>
                         </div>
@@ -103,8 +161,13 @@ export default function LoginPage() {
                             </Link>
                         </div>
 
-                        <Button className="w-full h-12 text-lg shadow-lg shadow-brand-red/30" size="lg">
-                            ACCEDER
+                        <Button
+                            className="w-full h-12 text-lg shadow-lg shadow-brand-red/30"
+                            size="lg"
+                            type="submit"
+                            disabled={loading}
+                        >
+                            {loading ? "ACCEDIENDO..." : "ACCEDER"}
                         </Button>
                     </form>
 
@@ -121,3 +184,4 @@ export default function LoginPage() {
         </div>
     );
 }
+
