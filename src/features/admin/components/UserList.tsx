@@ -1,14 +1,21 @@
-import { Pencil, Trash2 } from 'lucide-react';
-import { User } from '../data/mockUsers';
+import { Pencil, Trash2, User as UserIcon } from 'lucide-react';
+import { Usuario } from '../types';
 import { cn } from '../../../lib/utils';
 
 interface UserListProps {
-    users: User[];
-    onEdit: (user: User) => void;
-    onDelete: (userId: string) => void;
+    users: Usuario[];
+    onEdit: (user: Usuario) => void;
+    onDelete: (userId: number) => void;
 }
 
 export default function UserList({ users, onEdit, onDelete }: UserListProps) {
+    const getRoleName = (user: Usuario) => {
+        // Enforce role name based on string 'rol'
+        if (user.rol === 'admin') return 'Administrador';
+        if (user.rol === 'profesor') return 'Profesor';
+        return user.rol || 'Desconocido';
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
@@ -23,34 +30,27 @@ export default function UserList({ users, onEdit, onDelete }: UserListProps) {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {users.map((user) => (
-                            <tr key={user.id} className="group hover:bg-gray-50 transition-colors">
+                            <tr key={user.id_usuario} className="group hover:bg-gray-50 transition-colors">
                                 <td className="py-4 pl-6 pr-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                                            {user.avatar ? (
-                                                <img src={user.avatar} alt={user.nombre} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 font-bold">
-                                                    {user.nombre.charAt(0)}
-                                                </div>
-                                            )}
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shrink-0 flex items-center justify-center text-gray-500">
+                                            <UserIcon size={20} />
                                         </div>
                                         <span className="font-bold text-gray-900 group-hover:text-brand-red transition-colors">
-                                            {user.nombre}
+                                            {user.nombre_usuario}
                                         </span>
                                     </div>
                                 </td>
                                 <td className="py-4 px-4 text-gray-600 text-sm">
-                                    {user.email}
+                                    {user.mail_usuario}
                                 </td>
                                 <td className="py-4 px-4">
                                     <span className={cn(
                                         "px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
-                                        user.rol === 'Administrador' && "bg-blue-100 text-blue-700",
-                                        user.rol === 'Entrenador' && "bg-green-100 text-green-700",
-                                        user.rol === 'Recepción' && "bg-orange-100 text-orange-700"
+                                        (user.rol === 'admin' || getRoleName(user) === 'Administrador') && "bg-red-100 text-red-700",
+                                        (user.rol === 'profesor' || getRoleName(user) === 'Profesor') && "bg-green-100 text-green-700"
                                     )}>
-                                        {user.rol}
+                                        {getRoleName(user)}
                                     </span>
                                 </td>
                                 <td className="py-4 pr-6 pl-4 text-right">
@@ -63,7 +63,7 @@ export default function UserList({ users, onEdit, onDelete }: UserListProps) {
                                             <Pencil size={18} />
                                         </button>
                                         <button
-                                            onClick={() => onDelete(user.id)}
+                                            onClick={() => onDelete(user.id_usuario)}
                                             className="p-1.5 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
                                             title="Eliminar"
                                         >

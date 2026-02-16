@@ -32,7 +32,16 @@ export function Sidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2">
-                {NAV_ITEMS.map((item) => {
+                {NAV_ITEMS.filter(item => {
+                    const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+                    // Check if user is professor (id_rol 2 or rol_usuario 'Profesor'/'Entrenador')
+                    const isProfessor = user.id_rol === 2 || user.rol_usuario === 'Profesor' || user.rol_usuario === 'Entrenador';
+
+                    if (isProfessor) {
+                        return !['Pagos', 'Roles & Usuarios'].includes(item.name);
+                    }
+                    return true;
+                }).map((item) => {
                     const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
                     return (
                         <Link

@@ -21,14 +21,31 @@ export interface ClienteBackend {
     disciplinas?: {
         nombre_disciplina: string;
     };
-    pagos?: any[]; // We can define PagoBackend if needed, but for now any[] or specific if used
+    pagos?: any[];
 }
 
 export interface Disciplina {
+    id_disciplina: number; // Backend uses snake_case and number
+    nombre_disciplina: string;
+    descripcion_disciplina: string; // Assuming backend naming, will verify
+    imagen_disciplina?: string; // Optional or mapped
+    // Frontend-only props if needed for UI using adapters, but let's try to match backend
+}
+
+// Frontend adapter type if we want to keep UI clean, but better to match backend for now
+export interface DisciplinaUI {
     id: string;
     nombre: string;
     descripcion: string;
     imagen: string;
+}
+
+export interface Usuario {
+    id_usuario: number;
+    nombre_usuario: string;
+    mail_usuario: string;
+    rol: string; // 'admin' or 'profesor'
+    activo: boolean;
 }
 
 export interface Profesor {

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Calendar, CreditCard, LogOut, X, Dumbbell } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, CreditCard, LogOut, X, Dumbbell, Shield } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
     { name: "Clases", path: "/admin/clases", icon: Calendar },
     { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
     { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
+    { name: "Roles & Usuarios", path: "/admin/usuarios", icon: Shield },
 ];
 
 interface MobileSidebarProps {
@@ -56,7 +57,34 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {NAV_ITEMS.map((item) => {
+                    {NAV_ITEMS.concat({ name: "Roles & Usuarios", path: "/admin/usuarios", icon: Dumbbell }).filter(item => { // Added Roles & Usuarios manually here as it was missing in NAV_ITEMS const in MobileSidebar but present in Sidebar? Wait, let's check MobileSidebar NAV_ITEMS. 
+                        // Ah, MobileSidebar NAV_ITEMS in file view (step 301) DOES NOT include "Roles & Usuarios". 
+                        // It has Dashboard, Alumnos, Clases, Disciplinas, Pagos.
+                        // I should probably add it if it's supposed to be there for Admins. 
+                        // The user said "UsuariosPage (Roles & Usuarios)" -> Hide for professors.
+                        // If it's not in the list, I guess I don't need to hide it? 
+                        // But wait, if I want to be consistent, I should probably add it to NAV_ITEMS if it was intended to be there.
+                        // However, strictly following the file content I see:
+                        /*
+                        const NAV_ITEMS = [
+                            { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+                            { name: "Alumnos", path: "/admin/alumnos", icon: Users },
+                            { name: "Clases", path: "/admin/clases", icon: Calendar },
+                            { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
+                            { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
+                        ];
+                        */
+                        // It seems "Roles & Usuarios" is missing from MobileSidebar. I should add it for Admin consistency.
+                        // But first, let's just filter what is there (Pagos).
+
+                        const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+                        const isProfessor = user.id_rol === 2 || user.rol_usuario === 'Profesor' || user.rol_usuario === 'Entrenador';
+
+                        if (isProfessor) {
+                            return !['Pagos', 'Roles & Usuarios'].includes(item.name);
+                        }
+                        return true;
+                    }).map((item) => {
                         const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
                         return (
                             <Link

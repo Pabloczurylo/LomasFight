@@ -1,32 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import UserForm from '../components/UserForm';
 import UserList from '../components/UserList';
-import { MOCK_USERS, User } from '../data/mockUsers';
+import { Usuario } from '../types';
+import { api } from '../../../services/api';
+import { AxiosError } from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function UsuariosPage() {
-    const [users, setUsers] = useState<User[]>(MOCK_USERS);
+    const [users, setUsers] = useState<Usuario[]>([]);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
-    const handleCreateUser = (userData: Omit<User, 'id' | 'avatar'>) => {
-        const newUser: User = {
-            ...userData,
-            id: Date.now().toString(),
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nombre)}&background=random`
-        };
-        setUsers(prev => [newUser, ...prev]);
-    };
-
-    const handleEditUser = (user: User) => {
-        // Mock edit functionality - just logging for now as mockup focused on creation
-        console.log("Edit user", user);
-        alert(`Editar usuario: ${user.nombre} (Funcionalidad pendiente)`);
-    };
-
-    const handleDeleteUser = (userId: string) => {
-        if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
-            setUsers(prev => prev.filter(u => u.id !== userId));
+    const fetchUsuarios = async () => {
+        try {
+            const response = await api.get('/usuarios');
+            setUsers(response.data);
+        } catch (error) {
+            console.error('Error fetching usuarios:', error);
+            if (error instanceof AxiosError && error.response?.status === 401) {
+                localStorage.clear();
+                navigate('/login');
+            }
+        } finally {
+            setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchUsuarios();
+    }, []);
+
+    const handleCreateUser = async (userData: { nombre_usuario: string; mail_usuario: string; contrasena_usuario: string; rol: string }) => {
+        try {
+            const response = await api.post('/usuarios', userData);
+            if (response.data) { // Assuming response returns created user
+                // If we had the created user with ID, we'd add it. 
+                // But safest is refetch or assume structure. 
+                // Let's refetch to be consistent and safe with IDs and server-side logic
+                fetchUsuarios();
+            }
+        } catch (error) {
+            console.error("Error creating usuario:", error);
+            if (error instanceof AxiosError && error.response?.status === 401) {
+                localStorage.clear();
+                navigate('/login');
+            }
+        }
+    };
+
+    const handleEditUser = (user: Usuario) => {
+        // Mock edit functionality - just logging for now as mockup focused on creation
+        console.log("Edit user", user);
+        alert(`Editar usuario: ${user.nombre_usuario} (Funcionalidad pendiente)`);
+    };
+
+    const handleDeleteUser = async (userId: number) => {
+        if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
+            try {
+                await api.delete(`/usuarios/${userId}`);
+                setUsers(prev => prev.filter(u => u.id_usuario !== userId));
+            } catch (error) {
+                console.error("Error deleting usuario:", error);
+                if (error instanceof AxiosError && error.response?.status === 401) {
+                    localStorage.clear();
+                    navigate('/login');
+                }
+            }
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 pb-12">

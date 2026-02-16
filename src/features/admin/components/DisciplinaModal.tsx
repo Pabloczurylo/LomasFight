@@ -16,27 +16,16 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
 
     useEffect(() => {
         if (initialData) {
-            setNombre(initialData.nombre);
-            setDescripcion(initialData.descripcion);
-            setImagen(initialData.imagen);
+            setNombre(initialData.nombre_disciplina);
+            setDescripcion(initialData.descripcion_disciplina);
+            setImagen(initialData.imagen_disciplina || '');
         } else {
+            setNombre('');
             setDescripcion('');
             setImagen('');
         }
-
-        return () => {
-            // Cleanup check: if imagen is a blob url, revoke it
-            // We can't easily check if it's a blob url specifically created by us here without extra state, 
-            // but standard practice is to revoke if we created it. 
-            // For simplicity in this scope, we will just let the browser handle it on page unload 
-            // OR strictly speaking we should track if we created a blob.
-            // However, the best practice requested was to revoke.
-            // Let's refactor slightly to track the blobUrl if we want to be 100% correct, 
-            // but for now, since we mix strings (urls) and blobs, we might revoke a string which does nothing.
-        };
     }, [initialData, isOpen]);
 
-    // Better cleanup approach: use a separate effect for the preview if it changes
     useEffect(() => {
         return () => {
             if (imagen.startsWith('blob:')) {
@@ -50,10 +39,10 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave({
-            id: initialData?.id || Date.now().toString(),
-            nombre,
-            descripcion,
-            imagen
+            id_disciplina: initialData?.id_disciplina || 0, // 0 indicates new
+            nombre_disciplina: nombre,
+            descripcion_disciplina: descripcion,
+            imagen_disciplina: imagen
         });
         onClose();
     };
