@@ -57,34 +57,26 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {NAV_ITEMS.concat({ name: "Roles & Usuarios", path: "/admin/usuarios", icon: Dumbbell }).filter(item => { // Added Roles & Usuarios manually here as it was missing in NAV_ITEMS const in MobileSidebar but present in Sidebar? Wait, let's check MobileSidebar NAV_ITEMS. 
-                        // Ah, MobileSidebar NAV_ITEMS in file view (step 301) DOES NOT include "Roles & Usuarios". 
-                        // It has Dashboard, Alumnos, Clases, Disciplinas, Pagos.
-                        // I should probably add it if it's supposed to be there for Admins. 
-                        // The user said "UsuariosPage (Roles & Usuarios)" -> Hide for professors.
-                        // If it's not in the list, I guess I don't need to hide it? 
-                        // But wait, if I want to be consistent, I should probably add it to NAV_ITEMS if it was intended to be there.
-                        // However, strictly following the file content I see:
-                        /*
-                        const NAV_ITEMS = [
-                            { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
-                            { name: "Alumnos", path: "/admin/alumnos", icon: Users },
-                            { name: "Clases", path: "/admin/clases", icon: Calendar },
-                            { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
-                            { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
-                        ];
-                        */
-                        // It seems "Roles & Usuarios" is missing from MobileSidebar. I should add it for Admin consistency.
-                        // But first, let's just filter what is there (Pagos).
-
+                    {NAV_ITEMS.filter(item => {
                         const user = JSON.parse(localStorage.getItem('usuario') || '{}');
-                        const isProfessor = user.id_rol === 2 || user.rol_usuario === 'Profesor' || user.rol_usuario === 'Entrenador';
+                        // Check strict string role from backend
+                        const isProfessor = user.rol === 'profesor';
 
                         if (isProfessor) {
-                            return !['Pagos', 'Roles & Usuarios'].includes(item.name);
+                            // Professors only see Clases (renamed to Asistencia)
+                            return ['Clases'].includes(item.name);
                         }
                         return true;
                     }).map((item) => {
+                        const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+                        const isProfessor = user.rol === 'profesor';
+
+                        // Rename Clases to Asistencia for professors
+                        let displayName = item.name;
+                        if (isProfessor && item.name === 'Clases') {
+                            displayName = 'Asistencia';
+                        }
+
                         const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
                         return (
                             <Link
@@ -99,7 +91,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                                 )}
                             >
                                 <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                <span className="font-heading font-semibold tracking-wide text-sm uppercase">{item.name}</span>
+                                <span className="font-heading font-semibold tracking-wide text-sm uppercase">{displayName}</span>
                             </Link>
                         );
                     })}

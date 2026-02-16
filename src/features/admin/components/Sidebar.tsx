@@ -34,14 +34,24 @@ export function Sidebar() {
             <nav className="flex-1 p-4 space-y-2">
                 {NAV_ITEMS.filter(item => {
                     const user = JSON.parse(localStorage.getItem('usuario') || '{}');
-                    // Check if user is professor (id_rol 2 or rol_usuario 'Profesor'/'Entrenador')
-                    const isProfessor = user.id_rol === 2 || user.rol_usuario === 'Profesor' || user.rol_usuario === 'Entrenador';
+                    // Check strict string role from backend
+                    const isProfessor = user.rol === 'profesor';
 
                     if (isProfessor) {
-                        return !['Pagos', 'Roles & Usuarios'].includes(item.name);
+                        // Professors only see Clases (renamed to Asistencia)
+                        return ['Clases'].includes(item.name);
                     }
                     return true;
                 }).map((item) => {
+                    const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+                    const isProfessor = user.rol === 'profesor';
+
+                    // Rename Clases to Asistencia for professors
+                    let displayName = item.name;
+                    if (isProfessor && item.name === 'Clases') {
+                        displayName = 'Asistencia';
+                    }
+
                     const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
                     return (
                         <Link
@@ -55,7 +65,7 @@ export function Sidebar() {
                             )}
                         >
                             <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                            <span className="font-heading font-semibold tracking-wide text-sm uppercase">{item.name}</span>
+                            <span className="font-heading font-semibold tracking-wide text-sm uppercase">{displayName}</span>
                         </Link>
                     );
                 })}
