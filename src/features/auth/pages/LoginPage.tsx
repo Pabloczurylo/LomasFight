@@ -40,8 +40,12 @@ export default function LoginPage() {
                 localStorage.setItem("usuario", JSON.stringify(usuario));
 
                 // Assuming the response structure is correct based on requirements
-                // Redirect to admin dashboard
-                navigate("/admin/alumnos");
+                // Redirect based on role
+                if (usuario.rol === 'profesor') {
+                    navigate("/admin/asistencia");
+                } else {
+                    navigate("/admin/alumnos");
+                }
             } else {
                 setError("Respuesta inesperada del servidor.");
             }

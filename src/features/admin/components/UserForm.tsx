@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Shield, Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { User } from '../data/mockUsers';
 
 interface UserFormProps {
-    onSubmit: (userData: Omit<User, 'id' | 'avatar'>) => void;
+    onSubmit: (userData: { nombre_usuario: string; mail_usuario: string; contrasena_usuario: string; rol: string }) => void;
     onCancel: () => void;
 }
 
@@ -15,17 +14,20 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
         nombre: '',
         email: '',
         password: '',
-        rol: '' as User['rol'] | ''
+        rol: '' as string
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.rol) {
-            onSubmit({
-                nombre: formData.nombre,
-                email: formData.email,
-                rol: formData.rol
-            });
+            const payload = {
+                nombre_usuario: formData.nombre,
+                mail_usuario: formData.email,
+                contrasena_usuario: formData.password,
+                rol: formData.rol // Send as string directly
+            };
+            console.log('Enviando usuario:', payload);
+            onSubmit(payload);
             // Reset form
             setFormData({ nombre: '', email: '', password: '', rol: '' });
         }
@@ -46,6 +48,7 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
                             value={formData.nombre}
                             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                             required
+                            className="text-black"
                         />
                     </div>
 
@@ -61,6 +64,7 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             required
+                            className="text-black"
                         />
                     </div>
 
@@ -78,6 +82,7 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 required
                                 minLength={8}
+                                className="text-black"
                             />
                             <button
                                 type="button"
@@ -102,15 +107,14 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
                                 <Shield size={18} />
                             </div>
                             <select
-                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red appearance-none text-gray-700"
+                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red appearance-none text-gray-900"
                                 value={formData.rol}
-                                onChange={(e) => setFormData({ ...formData, rol: e.target.value as User['rol'] })}
+                                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
                                 required
                             >
                                 <option value="" disabled>Seleccione un rol</option>
-                                <option value="Administrador">Administrador</option>
-                                <option value="Entrenador">Entrenador</option>
-                                <option value="Recepción">Recepción</option>
+                                <option value="admin">Administrador</option>
+                                <option value="profesor">Profesor</option>
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
@@ -143,10 +147,8 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
                 <div className="bg-brand-red text-white p-1 rounded-full shrink-0 mt-0.5">
                     <span className="font-bold text-xs">i</span>
                 </div>
-                {/* Or use AlertCircle */}
-                {/* <AlertCircle className="text-brand-red shrink-0" size={20} /> */}
                 <p className="text-sm text-gray-700">
-                    El usuario recibirá un correo electrónico automático para activar su cuenta y confirmar su acceso.
+                    Asegúrese de seleccionar el rol correcto. Los administradores tienen acceso total, mientras que los profesores tienen acceso limitado.
                 </p>
             </div>
         </div>
