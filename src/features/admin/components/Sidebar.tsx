@@ -1,5 +1,5 @@
 import { LayoutDashboard, Users, Calendar, CreditCard, LogOut, Dumbbell, Shield } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils"; // Assuming utils exist, or I will use clsx/tailwind-merge directly if needed
 
 const NAV_ITEMS = [
@@ -13,6 +13,12 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/login');
+    };
 
     return (
         <aside className="hidden lg:flex flex-col w-64 bg-black text-white h-screen fixed left-0 top-0 border-r border-zinc-800">
@@ -64,7 +70,10 @@ export function Sidebar() {
                     </div>
                 </div>
 
-                <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-red-500 transition-colors">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-red-500 transition-colors cursor-pointer"
+                >
                     <LogOut className="w-5 h-5" />
                     <span className="font-heading font-semibold tracking-wide text-sm uppercase">Cerrar Sesión</span>
                 </button>
