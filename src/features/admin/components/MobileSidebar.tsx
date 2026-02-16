@@ -1,5 +1,5 @@
 import { LayoutDashboard, Users, Calendar, CreditCard, LogOut, X, Dumbbell } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 
 const NAV_ITEMS = [
@@ -17,6 +17,12 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/login');
+    };
 
     return (
         <>
@@ -89,7 +95,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                         </div>
                     </div>
 
-                    <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-red-500 transition-colors">
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-red-500 transition-colors cursor-pointer"
+                    >
                         <LogOut className="w-5 h-5" />
                         <span className="font-heading font-semibold tracking-wide text-sm uppercase">Cerrar Sesión</span>
                     </button>

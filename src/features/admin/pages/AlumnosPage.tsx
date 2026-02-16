@@ -5,6 +5,8 @@ import { Search, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import StudentModal from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 
 // Mapeo temporal de disciplinas (Debería venir del backend)
 const DISCIPLINA_ID_MAP: Record<string, number> = {
@@ -20,6 +22,7 @@ export default function AlumnosPage() {
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Alumno | undefined>(undefined);
+    const navigate = useNavigate();
 
     // Estados para ConfirmModals
     const [studentToDelete, setStudentToDelete] = useState<Alumno | null>(null);
@@ -46,6 +49,13 @@ export default function AlumnosPage() {
             setAlumnos(mappedAlumnos);
         } catch (err) {
             console.error('Error fetching alumnos:', err);
+
+            if (err instanceof AxiosError && err.response?.status === 401) {
+                localStorage.clear(); // Or remove specific items: localStorage.removeItem('token'); localStorage.removeItem('usuario');
+                navigate('/login');
+                return;
+            }
+
             setError('Error al cargar los alumnos. Por favor, intente nuevamente.');
         } finally {
             setIsLoading(false);
