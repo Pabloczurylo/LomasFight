@@ -4,13 +4,16 @@ import DisciplineDetailPage from "./features/landing/pages/DisciplineDetailPage"
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { AdminRoutes } from "./features/admin/routes/AdminRoutes";
 import LoginPage from "./features/auth/pages/LoginPage";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Admin Routes - Isolated from Public Layout */}
-        <Route path="/admin/*" element={<AdminRoutes />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/admin/*" element={<AdminRoutes />} />
+        </Route>
 
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
