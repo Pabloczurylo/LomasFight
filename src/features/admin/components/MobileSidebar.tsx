@@ -72,7 +72,23 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 </nav>
 
                 {/* Logout/Footer */}
-                <div className="p-4 border-t border-zinc-800">
+                <div className="p-4 border-t border-zinc-800 space-y-4">
+                    <div className="flex items-center gap-3 px-4">
+                        <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
+                            <span className="text-xs font-bold text-brand-red">
+                                {JSON.parse(localStorage.getItem('usuario') || '{}').nombre_usuario?.charAt(0).toUpperCase() || 'A'}
+                            </span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white leading-none">
+                                {JSON.parse(localStorage.getItem('usuario') || '{}').nombre_usuario || 'Administrador'}
+                            </span>
+                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
+                                {JSON.parse(localStorage.getItem('usuario') || '{}').rol_usuario || 'Staff'}
+                            </span>
+                        </div>
+                    </div>
+
                     <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-red-500 transition-colors">
                         <LogOut className="w-5 h-5" />
                         <span className="font-heading font-semibold tracking-wide text-sm uppercase">Cerrar Sesión</span>
