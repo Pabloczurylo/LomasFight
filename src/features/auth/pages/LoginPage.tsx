@@ -42,7 +42,7 @@ export default function LoginPage() {
                 // Assuming the response structure is correct based on requirements
                 // Redirect based on role
                 if (usuario.rol === 'profesor') {
-                    navigate("/admin/clases");
+                    navigate("/admin/asistencia");
                 } else {
                     navigate("/admin/alumnos");
                 }

@@ -73,15 +73,18 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
                         // Rename Clases to Asistencia for professors
                         let displayName = item.name;
+                        let displayPath = item.path;
+
                         if (isProfessor && item.name === 'Clases') {
                             displayName = 'Asistencia';
+                            displayPath = '/admin/asistencia';
                         }
 
-                        const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
+                        const isActive = location.pathname === displayPath || (displayPath !== "/admin" && location.pathname.startsWith(displayPath));
                         return (
                             <Link
                                 key={item.path}
-                                to={item.path}
+                                to={displayPath}
                                 onClick={onClose}
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
