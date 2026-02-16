@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    // Apuntamos al puerto 3000 y al prefijo /api que definiste en el backend
+    baseURL: 'http://localhost:3000/api', 
 });
 
 api.interceptors.request.use(
@@ -10,10 +11,7 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        console.log('Token enviado en la petición: ', token ? 'SÍ' : 'NO');
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
