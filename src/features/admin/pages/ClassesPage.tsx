@@ -6,6 +6,8 @@ import AddClassModal from "../components/AddClassModal";
 
 import { MOCK_SCHEDULE } from "../data/mockData";
 
+const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+
 export default function ClassesPage() {
     const [schedule, setSchedule] = useState<any[]>(() => {
         const saved = localStorage.getItem('class_schedule');
@@ -17,8 +19,17 @@ export default function ClassesPage() {
         localStorage.setItem('class_schedule', JSON.stringify(schedule));
     }, [schedule]);
     const [view, setView] = useState<'week' | 'day'>('week');
+    const [currentDayIndex, setCurrentDayIndex] = useState(0); // 0 = LUNES
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<any | null>(null);
+
+    const handlePrevDay = () => {
+        setCurrentDayIndex(prev => (prev > 0 ? prev - 1 : prev));
+    };
+
+    const handleNextDay = () => {
+        setCurrentDayIndex(prev => (prev < WEEK_DAYS.length - 1 ? prev + 1 : prev));
+    };
 
     const handleSaveClass = (data: any) => {
         // Transform modal data to calendar events
@@ -108,21 +119,25 @@ export default function ClassesPage() {
                         <p className="text-gray-500 text-sm mt-0.5 font-medium">Visualización semanal de actividades y turnos.</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 self-start md:self-auto">
                         {/* View Toggle */}
-                        <div className="bg-gray-100 p-1 rounded-lg flex text-[10px] font-bold shadow-inner">
-                            <button
-                                onClick={() => setView('week')}
-                                className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide ${view === 'week' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
-                            >
-                                Semana
-                            </button>
-                            <button
-                                onClick={() => setView('day')}
-                                className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide ${view === 'day' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
-                            >
-                                Día
-                            </button>
+                        <div className="flex items-center gap-2">
+                            {/* Removed old day navigation buttons */}
+
+                            <div className="bg-gray-100 p-1 rounded-lg flex text-[10px] font-bold shadow-inner h-8 items-center">
+                                <button
+                                    onClick={() => setView('week')}
+                                    className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide h-full flex items-center ${view === 'week' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    Semana
+                                </button>
+                                <button
+                                    onClick={() => setView('day')}
+                                    className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide h-full flex items-center ${view === 'day' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    Día
+                                </button>
+                            </div>
                         </div>
 
                         <Button
@@ -140,12 +155,12 @@ export default function ClassesPage() {
                 </div>
 
                 {/* Legend / Filters - Moved up since Nav bar is gone */}
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <span className="text-sm font-heading font-bold text-gray-900 uppercase tracking-wide pl-2">
                         Horarios Semanales
                     </span>
 
-                    <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[10px] font-medium uppercase tracking-wide text-gray-600">
+                    <div className="flex flex-wrap justify-start items-center gap-3 md:gap-4 text-[10px] font-medium uppercase tracking-wide text-gray-600 pl-2 sm:pl-0">
                         <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-red-50 border border-red-100"></span>
                             <span>Kickboxing</span>
@@ -168,6 +183,11 @@ export default function ClassesPage() {
                     view={view}
                     events={schedule}
                     onEventClick={handleEventClick}
+                    activeDay={WEEK_DAYS[currentDayIndex]}
+                    onPrevDay={handlePrevDay}
+                    onNextDay={handleNextDay}
+                    isFirstDay={currentDayIndex === 0}
+                    isLastDay={currentDayIndex === WEEK_DAYS.length - 1}
                 />
             </div>
 
