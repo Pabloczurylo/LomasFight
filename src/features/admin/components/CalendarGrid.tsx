@@ -15,6 +15,7 @@ interface CalendarGridProps {
     view: 'week' | 'day';
     events: CalendarEvent[];
     onEventClick: (classItem: CalendarEvent) => void;
+    activeDay?: string; // Optional, used when view is 'day'
 }
 
 const START_HOUR = 8;
@@ -25,14 +26,14 @@ const TOTAL_SLOTS = TOTAL_HOURS * SLOTS_PER_HOUR; // 30 slots
 
 const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 
-export function CalendarGrid({ view, events, onEventClick }: CalendarGridProps) {
+export function CalendarGrid({ view, events, onEventClick, activeDay }: CalendarGridProps) {
 
     const days = useMemo(() => {
         if (view === 'day') {
-            return ['LUNES']; // Default/Placeholder for day view
+            return activeDay ? [activeDay] : ['LUNES']; // Use activeDay if provided, else default
         }
         return WEEK_DAYS;
-    }, [view]);
+    }, [view, activeDay]);
 
     // Helper to get grid row from time string "HH:mm"
     const getGridRow = (timeStr: string) => {

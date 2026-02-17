@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { CalendarGrid } from "../components/CalendarGrid";
 import AddClassModal from "../components/AddClassModal";
 
 import { MOCK_SCHEDULE } from "../data/mockData";
+
+const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 
 export default function ClassesPage() {
     const [schedule, setSchedule] = useState<any[]>(() => {
@@ -17,8 +19,17 @@ export default function ClassesPage() {
         localStorage.setItem('class_schedule', JSON.stringify(schedule));
     }, [schedule]);
     const [view, setView] = useState<'week' | 'day'>('week');
+    const [currentDayIndex, setCurrentDayIndex] = useState(0); // 0 = LUNES
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingClass, setEditingClass] = useState<any | null>(null);
+
+    const handlePrevDay = () => {
+        setCurrentDayIndex(prev => (prev > 0 ? prev - 1 : prev));
+    };
+
+    const handleNextDay = () => {
+        setCurrentDayIndex(prev => (prev < WEEK_DAYS.length - 1 ? prev + 1 : prev));
+    };
 
     const handleSaveClass = (data: any) => {
         // Transform modal data to calendar events
@@ -110,19 +121,40 @@ export default function ClassesPage() {
 
                     <div className="flex items-center gap-3 self-start md:self-auto">
                         {/* View Toggle */}
-                        <div className="bg-gray-100 p-1 rounded-lg flex text-[10px] font-bold shadow-inner">
-                            <button
-                                onClick={() => setView('week')}
-                                className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide ${view === 'week' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
-                            >
-                                Semana
-                            </button>
-                            <button
-                                onClick={() => setView('day')}
-                                className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide ${view === 'day' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
-                            >
-                                Día
-                            </button>
+                        <div className="flex items-center gap-2">
+                            {view === 'day' && (
+                                <div className="flex items-center bg-gray-100 p-1 rounded-lg shadow-inner h-8">
+                                    <button
+                                        onClick={handlePrevDay}
+                                        disabled={currentDayIndex === 0}
+                                        className="p-1 hover:bg-white hover:shadow-sm rounded transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none text-gray-600"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={handleNextDay}
+                                        disabled={currentDayIndex === WEEK_DAYS.length - 1}
+                                        className="p-1 hover:bg-white hover:shadow-sm rounded transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none text-gray-600"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="bg-gray-100 p-1 rounded-lg flex text-[10px] font-bold shadow-inner h-8 items-center">
+                                <button
+                                    onClick={() => setView('week')}
+                                    className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide h-full flex items-center ${view === 'week' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    Semana
+                                </button>
+                                <button
+                                    onClick={() => setView('day')}
+                                    className={`px-3 py-1.5 rounded-md transition-all uppercase tracking-wide h-full flex items-center ${view === 'day' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    Día
+                                </button>
+                            </div>
                         </div>
 
                         <Button
@@ -168,6 +200,7 @@ export default function ClassesPage() {
                     view={view}
                     events={schedule}
                     onEventClick={handleEventClick}
+                    activeDay={WEEK_DAYS[currentDayIndex]}
                 />
             </div>
 
