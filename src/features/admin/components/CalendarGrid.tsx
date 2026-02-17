@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { ClassCard } from "./ClassCard";
 import { cn } from "../../../lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CalendarEvent {
     id: number | string;
@@ -16,6 +17,10 @@ interface CalendarGridProps {
     events: CalendarEvent[];
     onEventClick: (classItem: CalendarEvent) => void;
     activeDay?: string; // Optional, used when view is 'day'
+    onPrevDay?: () => void;
+    onNextDay?: () => void;
+    isFirstDay?: boolean;
+    isLastDay?: boolean;
 }
 
 const START_HOUR = 8;
@@ -26,7 +31,16 @@ const TOTAL_SLOTS = TOTAL_HOURS * SLOTS_PER_HOUR; // 30 slots
 
 const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 
-export function CalendarGrid({ view, events, onEventClick, activeDay }: CalendarGridProps) {
+export function CalendarGrid({
+    view,
+    events,
+    onEventClick,
+    activeDay,
+    onPrevDay,
+    onNextDay,
+    isFirstDay,
+    isLastDay
+}: CalendarGridProps) {
 
     const days = useMemo(() => {
         if (view === 'day') {
@@ -68,10 +82,32 @@ export function CalendarGrid({ view, events, onEventClick, activeDay }: Calendar
                         {/* Days Header */}
                         <div className={`flex-1 grid ${view === 'week' ? 'grid-cols-6' : 'grid-cols-1'} divide-x divide-gray-100`}>
                             {days.map((dayName, i) => (
-                                <div key={i} className="py-3 text-center bg-gray-50/50">
+                                <div key={i} className="py-3 text-center bg-gray-50/50 flex items-center justify-center gap-2 relative">
+                                    {view === 'day' && onPrevDay && (
+                                        <button
+                                            onClick={onPrevDay}
+                                            disabled={isFirstDay}
+                                            className="p-1 hover:bg-white hover:shadow-md rounded-full transition-all disabled:opacity-0 text-gray-400 hover:text-gray-700 active:scale-95 absolute left-4"
+                                            title="Día anterior"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                    )}
+
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-gray-500">
                                         {dayName}
                                     </div>
+
+                                    {view === 'day' && onNextDay && (
+                                        <button
+                                            onClick={onNextDay}
+                                            disabled={isLastDay}
+                                            className="p-1 hover:bg-white hover:shadow-md rounded-full transition-all disabled:opacity-0 text-gray-400 hover:text-gray-700 active:scale-95 absolute right-4"
+                                            title="Siguiente día"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>

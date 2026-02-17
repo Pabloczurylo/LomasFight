@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { CalendarGrid } from "../components/CalendarGrid";
 import AddClassModal from "../components/AddClassModal";
@@ -122,24 +122,7 @@ export default function ClassesPage() {
                     <div className="flex items-center gap-3 self-start md:self-auto">
                         {/* View Toggle */}
                         <div className="flex items-center gap-2">
-                            {view === 'day' && (
-                                <div className="flex items-center bg-gray-100 p-1 rounded-lg shadow-inner h-8">
-                                    <button
-                                        onClick={handlePrevDay}
-                                        disabled={currentDayIndex === 0}
-                                        className="p-1 hover:bg-white hover:shadow-sm rounded transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none text-gray-600"
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={handleNextDay}
-                                        disabled={currentDayIndex === WEEK_DAYS.length - 1}
-                                        className="p-1 hover:bg-white hover:shadow-sm rounded transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none text-gray-600"
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
+                            {/* Removed old day navigation buttons */}
 
                             <div className="bg-gray-100 p-1 rounded-lg flex text-[10px] font-bold shadow-inner h-8 items-center">
                                 <button
@@ -201,6 +184,10 @@ export default function ClassesPage() {
                     events={schedule}
                     onEventClick={handleEventClick}
                     activeDay={WEEK_DAYS[currentDayIndex]}
+                    onPrevDay={handlePrevDay}
+                    onNextDay={handleNextDay}
+                    isFirstDay={currentDayIndex === 0}
+                    isLastDay={currentDayIndex === WEEK_DAYS.length - 1}
                 />
             </div>
 
