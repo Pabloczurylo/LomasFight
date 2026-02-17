@@ -108,7 +108,7 @@ export default function ClassesPage() {
                         <p className="text-gray-500 text-sm mt-0.5 font-medium">Visualización semanal de actividades y turnos.</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 self-start md:self-auto">
                         {/* View Toggle */}
                         <div className="bg-gray-100 p-1 rounded-lg flex text-[10px] font-bold shadow-inner">
                             <button
@@ -140,12 +140,12 @@ export default function ClassesPage() {
                 </div>
 
                 {/* Legend / Filters - Moved up since Nav bar is gone */}
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <span className="text-sm font-heading font-bold text-gray-900 uppercase tracking-wide pl-2">
                         Horarios Semanales
                     </span>
 
-                    <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 text-[10px] font-medium uppercase tracking-wide text-gray-600">
+                    <div className="flex flex-wrap justify-start items-center gap-3 md:gap-4 text-[10px] font-medium uppercase tracking-wide text-gray-600 pl-2 sm:pl-0">
                         <div className="flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-full bg-red-50 border border-red-100"></span>
                             <span>Kickboxing</span>

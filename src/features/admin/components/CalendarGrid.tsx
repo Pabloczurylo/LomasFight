@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ClassCard } from "./ClassCard";
+import { cn } from "../../../lib/utils";
 
 interface CalendarEvent {
     id: number | string;
@@ -28,12 +29,7 @@ export function CalendarGrid({ view, events, onEventClick }: CalendarGridProps) 
 
     const days = useMemo(() => {
         if (view === 'day') {
-            // For Day view, without date selection, we might just default to showing Lunes logic or just all days in a column?
-            // Or maybe just show 'LUNES' as the first one?
-            // Given the user request is "remove function to advance weeks", and "show days from Mon-Sat",
-            // sticking to week view is safest. If they toggle 'day', I'll just show 'LUNES' for now or the first day.
-            // But let's assume 'week' is the main view.
-            return ['LUNES'];
+            return ['LUNES']; // Default/Placeholder for day view
         }
         return WEEK_DAYS;
     }, [view]);
@@ -54,81 +50,92 @@ export function CalendarGrid({ view, events, onEventClick }: CalendarGridProps) 
 
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Header: Days */}
-            <div className="flex border-b border-gray-100">
-                <div className="w-12 flex-shrink-0 border-r border-gray-100"></div>
-                <div className={`flex-1 grid ${view === 'week' ? 'grid-cols-6' : 'grid-cols-1'} divide-x divide-gray-100`}>
-                    {days.map((dayName, i) => (
-                        <div key={i} className="py-3 text-center bg-gray-50/30">
-                            <div className="text-[11px] font-bold uppercase tracking-widest text-gray-500">
-                                {dayName}
-                            </div>
-                            {/* Removed the numeric date */}
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* 
+              Single scrollable container for both X and Y.
+              We use sticky positioning for headers (top) and time column (left).
+            */}
+            <div className="flex-1 overflow-auto relative custom-scrollbar">
+                <div className={cn(
+                    "flex flex-col min-h-[600px]",
+                    view === 'week' ? "min-w-[800px]" : "w-full"
+                )}>
+                    {/* Header Row: Sticky Top */}
+                    <div className="flex border-b border-gray-100 sticky top-0 z-30 bg-white shadow-sm ring-1 ring-black/5">
+                        {/* Top-Left Corner: Sticky Left + Sticky Top */}
+                        <div className="w-12 flex-shrink-0 border-r border-gray-100 bg-white sticky left-0 z-40"></div>
 
-            {/* Grid Body */}
-            <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                <div className="flex min-h-[600px]">
-                    {/* Time Column */}
-                    <div className="w-12 flex-shrink-0 border-r border-gray-100 bg-gray-50/30 text-[10px] text-gray-400 font-medium text-center custom-time-labels">
-                        {Array.from({ length: TOTAL_HOURS }).map((_, i) => {
-                            const hour = START_HOUR + i;
-                            const showLabel = hour % 2 === 0 || hour === START_HOUR;
-                            return (
-                                <div key={i} className="h-[4.5rem] relative border-b border-gray-50 flex items-start justify-center pt-1.5">
-                                    {showLabel ? `${hour.toString().padStart(2, '0')}:00` : ''}
+                        {/* Days Header */}
+                        <div className={`flex-1 grid ${view === 'week' ? 'grid-cols-6' : 'grid-cols-1'} divide-x divide-gray-100`}>
+                            {days.map((dayName, i) => (
+                                <div key={i} className="py-3 text-center bg-gray-50/50">
+                                    <div className="text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                                        {dayName}
+                                    </div>
                                 </div>
-                            )
-                        })}
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Events Grid */}
-                    <div className={`flex-1 grid ${view === 'week' ? 'grid-cols-6' : 'grid-cols-1'} divide-x divide-gray-100 relative`}>
-                        {days.map((dayName, colIndex) => {
-                            const dayEvents = events.filter(e => e.day.toUpperCase() === dayName);
-
-                            return (
-                                <div key={colIndex} className="relative bg-white">
-                                    {/* Grid Lines */}
-                                    <div className="absolute inset-0 grid" style={{ gridTemplateRows: `repeat(${TOTAL_SLOTS}, minmax(2.25rem, 1fr))` }}>
-                                        {Array.from({ length: TOTAL_SLOTS }).map((_, idx) => (
-                                            <div key={idx} className="border-b border-gray-50/50 box-border"></div>
-                                        ))}
+                    {/* Grid Body */}
+                    <div className="flex flex-1">
+                        {/* Time Column: Sticky Left */}
+                        <div className="w-12 flex-shrink-0 border-r border-gray-100 bg-white z-20 sticky left-0 text-[10px] text-gray-400 font-medium text-center custom-time-labels">
+                            {Array.from({ length: TOTAL_HOURS }).map((_, i) => {
+                                const hour = START_HOUR + i;
+                                const showLabel = hour % 2 === 0 || hour === START_HOUR;
+                                return (
+                                    <div key={i} className="h-[4.5rem] relative border-b border-gray-50 flex items-start justify-center pt-1.5 bg-gray-50/30">
+                                        {showLabel ? `${hour.toString().padStart(2, '0')}:00` : ''}
                                     </div>
+                                )
+                            })}
+                        </div>
 
-                                    {/* Render Events */}
-                                    {dayEvents.map((evt, idx) => {
-                                        const [startTime] = evt.time.split(' - ');
-                                        const startRow = getGridRow(startTime);
-                                        const span = getDurationSlots(evt.time);
+                        {/* Events Grid */}
+                        <div className={`flex-1 grid ${view === 'week' ? 'grid-cols-6' : 'grid-cols-1'} divide-x divide-gray-100 relative`}>
+                            {days.map((dayName, colIndex) => {
+                                const dayEvents = events.filter(e => e.day.toUpperCase() === dayName);
 
-                                        const topPercent = ((startRow - 1) / TOTAL_SLOTS) * 100;
-                                        const heightPercent = (span / TOTAL_SLOTS) * 100;
+                                return (
+                                    <div key={colIndex} className="relative bg-white">
+                                        {/* Grid Lines */}
+                                        <div className="absolute inset-0 grid" style={{ gridTemplateRows: `repeat(${TOTAL_SLOTS}, minmax(2.25rem, 1fr))` }}>
+                                            {Array.from({ length: TOTAL_SLOTS }).map((_, idx) => (
+                                                <div key={idx} className="border-b border-gray-50/50 box-border"></div>
+                                            ))}
+                                        </div>
 
-                                        return (
-                                            <div
-                                                key={idx}
-                                                className="absolute w-[95%] left-[2.5%] z-10 transition-all hover:z-20 p-0.5 cursor-pointer"
-                                                style={{
-                                                    top: `${topPercent}%`,
-                                                    height: `${heightPercent}%`,
-                                                }}
-                                                onClick={() => onEventClick(evt)}
-                                            >
-                                                <ClassCard
-                                                    discipline={evt.discipline}
-                                                    time={evt.time}
-                                                    variant={evt.variant}
-                                                />
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            );
-                        })}
+                                        {/* Render Events */}
+                                        {dayEvents.map((evt, idx) => {
+                                            const [startTime] = evt.time.split(' - ');
+                                            const startRow = getGridRow(startTime);
+                                            const span = getDurationSlots(evt.time);
+
+                                            const topPercent = ((startRow - 1) / TOTAL_SLOTS) * 100;
+                                            const heightPercent = (span / TOTAL_SLOTS) * 100;
+
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="absolute w-[95%] left-[2.5%] z-10 transition-all hover:z-20 p-0.5 cursor-pointer"
+                                                    style={{
+                                                        top: `${topPercent}%`,
+                                                        height: `${heightPercent}%`,
+                                                    }}
+                                                    onClick={() => onEventClick(evt)}
+                                                >
+                                                    <ClassCard
+                                                        discipline={evt.discipline}
+                                                        time={evt.time}
+                                                        variant={evt.variant}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
