@@ -3,7 +3,7 @@ import { ClassCard } from "./ClassCard";
 import { cn } from "../../../lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface CalendarEvent {
+export interface CalendarEvent {
     id: number | string;
     day: string; // "LUNES", "MARTES", etc.
     time: string; // "HH:mm - HH:mm"

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
-import { CalendarGrid } from "../components/CalendarGrid";
+import { CalendarGrid, CalendarEvent } from "../components/CalendarGrid";
 import AddClassModal from "../components/AddClassModal";
-import { api } from "../../../api/api"; 
+import { api } from "../../../services/api";
 
 // --- INTERFACES DE TIPADO ---
 interface Disciplina {
@@ -26,14 +26,7 @@ interface HorarioBackend {
     profesores: Profesor;
 }
 
-interface CalendarEvent {
-    id: number;
-    day: string;
-    time: string;
-    discipline: string;
-    instructor: string;
-    variant: string;
-}
+
 
 const WEEK_DAYS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'] as const;
 type DayName = typeof WEEK_DAYS[number];
@@ -52,14 +45,21 @@ export default function ClassesPage() {
         try {
             setLoading(true);
             const { data } = await api.get<HorarioBackend[]>('/horarios');
-            
-            const mappedEvents: CalendarEvent[] = data.map(h => {
+
+            const mappedEvents: CalendarEvent[] = data.map((h: HorarioBackend) => {
                 const date = new Date(h.dia_y_hora);
                 const dayName = WEEK_DAYS[date.getDay()];
                 const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                // Construct a time range string as expected by CalendarGrid (e.g., "10:00 - 11:00")
+                // Since backend doesn't provide end time, we default to 1 hour duration
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                const endDate = new Date(date);
+                endDate.setHours(hours + 1, minutes);
+                const endTimeStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                const timeRange = `${timeStr} - ${endTimeStr}`;
 
                 // Lógica de variantes visuales basada en el nombre de la disciplina
-                const variantMap: Record<string, string> = {
+                const variantMap: Record<string, CalendarEvent['variant']> = {
                     'KICKBOXING': 'kickboxing',
                     'BOXEO': 'boxeo',
                     'MUAY THAI': 'muaythai',
@@ -70,13 +70,13 @@ export default function ClassesPage() {
                 return {
                     id: h.id_horario,
                     day: dayName,
-                    time: timeStr,
+                    time: timeRange,
                     discipline: h.disciplinas.nombre,
                     instructor: h.profesores.nombre,
                     variant: variantMap[h.disciplinas.nombre.toUpperCase()] || 'default'
                 };
             });
-            
+
             setSchedule(mappedEvents);
         } catch (error) {
             console.error("Error cargando horarios:", error);
@@ -94,15 +94,15 @@ export default function ClassesPage() {
         const now = new Date();
         const targetDayIndex = WEEK_DAYS.indexOf(dayName as DayName);
         const currentDayIndex = now.getDay();
-        
+
         let diff = targetDayIndex - currentDayIndex;
         // Ajuste para que siempre sea en la semana actual/próxima
         const resultDate = new Date(now);
         resultDate.setDate(now.getDate() + diff);
-        
+
         const [hours, minutes] = timeStr.split(':').map(Number);
         resultDate.setHours(hours, minutes, 0, 0);
-        
+
         return resultDate;
     };
 
@@ -113,11 +113,11 @@ export default function ClassesPage() {
             const promises = data.days.map((day: string) => {
                 const payload = {
                     dia_y_hora: combineDayAndTime(day, data.startTime),
-                    id_disciplina: Number(data.discipline), 
+                    id_disciplina: Number(data.discipline),
                     id_profesor: Number(data.instructor)
                 };
 
-                return editingClass?.id 
+                return editingClass?.id
                     ? api.put(`/horarios/${editingClass.id}`, payload)
                     : api.post('/horarios', payload);
             });
