@@ -14,5 +14,7 @@ api.interceptors.request.use(
         console.log('URL de la petición:', config.url);
         return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+        return Promise.reject(error);
+    }
 );
