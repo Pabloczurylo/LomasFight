@@ -165,6 +165,7 @@ export function CalendarGrid({
                                                         discipline={evt.discipline}
                                                         time={evt.time}
                                                         variant={evt.variant}
+                                                        instructor={evt.instructor}
                                                     />
                                                 </div>
                                             )
