@@ -7,7 +7,7 @@ import { api } from '../../../services/api'; // Importamos tu instancia de axios
 // --- INTERFACES ---
 interface Disciplina {
     id_disciplina: number;
-    nombre: string;
+    nombre_disciplina: string; // Changed from nombre to match backend
 }
 
 interface Profesor {
@@ -60,7 +60,7 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                 setLoadingData(true);
                 // Asumiendo que estos son tus endpoints
                 const [resDisc, resProf] = await Promise.all([
-                    api.get<Disciplina[]>('/disciplinas'),
+                    api.get<Disciplina[]>('/diciplinas'), // Fixed typo in endpoint to match DisciplinasPage
                     api.get<Profesor[]>('/profesores')
                 ]);
                 setDisciplinesList(resDisc.data);
@@ -168,7 +168,7 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                                 >
                                     <option value="" disabled>Selecciona disciplina</option>
                                     {disciplinesList.map(d => (
-                                        <option key={d.id_disciplina} value={d.id_disciplina}>{d.nombre}</option>
+                                        <option key={d.id_disciplina} value={d.id_disciplina}>{d.nombre_disciplina}</option>
                                     ))}
                                 </select>
                             </div>
