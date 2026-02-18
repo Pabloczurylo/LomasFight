@@ -30,7 +30,7 @@ export interface Disciplina {
     descripcion: string; // Corrected to match Supabase
     img_banner: string; // Corrected to match Supabase
     img_preview?: string; // Optional or mapped
-    cuota?: number; // Added as per latest backend requirements
+    cuota: number; // Added as per latest backend requirements
 }
 
 // Frontend adapter type if we want to keep UI clean, but better to match backend for now
