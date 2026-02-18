@@ -16,7 +16,23 @@ export default function LoginPage() {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (token) {
+        const usuarioStr = localStorage.getItem("usuario");
+
+        if (token && usuarioStr) {
+            try {
+                const usuario = JSON.parse(usuarioStr);
+                if (usuario.rol === 'profesor') {
+                    navigate("/admin/asistencia");
+                } else {
+                    navigate("/admin/alumnos");
+                }
+            } catch (e) {
+                console.error("Error parsing user data", e);
+                // Fallback if data is corrupted
+                navigate("/admin/alumnos");
+            }
+        } else if (token) {
+            // Token exists but no user data? unlikely but safe fallback
             navigate("/admin/alumnos");
         }
     }, [navigate]);
@@ -39,7 +55,6 @@ export default function LoginPage() {
                 // Saving user object as a JSON string
                 localStorage.setItem("usuario", JSON.stringify(usuario));
 
-                // Assuming the response structure is correct based on requirements
                 // Redirect based on role
                 if (usuario.rol === 'profesor') {
                     navigate("/admin/asistencia");
