@@ -1,30 +1,35 @@
+import { useEffect, useState } from "react";
 import { DisciplineCard } from "./DisciplineCard";
+import { api } from "../../../services/api";
 
-const DISCIPLINES = [
-    {
-        title: "FUERZA Y ACONDICIONAMIENTO",
-        slug: "fuerza-y-acondicionamiento",
-        description: "Mejora tu resistencia cardiovascular y muscular con ejercicios funcionales de alta intensidad.",
-        intensity: 85,
-        image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
-    },
-    {
-        title: "KICKBOXING",
-        slug: "kickboxing",
-        description: "Domina el arte del golpeo con patadas y puños. Técnica, velocidad y potencia en cada movimiento.",
-        intensity: 100,
-        image: "https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=2070&auto=format&fit=crop"
-    },
-    {
-        title: "BOXEO",
-        slug: "boxeo",
-        description: "El arte de la defensa y el golpeo preciso. Aprende a moverte y a golpear con inteligencia.",
-        intensity: 90,
-        image: "https://images.unsplash.com/photo-1599557718041-36b856641cd0?q=80&w=1974&auto=format&fit=crop"
-    }
-];
+interface Discipline {
+    id_disciplina: number;
+    nombre_disciplina: string;
+    descripcion: string; // Corrected to match Supabase
+    img_banner: string; // Corrected to match Supabase
+}
 
 export function DisciplinesSection() {
+    const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDisciplines = async () => {
+            try {
+                // Using the corrected endpoint from Sprint 9.1
+                const response = await api.get('/diciplinas');
+                setDisciplines(response.data);
+            } catch (error) {
+                console.error("Error fetching disciplines for landing:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDisciplines();
+    }, []);
+
+    if (loading) return null; // Or a skeleton/spinner, but null avoids layout shift flashing for now
+
     return (
         <section id="disciplinas" className="py-20 bg-brand-dark">
             <div className="container mx-auto px-4">
@@ -34,12 +39,21 @@ export function DisciplinesSection() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-                    {DISCIPLINES.map((discipline) => (
-                        <DisciplineCard
-                            key={discipline.title}
-                            {...discipline}
-                        />
-                    ))}
+                    {disciplines.length > 0 ? (
+                        disciplines.map((discipline) => (
+                            <DisciplineCard
+                                key={discipline.id_disciplina}
+                                title={discipline.nombre_disciplina}
+                                description={discipline.descripcion || "Entrena con los mejores profesionales en Lomas Fight."}
+                                image={discipline.img_banner || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"}
+                                slug={discipline.nombre_disciplina.toLowerCase().replace(/ /g, '-')}
+                            />
+                        ))
+                    ) : (
+                        <div className="col-span-3 text-center text-gray-400 py-12">
+                            <p>No hay disciplinas disponibles en este momento.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </section>

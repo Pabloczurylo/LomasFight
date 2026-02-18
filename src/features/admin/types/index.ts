@@ -27,9 +27,10 @@ export interface ClienteBackend {
 export interface Disciplina {
     id_disciplina: number; // Backend uses snake_case and number
     nombre_disciplina: string;
-    descripcion_disciplina: string; // Assuming backend naming, will verify
-    imagen_disciplina?: string; // Optional or mapped
-    // Frontend-only props if needed for UI using adapters, but let's try to match backend
+    descripcion: string; // Corrected to match Supabase
+    img_banner: string; // Corrected to match Supabase
+    img_preview?: string; // Optional or mapped
+    cuota?: number; // Added as per latest backend requirements
 }
 
 // Frontend adapter type if we want to keep UI clean, but better to match backend for now
