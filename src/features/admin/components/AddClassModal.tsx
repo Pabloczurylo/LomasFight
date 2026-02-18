@@ -232,7 +232,19 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                                     />
                                 </div>
                             </div>
-                            {/* ... Hora de Fin ... */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-gray-800 tracking-wide">Hora de Fin</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input
+                                        required
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white outline-none font-medium text-gray-700"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Botones de acción */}
