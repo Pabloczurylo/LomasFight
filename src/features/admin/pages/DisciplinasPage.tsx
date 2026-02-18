@@ -84,8 +84,8 @@ export default function DisciplinasPage() {
             nombre_disciplina: disciplina.nombre_disciplina,
             descripcion: disciplina.descripcion,
             img_banner: disciplina.img_banner,
-            img_preview: disciplina.img_banner, // Sending same image for both
-            cuota: 0 // Required by backend
+            img_preview: disciplina.img_banner,
+            cuota: disciplina.cuota || 0 // Use value from modal or 0 as fallback
         };
 
         try {
@@ -108,15 +108,15 @@ export default function DisciplinasPage() {
                 const response = await api.post(endpoint, payload);
                 console.log('[CREATE] Respuesta Servidor:', response.status, response.data);
 
-                if (response.data && response.data.id_disciplina) {
-                    fetchDisciplinas();
-                } else {
-                    fetchDisciplinas();
-                }
+                // Always re-fetch to ensure sync with DB IDs and defaults
+                fetchDisciplinas();
             }
         } catch (error) {
             console.error("Error saving disciplina (CRITICAL):", error);
             if (error instanceof AxiosError) {
+                // User requested specific log format for easier debugging
+                console.error('Error al crear:', error.response?.data);
+
                 console.error("Detalles del Error Axios:", {
                     status: error.response?.status,
                     data: error.response?.data,

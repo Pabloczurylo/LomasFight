@@ -13,16 +13,19 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
     const [nombre, setNombre] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [imagen, setImagen] = useState('');
+    const [cuota, setCuota] = useState<string>('0');
 
     useEffect(() => {
         if (initialData) {
             setNombre(initialData.nombre_disciplina);
             setDescripcion(initialData.descripcion);
             setImagen(initialData.img_banner || '');
+            setCuota(initialData.cuota?.toString() || '0');
         } else {
             setNombre('');
             setDescripcion('');
             setImagen('');
+            setCuota('0');
         }
     }, [initialData, isOpen]);
 
@@ -43,7 +46,8 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
             nombre_disciplina: nombre,
             descripcion: descripcion,
             img_banner: imagen,
-            img_preview: imagen
+            img_preview: imagen,
+            cuota: parseFloat(cuota) || 0
         });
         onClose();
     };
@@ -73,6 +77,22 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
                             onChange={(e) => setNombre(e.target.value)}
                             className="w-full px-4 py-2 border border-gray-200 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
                             placeholder="Ej: Kickboxing"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            Cuota Mensual ($)
+                        </label>
+                        <input
+                            type="number"
+                            value={cuota}
+                            onChange={(e) => setCuota(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                            placeholder="0"
+                            min="0"
+                            step="0.01"
                             required
                         />
                     </div>
