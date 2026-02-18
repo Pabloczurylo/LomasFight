@@ -114,7 +114,8 @@ export default function ClassesPage() {
                 const payload = {
                     dia_y_hora: combineDayAndTime(day, data.startTime),
                     id_disciplina: Number(data.discipline),
-                    id_profesor: Number(data.instructor)
+                    // id_profesor: Number(data.instructor) // OLD
+                    id_usuario: Number(data.instructor)     // NEW: Enviamos id_usuario ya que ahora seleccionamos usuarios
                 };
 
                 return editingClass?.id
