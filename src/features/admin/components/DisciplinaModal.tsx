@@ -13,16 +13,19 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
     const [nombre, setNombre] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [imagen, setImagen] = useState('');
+    const [cuota, setCuota] = useState<string>('0');
 
     useEffect(() => {
         if (initialData) {
             setNombre(initialData.nombre_disciplina);
-            setDescripcion(initialData.descripcion_disciplina);
-            setImagen(initialData.imagen_disciplina || '');
+            setDescripcion(initialData.descripcion);
+            setImagen(initialData.img_banner || '');
+            setCuota(initialData.cuota?.toString() || '0');
         } else {
             setNombre('');
             setDescripcion('');
             setImagen('');
+            setCuota('0');
         }
     }, [initialData, isOpen]);
 
@@ -41,8 +44,10 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
         onSave({
             id_disciplina: initialData?.id_disciplina || 0, // 0 indicates new
             nombre_disciplina: nombre,
-            descripcion_disciplina: descripcion,
-            imagen_disciplina: imagen
+            descripcion: descripcion,
+            img_banner: imagen,
+            img_preview: imagen,
+            cuota: parseFloat(cuota) || 0
         });
         onClose();
     };
@@ -70,8 +75,24 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
                             type="text"
                             value={nombre}
                             onChange={(e) => setNombre(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
                             placeholder="Ej: Kickboxing"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            Cuota Mensual ($)
+                        </label>
+                        <input
+                            type="number"
+                            value={cuota}
+                            onChange={(e) => setCuota(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                            placeholder="0"
+                            min="0"
+                            step="0.01"
                             required
                         />
                     </div>
@@ -83,54 +104,42 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
                         <textarea
                             value={descripcion}
                             onChange={(e) => setDescripcion(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all resize-none h-24"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all resize-none h-24"
                             placeholder="Breve descripción de la disciplina..."
                             required
                         />
                     </div>
 
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        Imagen
-                    </label>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            URL de la Imagen
+                        </label>
+                        <input
+                            type="url"
+                            value={imagen}
+                            onChange={(e) => setImagen(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all mb-2"
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                    </div>
 
-                    {/* File Input */}
-                    {!imagen ? (
-                        <div className="flex items-center justify-center w-full">
-                            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
-                                    </svg>
-                                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click para subir</span></p>
-                                    <p className="text-xs text-gray-500">SVG, PNG, JPG or GIF</p>
-                                </div>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            const url = URL.createObjectURL(file);
-                                            setImagen(url);
-                                        }
-                                    }}
-                                />
-                            </label>
-                        </div>
-                    ) : (
+                    {/* Image Preview */}
+                    {imagen && (
                         <div className="relative w-full h-48 rounded-lg overflow-hidden group border border-gray-200">
                             <img
                                 src={imagen}
                                 alt="Preview"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Error+Carga';
+                                }}
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <button
                                     type="button"
                                     onClick={() => setImagen('')}
                                     className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50 transition-colors transform hover:scale-110"
-                                    title="Eliminar imagen"
+                                    title="Limpiar imagen"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>

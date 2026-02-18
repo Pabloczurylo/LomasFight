@@ -32,8 +32,10 @@ export default function DisciplinasPage() {
     });
 
     const fetchDisciplinas = async () => {
+        const endpoint = '/diciplinas';
+        console.log('URL Final GET:', api.defaults.baseURL + endpoint);
         try {
-            const response = await api.get('/disciplinas');
+            const response = await api.get(endpoint);
             setDisciplinas(response.data);
         } catch (error) {
             console.error('Error fetching disciplinas:', error);
@@ -60,8 +62,10 @@ export default function DisciplinasPage() {
 
     const handleConfirmDelete = async () => {
         if (deleteModal.id) {
+            const endpoint = `/diciplinas/${deleteModal.id}`;
+            console.log('URL Final DELETE:', api.defaults.baseURL + endpoint);
             try {
-                await api.delete(`/disciplinas/${deleteModal.id}`);
+                await api.delete(endpoint);
                 setDisciplinas(prev => prev.filter(d => d.id_disciplina !== deleteModal.id));
             } catch (error) {
                 console.error("Error al eliminar disciplina:", error);
@@ -75,31 +79,53 @@ export default function DisciplinasPage() {
     };
 
     const handleSaveDisciplina = async (disciplina: Disciplina) => {
+        // Prepare Payload for Backend (names must match controller expectations)
+        const payload = {
+            nombre_disciplina: disciplina.nombre_disciplina,
+            descripcion: disciplina.descripcion,
+            img_banner: disciplina.img_banner,
+            img_preview: disciplina.img_banner,
+            cuota: disciplina.cuota || 0 // Use value from modal or 0 as fallback
+        };
+
         try {
             if (disciplina.id_disciplina) {
                 // Update
-                // We don't send id in body typically if it's strictly following REST, but let's see. 
-                // Using PUT /disciplinas/:id
-                const { id_disciplina, ...data } = disciplina;
-                await api.put(`/disciplinas/${id_disciplina}`, data);
-                setDisciplinas(prev => prev.map(d => d.id_disciplina === id_disciplina ? disciplina : d));
+                const endpoint = `/diciplinas/${disciplina.id_disciplina}`;
+                console.log(`[UPDATE] Enviando PUT a: ${api.defaults.baseURL}${endpoint}`);
+                console.log('[UPDATE] Payload:', payload);
+
+                const response = await api.put(endpoint, payload);
+                console.log('[UPDATE] Respuesta Servidor:', response.status, response.data);
+
+                setDisciplinas(prev => prev.map(d => d.id_disciplina === disciplina.id_disciplina ? { ...disciplina, ...payload } : d));
             } else {
                 // Create
-                const response = await api.post('/disciplinas', disciplina);
-                // Assuming backend returns the created object with ID
-                // If backend returns just "ok", we might need to refetch or assume ID if passed (but ID is usually auto-inc)
-                // Let's refetch to be safe or use response data
-                if (response.data && response.data.id_disciplina) {
-                    setDisciplinas(prev => [...prev, response.data]);
-                } else {
-                    fetchDisciplinas();
-                }
+                const endpoint = '/diciplinas';
+                console.log(`[CREATE] Enviando POST a: ${api.defaults.baseURL}${endpoint}`);
+                console.log('[CREATE] Payload:', payload);
+
+                const response = await api.post(endpoint, payload);
+                console.log('[CREATE] Respuesta Servidor:', response.status, response.data);
+
+                // Always re-fetch to ensure sync with DB IDs and defaults
+                fetchDisciplinas();
             }
         } catch (error) {
-            console.error("Error saving disciplina:", error);
-            if (error instanceof AxiosError && error.response?.status === 401) {
-                localStorage.clear();
-                navigate('/login');
+            console.error("Error saving disciplina (CRITICAL):", error);
+            if (error instanceof AxiosError) {
+                // User requested specific log format for easier debugging
+                console.error('Error al crear:', error.response?.data);
+
+                console.error("Detalles del Error Axios:", {
+                    status: error.response?.status,
+                    data: error.response?.data,
+                    headers: error.response?.headers
+                });
+                if (error.response?.status === 401) {
+                    localStorage.clear();
+                    navigate('/login');
+                }
             }
         }
     };
@@ -113,72 +139,94 @@ export default function DisciplinasPage() {
     }
 
     return (
-        <div className="space-y-12 pb-12">
-            {/* Sección Disciplinas */}
-            <section className="space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h2 className="text-3xl font-heading font-bold text-gray-900">Disciplinas</h2>
-                        <p className="text-gray-600">Gestiona las disciplinas disponibles en el gimnasio</p>
-                    </div>
-                    <button
-                        onClick={() => setDisciplinaModal({ isOpen: true, data: null })}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
-                    >
-                        <Plus className="w-5 h-5" />
-                        AÑADIR NUEVA DISCIPLINA
-                    </button>
+        <div className="space-y-8 pb-12">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-heading font-bold text-gray-900">Disciplinas</h2>
+                    <p className="text-gray-600">Gestiona las disciplinas disponibles en el gimnasio</p>
                 </div>
+                <button
+                    onClick={() => setDisciplinaModal({ isOpen: true, data: null })}
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md transform hover:scale-105 duration-200"
+                >
+                    <Plus className="w-5 h-5" />
+                    AÑADIR DISCIPLINA
+                </button>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {disciplinas.map((disciplina) => (
-                        <div key={disciplina.id_disciplina} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-                            <div className="relative h-48 overflow-hidden bg-gray-100">
-                                {disciplina.imagen_disciplina ? (
-                                    <img
-                                        src={disciplina.imagen_disciplina}
-                                        alt={disciplina.nombre_disciplina}
-                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                        <Layers className="w-12 h-12" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </div>
-
-                            <div className="p-6">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="text-xl font-heading font-bold text-gray-900 group-hover:text-brand-red transition-colors">
-                                        {disciplina.nombre_disciplina}
-                                    </h3>
-                                </div>
-                                <p className="text-gray-600 text-sm mb-6 line-clamp-2 min-h-[40px]">
-                                    {disciplina.descripcion_disciplina}
-                                </p>
-
-                                <div className="flex gap-3 pt-4 border-t border-gray-100">
-                                    <button
-                                        onClick={() => setDisciplinaModal({ isOpen: true, data: disciplina })}
-                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                        EDITAR
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(disciplina.id_disciplina, disciplina.nombre_disciplina)}
-                                        className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        ELIMINAR
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+            {/* Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider w-24">Imagen</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Nombre</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Descripción</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {disciplinas.length > 0 ? (
+                                disciplinas.map((disciplina) => (
+                                    <tr key={disciplina.id_disciplina} className="hover:bg-gray-50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                                                {disciplina.img_preview || disciplina.img_banner ? (
+                                                    <img
+                                                        src={disciplina.img_preview || disciplina.img_banner}
+                                                        alt={disciplina.nombre_disciplina}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                        <Layers className="w-8 h-8" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="font-bold text-gray-900 text-lg">
+                                                {disciplina.nombre_disciplina}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-gray-500 text-sm line-clamp-2 max-w-md">
+                                                {disciplina.descripcion}
+                                            </p>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => setDisciplinaModal({ isOpen: true, data: disciplina })}
+                                                    className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteClick(disciplina.id_disciplina, disciplina.nombre_disciplina)}
+                                                    className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                        No hay disciplinas registradas.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-            </section>
+            </div>
 
             {/* Modals */}
             <ConfirmModal
