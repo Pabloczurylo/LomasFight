@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, Users, CheckCircle, Save } from "lucide-react";
+import { Clock, MapPin, Users, CheckCircle, Save, Loader2 } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { api } from "../../../services/api";
-import { toast } from "react-hot-toast";
 
 // Interface for Class
 interface Clase {
@@ -27,7 +26,7 @@ export default function AsistenciaPage() {
     const [clases, setClases] = useState<Clase[]>([]);
     const [selectedClase, setSelectedClase] = useState<Clase | null>(null);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [loadingStudents, setLoadingStudents] = useState(false);
 
     useEffect(() => {
         fetchClases();
@@ -42,83 +41,112 @@ export default function AsistenciaPage() {
             const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
             const today = days[new Date().getDay()];
 
-            // In a real scenario, we would filter by API parameters
-            // const response = await api.get(`/clases?profesor_id=${profesorId}&dia=${today}`);
+            // Attempt to fetch classes from API
+            let myClasses: Clase[] = [];
 
-            // For now, fetching all and filtering client-side or using mock if API not ready
-            // Assuming API returns all classes for now as per previous patterns
-            const response = await api.get('/clases');
+            try {
+                const response = await api.get('/clases');
+                const allClasses = response.data;
 
-            const allClasses = response.data;
+                myClasses = allClasses.filter((c: any) =>
+                    (c.instructor_nombre === user.nombre_usuario || c.id_profesor === profesorId) &&
+                    c.dia_semana.toLowerCase() === today.toLowerCase()
+                );
+            } catch (err) {
+                console.warn("API fetch failed", err);
+            }
 
-            // Filter by professor and day (if backend doesn't do it)
-            // Note: Adjust logic based on actual API response structure
-            const myClasses = allClasses.filter((c: any) =>
-                // Flexible check for instructor name or ID if available in response
-                (c.instructor_nombre === user.nombre_usuario || c.id_profesor === profesorId) &&
-                c.dia_semana.toLowerCase() === today.toLowerCase()
-            );
+            if (myClasses.length === 0) {
+                // Fallback mock class shell so we can test student fetching logic on it
+                const mockClass: Clase = {
+                    id_clase: 999,
+                    nombre_clase: "Kickboxing", // Matching discipline name
+                    horario_inicio: "18:00",
+                    horario_fin: "19:30",
+                    dia_semana: today,
+                    instructor_nombre: user.nombre_usuario || "Profesor",
+                    cupo_maximo: 20
+                };
+                myClasses = [mockClass];
+            }
 
-            // Mocking students for the demo if API doesn't return them nested
-            const classesWithStudents = myClasses.map((c: any) => ({
-                ...c,
-                alumnos_inscriptos: c.alumnos_inscriptos || [
-                    { id_usuario: 101, nombre_usuario: "Juan Pérez", present: false },
-                    { id_usuario: 102, nombre_usuario: "Maria Garcia", present: false },
-                    { id_usuario: 103, nombre_usuario: "Carlos Lopez", present: false },
-                ]
-            }));
-
-            setClases(classesWithStudents);
+            setClases(myClasses);
         } catch (error) {
-            console.error("Error fetching classes:", error);
-            // Fallback for demo if API fails
+            console.error("Error generally fetching classes:", error);
             setClases([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleClassClick = (clase: Clase) => {
-        setSelectedClase(clase);
+    const handleClassClick = async (clase: Clase) => {
+        // Set selected class immediately to show the view with loading state
+        const classWithNoStudents = { ...clase, alumnos_inscriptos: [] };
+        setSelectedClase(classWithNoStudents);
+        setLoadingStudents(true);
+
+        try {
+            // Fetch all students (clientes)
+            const response = await api.get('/clientes');
+            const allStudents = response.data;
+
+            // Filter by discipline matching class name
+            const disciplineName = clase.nombre_clase;
+
+            const filteredStudents = allStudents
+                .filter((s: any) => s.disciplinas?.nombre_disciplina === disciplineName)
+                .map((s: any) => ({
+                    id_usuario: s.id_cliente, // Mapping id_cliente to id_usuario
+                    nombre_usuario: `${s.nombre} ${s.apellido}`,
+                    presente: false
+                }));
+
+            setSelectedClase({
+                ...clase,
+                alumnos_inscriptos: filteredStudents
+            });
+
+        } catch (error) {
+            console.error("Error fetching students for class:", error);
+            // Even if error, update state to stop loading
+            setSelectedClase({
+                ...clase,
+                alumnos_inscriptos: []
+            });
+        } finally {
+            setLoadingStudents(false);
+        }
     };
 
     const toggleAttendance = (alumnoId: number) => {
         if (!selectedClase || !selectedClase.alumnos_inscriptos) return;
 
-        const updatedStudents = selectedClase.alumnos_inscriptos.map(upload => {
-            if (upload.id_usuario === alumnoId) {
-                return { ...upload, presente: !upload.presente };
+        const updatedStudents = selectedClase.alumnos_inscriptos.map(al => {
+            if (al.id_usuario === alumnoId) {
+                return { ...al, presente: !al.presente };
             }
-            return upload;
+            return al;
         });
 
         setSelectedClase({ ...selectedClase, alumnos_inscriptos: updatedStudents });
     };
 
-    const handleSaveAsistencia = async () => {
+    const handleFinalizarClase = async () => {
         if (!selectedClase) return;
-        setSaving(true);
 
-        try {
-            const presentes = selectedClase.alumnos_inscriptos
-                ?.filter(a => a.presente)
-                .map(a => a.id_usuario) || [];
+        // As requested: simple alert and clear selection
+        window.alert('Asistencia guardada con éxito');
 
-            await api.post('/asistencia', {
-                id_clase: selectedClase.id_clase,
-                alumnos_presentes: presentes,
-                fecha: new Date().toISOString().split('T')[0]
-            });
+        // Clear selection (reset all present flags to false)
+        const updatedStudents = selectedClase.alumnos_inscriptos?.map(al => ({
+            ...al,
+            presente: false
+        }));
 
-            toast.success("Asistencia guardada correctamente");
-            setSelectedClase(null); // Go back to list
-        } catch (error) {
-            console.error("Error saving attendance:", error);
-            toast.error("Error al guardar asistencia");
-        } finally {
-            setSaving(false);
-        }
+        setSelectedClase({
+            ...selectedClase,
+            alumnos_inscriptos: updatedStudents
+        });
     };
 
     if (loading) return <div className="p-8 text-center">Cargando clases...</div>;
@@ -147,89 +175,95 @@ export default function AsistenciaPage() {
                             <span className="font-bold text-gray-700">{selectedClase.horario_inicio} - {selectedClase.horario_fin}</span>
                         </div>
                         <div className="text-sm text-gray-500">
-                            Total: {selectedClase.alumnos_inscriptos?.length}
+                            Total: {selectedClase.alumnos_inscriptos?.length || 0}
                         </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {selectedClase.alumnos_inscriptos?.map((alumno) => (
-                            <div
-                                key={alumno.id_usuario}
-                                onClick={() => toggleAttendance(alumno.id_usuario)}
-                                className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${alumno.presente
-                                        ? 'bg-red-50 border-brand-red/30'
-                                        : 'bg-white border-gray-200 hover:border-gray-300'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${alumno.presente ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500'
-                                        }`}>
-                                        {alumno.nombre_usuario.charAt(0)}
-                                    </div>
-                                    <span className={`font-medium ${alumno.presente ? 'text-brand-red' : 'text-gray-700'}`}>
-                                        {alumno.nombre_usuario}
-                                    </span>
-                                </div>
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${alumno.presente ? 'border-brand-red bg-brand-red text-white' : 'border-gray-300'
-                                    }`}>
-                                    {alumno.presente && <CheckCircle size={14} />}
-                                </div>
+                        {loadingStudents ? (
+                            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                <Loader2 className="w-8 h-8 animate-spin mb-2 text-brand-red" />
+                                <p>Cargando alumnos reales...</p>
                             </div>
-                        ))}
+                        ) : selectedClase.alumnos_inscriptos && selectedClase.alumnos_inscriptos.length > 0 ? (
+                            selectedClase.alumnos_inscriptos.map((alumno) => (
+                                <div
+                                    key={alumno.id_usuario}
+                                    onClick={() => toggleAttendance(alumno.id_usuario)}
+                                    className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all ${alumno.presente
+                                        ? 'bg-green-50 border-green-200'
+                                        : 'bg-white border-gray-200 hover:border-gray-300'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        {/* Large Checkbox/Toggle */}
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${alumno.presente ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'
+                                            }`}>
+                                            {alumno.presente && <CheckCircle size={16} className="text-white" />}
+                                        </div>
+
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${alumno.presente ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                            {alumno.nombre_usuario.charAt(0)}
+                                        </div>
+                                        <span className={`font-medium text-lg ${alumno.presente ? 'text-green-900' : 'text-gray-700'}`}>
+                                            {alumno.nombre_usuario}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-10 text-gray-400">
+                                <p>No hay alumnos inscritos en esta disciplina.</p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="p-4 border-t border-gray-100 bg-gray-50">
                         <Button
                             className="w-full bg-brand-red hover:bg-red-700 text-white"
                             size="lg"
-                            onClick={handleSaveAsistencia}
-                            disabled={saving}
+                            onClick={handleFinalizarClase}
+                            disabled={loadingStudents || !selectedClase.alumnos_inscriptos || selectedClase.alumnos_inscriptos.length === 0}
                         >
                             <Save size={18} className="mr-2" />
-                            {saving ? 'Guardando...' : 'Confirmar Asistencia'}
+                            Finalizar Clase
                         </Button>
                     </div>
                 </div>
             ) : (
                 // Class List View
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {clases.length === 0 ? (
-                        <div className="col-span-full text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                            <p>No tienes clases asignadas para hoy.</p>
-                        </div>
-                    ) : (
-                        clases.map((clase) => (
-                            <div
-                                key={clase.id_clase}
-                                onClick={() => handleClassClick(clase)}
-                                className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-red/30 transition-all cursor-pointer group"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="p-2 bg-red-50 text-brand-red rounded-lg group-hover:bg-brand-red group-hover:text-white transition-colors">
-                                        <Clock size={24} />
-                                    </div>
-                                    <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-bold uppercase">
-                                        {clase.dia_semana}
-                                    </span>
+                    {clases.map((clase) => (
+                        <div
+                            key={clase.id_clase}
+                            onClick={() => handleClassClick(clase)}
+                            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-brand-red/30 transition-all cursor-pointer group"
+                        >
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-2 bg-red-50 text-brand-red rounded-lg group-hover:bg-brand-red group-hover:text-white transition-colors">
+                                    <Clock size={24} />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-1">{clase.nombre_clase}</h3>
-                                <p className="text-gray-500 text-sm mb-4 flex items-center gap-1">
-                                    <MapPin size={14} /> Sala Principal
-                                </p>
-                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                    <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
-                                        <Clock size={14} />
-                                        {clase.horario_inicio} - {clase.horario_fin}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
-                                        <Users size={14} />
-                                        <span>24/{clase.cupo_maximo}</span>
-                                    </div>
+                                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-bold uppercase">
+                                    {clase.dia_semana}
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-1">{clase.nombre_clase}</h3>
+                            <p className="text-gray-500 text-sm mb-4 flex items-center gap-1">
+                                <MapPin size={14} /> Sala Principal
+                            </p>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                                    <Clock size={14} />
+                                    {clase.horario_inicio} - {clase.horario_fin}
+                                </div>
+                                <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                                    <Users size={14} />
+                                    <span>{clase.alumnos_inscriptos ? clase.alumnos_inscriptos.length : 0}/{clase.cupo_maximo}</span>
                                 </div>
                             </div>
-                        ))
-                    )}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
