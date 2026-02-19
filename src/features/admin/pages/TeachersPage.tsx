@@ -3,7 +3,7 @@ import { Teacher } from '../types';
 import { TeacherForm } from '../components/TeacherForm';
 import { TeacherList } from '../components/TeacherList';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
-import { api } from '../../../services/api'; 
+import { api } from '../../../services/api';
 import { Loader2 } from 'lucide-react';
 
 // Interfaces para tipar la respuesta del Backend
@@ -44,7 +44,7 @@ export default function TeachersPage() {
             setLoading(true);
             const [resProf, resDisc] = await Promise.all([
                 api.get<ProfesorBackend[]>('/profesores'),
-                api.get<Disciplina[]>('/disciplinas') 
+                api.get<Disciplina[]>('/disciplinas')
             ]);
 
             const mappedTeachers: Teacher[] = resProf.data.map(p => ({
@@ -53,7 +53,7 @@ export default function TeachersPage() {
                 apellido: p.apellido,
                 id_disciplina: p.id_disciplina,
                 disciplinas: [p.disciplinas.nombre_disciplina], // Mapeo para TeacherList
-                presentacion: '', 
+                presentacion: '',
                 estado: p.activo ? 'Activo' : 'Inactivo'
             }));
 
@@ -95,7 +95,7 @@ export default function TeachersPage() {
             } else {
                 await api.post('/profesores', payload);
             }
-            
+
             await fetchAllData();
             handleDiscard();
             setIsConfirmModalOpen(false);
@@ -122,13 +122,13 @@ export default function TeachersPage() {
         setIsEditing(false);
     };
 
-    const handleEditClick = (teacher: any) => {
+    const handleEditClick = (teacher: Teacher) => {
         setFormData({
             id: teacher.id,
             nombre: teacher.nombre,
             apellido: teacher.apellido,
-            id_disciplina: '', // El admin deberá re-seleccionar o puedes buscar el ID por nombre
-            presentacion: ''
+            id_disciplina: teacher.id_disciplina ? teacher.id_disciplina.toString() : '',
+            presentacion: teacher.presentacion
         });
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
