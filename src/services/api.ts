@@ -10,8 +10,6 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        console.log('Token enviado en la petición: ', token ? 'SÍ' : 'NO');
-        console.log('URL de la petición:', config.url);
         return config;
     },
     (error) => {

@@ -64,7 +64,6 @@ export default function AlumnosPorDisciplina() {
 
                 // Map to local interface
                 const mappedAlumnos: Alumno[] = filtered.map((c: any) => {
-                    console.log('Mapping client:', c); // Debug log
                     return {
                         id_cliente: c.id_cliente || c.id, // Robust ID check
                         nombre: c.nombre,
@@ -103,12 +102,10 @@ export default function AlumnosPorDisciplina() {
             // Fix: Clean ID to avoid any suffix like :1
             const cleanId = String(id).split(':')[0];
             const endpoint = `/clientes/${cleanId}`;
-            console.log('Sending PUT to:', endpoint);
 
             // Backend logic `...(activo !== undefined && { activo })` allows partial update of status
             await api.put(endpoint, { activo: newStatus });
         } catch (error) {
-            console.error('Error updating status:', error);
             // Rollback
             setAlumnos(prev => prev.map(a =>
                 a.id_cliente === id ? { ...a, activo: currentStatus } : a
