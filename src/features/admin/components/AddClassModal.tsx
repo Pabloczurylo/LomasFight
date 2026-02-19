@@ -7,12 +7,13 @@ import { api } from '../../../services/api'; // Importamos tu instancia de axios
 // --- INTERFACES ---
 interface Disciplina {
     id_disciplina: number;
-    nombre: string;
+    nombre_disciplina: string; // Changed from nombre to match backend
 }
 
-interface Profesor {
-    id_profesor: number;
-    nombre: string;
+interface Usuario {
+    id_usuario: number;
+    nombre_usuario: string;
+    rol: string;
 }
 
 interface AddClassModalProps {
@@ -35,7 +36,7 @@ const DAYS = [
 export default function AddClassModal({ isOpen, onClose, onSave, initialData, onDelete }: AddClassModalProps) {
     // Estados para datos maestros
     const [disciplinesList, setDisciplinesList] = useState<Disciplina[]>([]);
-    const [profesoresList, setProfesoresList] = useState<Profesor[]>([]);
+    const [usuariosList, setUsuariosList] = useState<Usuario[]>([]);
     const [loadingData, setLoadingData] = useState(false);
 
     // Estados del formulario (usamos IDs para selects)
@@ -53,18 +54,18 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
         action: () => { }
     });
 
-    // 1. Cargar Disciplinas y Profesores al abrir el modal
+    // 1. Cargar Disciplinas y Usuarios al abrir el modal
     useEffect(() => {
         const fetchMasterData = async () => {
             try {
                 setLoadingData(true);
                 // Asumiendo que estos son tus endpoints
-                const [resDisc, resProf] = await Promise.all([
-                    api.get<Disciplina[]>('/disciplinas'),
-                    api.get<Profesor[]>('/profesores')
+                const [resDisc, resUsers] = await Promise.all([
+                    api.get<Disciplina[]>('/diciplinas'), // Fixed typo in endpoint to match DisciplinasPage
+                    api.get<Usuario[]>('/usuarios')
                 ]);
                 setDisciplinesList(resDisc.data);
-                setProfesoresList(resProf.data);
+                setUsuariosList(resUsers.data);
             } catch (error) {
                 console.error("Error cargando datos maestros:", error);
             } finally {
@@ -80,7 +81,7 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
         if (isOpen && initialData) {
             // Si el parent envía el objeto 'raw' de Prisma, usamos esos IDs
             setDisciplineId(initialData.raw?.id_disciplina?.toString() || '');
-            setInstructorId(initialData.raw?.id_profesor?.toString() || '');
+            setInstructorId(initialData.raw?.id_profesor?.toString() || ''); // Assuming id_profesor actually stores user ID now or needs mapping
             setSelectedDays(initialData.days || []);
             setStartTime(initialData.startTime || '');
             // Si no tienes endTime en el backend aún, puedes dejarlo opcional
@@ -168,13 +169,13 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                                 >
                                     <option value="" disabled>Selecciona disciplina</option>
                                     {disciplinesList.map(d => (
-                                        <option key={d.id_disciplina} value={d.id_disciplina}>{d.nombre}</option>
+                                        <option key={d.id_disciplina} value={d.id_disciplina}>{d.nombre_disciplina}</option>
                                     ))}
                                 </select>
                             </div>
                         </div>
 
-                        {/* Selector de Instructor Dinámico */}
+                        {/* Selector de Instructor Dinámico (Usuarios) */}
                         <div className="space-y-1.5">
                             <label className="text-sm font-bold text-gray-800 tracking-wide">Instructor</label>
                             <div className="relative">
@@ -188,8 +189,8 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                                     className="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:border-brand-red outline-none appearance-none font-medium text-gray-700"
                                 >
                                     <option value="" disabled>Selecciona un instructor</option>
-                                    {profesoresList.map(p => (
-                                        <option key={p.id_profesor} value={p.id_profesor}>{p.nombre}</option>
+                                    {usuariosList.map(u => (
+                                        <option key={u.id_usuario} value={u.id_usuario}>{u.nombre_usuario}</option>
                                     ))}
                                 </select>
                             </div>
@@ -231,7 +232,19 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                                     />
                                 </div>
                             </div>
-                            {/* ... Hora de Fin ... */}
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-gray-800 tracking-wide">Hora de Fin</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input
+                                        required
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white outline-none font-medium text-gray-700"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Botones de acción */}
