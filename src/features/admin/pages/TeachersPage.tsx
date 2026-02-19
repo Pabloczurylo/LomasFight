@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { GraduationCap } from 'lucide-react';
 import { Teacher } from '../types';
 import { TeacherForm } from '../components/TeacherForm';
 import { TeacherList } from '../components/TeacherList';
