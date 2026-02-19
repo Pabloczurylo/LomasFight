@@ -19,7 +19,6 @@ export function AdminRoutes() {
                 <Route path="disciplinas" element={<DisciplinasPage />} />
                 <Route path="pagos" element={<PagosPage />} />
                 <Route path="usuarios" element={<UsuariosPage />} />
-                <Route path="usuarios" element={<UsuariosPage />} />
                 <Route path="estados-alumnos" element={<AlumnosPorDisciplina />} />
                 <Route path="settings" element={<div>Configuración (Próximamente)</div>} />
             </Route>

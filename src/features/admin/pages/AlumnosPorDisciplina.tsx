@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
-import { Loader2, Search, UserCheck } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
@@ -63,14 +63,17 @@ export default function AlumnosPorDisciplina() {
                 const filtered = allClients.filter((c: any) => c.id_disciplina === selectedDisciplina);
 
                 // Map to local interface
-                const mappedAlumnos: Alumno[] = filtered.map((c: any) => ({
-                    id_cliente: c.id_cliente,
-                    nombre: c.nombre,
-                    apellido: c.apellido,
-                    fecha_registro: c.fecha_registro || new Date().toISOString(), // Fallback
-                    activo: c.activo !== false, // Default to true if null/undefined
-                    id_disciplina: c.id_disciplina
-                }));
+                const mappedAlumnos: Alumno[] = filtered.map((c: any) => {
+                    console.log('Mapping client:', c); // Debug log
+                    return {
+                        id_cliente: c.id_cliente || c.id, // Robust ID check
+                        nombre: c.nombre,
+                        apellido: c.apellido,
+                        fecha_registro: c.fecha_registro || new Date().toISOString(), // Fallback
+                        activo: c.activo !== false, // Default to true if null/undefined
+                        id_disciplina: c.id_disciplina
+                    };
+                });
 
                 setAlumnos(mappedAlumnos);
 
@@ -175,7 +178,7 @@ export default function AlumnosPorDisciplina() {
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
-                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Inicio</th>
+                                <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Inicio</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Estado</th>
                             </tr>
                         </thead>
@@ -193,7 +196,7 @@ export default function AlumnosPorDisciplina() {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 text-sm">
+                                        <td className="hidden md:table-cell px-6 py-4 text-gray-600 text-sm">
                                             {new Date(alumno.fecha_registro).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 text-right">
