@@ -4,6 +4,7 @@ import { cn } from "../../../lib/utils"; // Assuming utils exist, or I will use 
 
 const NAV_ITEMS = [
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+    { name: "Profesores", path: "/admin/profesores", icon: Users },
     { name: "Alumnos", path: "/admin/alumnos", icon: Users },
     { name: "Clases", path: "/admin/clases", icon: Calendar },
     { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
