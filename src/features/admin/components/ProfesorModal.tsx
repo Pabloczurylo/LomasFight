@@ -117,8 +117,8 @@ export default function ProfesorModal({ isOpen, onClose, onSave, disciplinas, in
                         >
                             <option value="" disabled>Seleccionar disciplina...</option>
                             {disciplinas.map((disciplina) => (
-                                <option key={disciplina.id} value={disciplina.nombre}>
-                                    {disciplina.nombre}
+                                <option key={disciplina.id_disciplina} value={disciplina.nombre_disciplina}>
+                                    {disciplina.nombre_disciplina}
                                 </option>
                             ))}
                         </select>
