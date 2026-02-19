@@ -147,7 +147,7 @@ export default function TeachersPage() {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900 flex items-center gap-2">
-                    <GraduationCap className="h-8 w-8 text-brand-red" /> Gestíon de Profesores
+                    Gestíon de Profesores
                 </h1>
                 <p className="text-gray-500 text-sm mt-0.5 font-medium">Administra el equipo de instructores y sus disciplinas.</p>
             </div>
