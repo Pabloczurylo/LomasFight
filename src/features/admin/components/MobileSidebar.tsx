@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Calendar, CreditCard, LogOut, X, Dumbbell, Shield } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, LogOut, X, Dumbbell, Shield, UserCheck, Calendar } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
     { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
     { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
     { name: "Roles & Usuarios", path: "/admin/usuarios", icon: Shield },
+    { name: "Gestión Estados", path: "/admin/estados-alumnos", icon: UserCheck },
 ];
 
 interface MobileSidebarProps {
@@ -63,28 +64,16 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                         const isProfessor = user.rol === 'profesor';
 
                         if (isProfessor) {
-                            // Professors only see Clases (renamed to Asistencia)
-                            return ['Clases'].includes(item.name);
+                            // Professors only see Gestión Estados
+                            return ['Gestión Estados'].includes(item.name);
                         }
                         return true;
                     }).map((item) => {
-                        const user = JSON.parse(localStorage.getItem('usuario') || '{}');
-                        const isProfessor = user.rol === 'profesor';
-
-                        // Rename Clases to Asistencia for professors
-                        let displayName = item.name;
-                        let displayPath = item.path;
-
-                        if (isProfessor && item.name === 'Clases') {
-                            displayName = 'Asistencia';
-                            displayPath = '/admin/asistencia';
-                        }
-
-                        const isActive = location.pathname === displayPath || (displayPath !== "/admin" && location.pathname.startsWith(displayPath));
+                        const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
                         return (
                             <Link
                                 key={item.path}
-                                to={displayPath}
+                                to={item.path}
                                 onClick={onClose}
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
@@ -94,7 +83,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                                 )}
                             >
                                 <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                <span className="font-heading font-semibold tracking-wide text-sm uppercase">{displayName}</span>
+                                <span className="font-heading font-semibold tracking-wide text-sm uppercase">{item.name}</span>
                             </Link>
                         );
                     })}

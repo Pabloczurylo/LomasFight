@@ -6,7 +6,8 @@ import AlumnosPage from "../pages/AlumnosPage";
 import DisciplinasPage from "../pages/DisciplinasPage";
 import PagosPage from "../pages/PagosPage";
 import UsuariosPage from "../pages/UsuariosPage";
-import AsistenciaPage from "../pages/AsistenciaPage";
+
+import AlumnosPorDisciplina from "../pages/AlumnosPorDisciplina";
 
 export function AdminRoutes() {
     return (
@@ -18,7 +19,7 @@ export function AdminRoutes() {
                 <Route path="disciplinas" element={<DisciplinasPage />} />
                 <Route path="pagos" element={<PagosPage />} />
                 <Route path="usuarios" element={<UsuariosPage />} />
-                <Route path="asistencia" element={<AsistenciaPage />} />
+                <Route path="estados-alumnos" element={<AlumnosPorDisciplina />} />
                 <Route path="settings" element={<div>Configuración (Próximamente)</div>} />
             </Route>
         </Routes>

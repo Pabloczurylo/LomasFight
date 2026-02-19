@@ -22,18 +22,18 @@ export default function LoginPage() {
             try {
                 const usuario = JSON.parse(usuarioStr);
                 if (usuario.rol === 'profesor') {
-                    navigate("/admin/asistencia");
+                    navigate("/admin/estados-alumnos");
                 } else {
-                    navigate("/admin/alumnos");
+                    navigate("/admin");
                 }
             } catch (e) {
                 console.error("Error parsing user data", e);
                 // Fallback if data is corrupted
-                navigate("/admin/alumnos");
+                navigate("/admin");
             }
         } else if (token) {
             // Token exists but no user data? unlikely but safe fallback
-            navigate("/admin/alumnos");
+            navigate("/admin");
         }
     }, [navigate]);
 
@@ -57,9 +57,9 @@ export default function LoginPage() {
 
                 // Redirect based on role
                 if (usuario.rol === 'profesor') {
-                    navigate("/admin/asistencia");
+                    navigate("/admin/estados-alumnos");
                 } else {
-                    navigate("/admin/alumnos");
+                    navigate("/admin");
                 }
             } else {
                 setError("Respuesta inesperada del servidor.");
