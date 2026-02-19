@@ -28,7 +28,7 @@ const MOCK_TEACHERS: Teacher[] = [
         apellido: "'The King' Mendez",
         disciplinas: ['KRAV MAGA', 'BJJ'],
         presentacion: 'Instructor certificado en defensa personal y cinturón negro en BJJ.',
-        estado: 'De Vacaciones'
+        estado: 'Inactivo'
     },
 ];
 
@@ -122,6 +122,12 @@ export default function TeachersPage() {
         }
     };
 
+    const handleStatusChange = (id: number, newStatus: Teacher['estado']) => {
+        setTeachers(prev => prev.map(t =>
+            t.id === id ? { ...t, estado: newStatus } : t
+        ));
+    };
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header */}
@@ -148,6 +154,7 @@ export default function TeachersPage() {
                 onSearchChange={setSearchTerm}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                onStatusChange={handleStatusChange}
             />
         </div>
     );

@@ -76,5 +76,5 @@ export interface Teacher {
     apellido: string;
     disciplinas: string[];
     presentacion: string;
-    estado: 'Activo' | 'De Vacaciones';
+    estado: 'Activo' | 'Inactivo';
 }
