@@ -143,7 +143,6 @@ export default function TeachersPage() {
                 formData={formData}
                 onChange={handleInputChange}
                 onSave={handleSave}
-                onDiscard={handleDiscard}
                 isEditing={isEditing}
             />
 

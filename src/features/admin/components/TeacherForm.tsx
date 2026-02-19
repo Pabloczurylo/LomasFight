@@ -12,11 +12,10 @@ interface TeacherFormProps {
     };
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     onSave: () => void;
-    onDiscard: () => void;
     isEditing: boolean;
 }
 
-export function TeacherForm({ formData, onChange, onSave, onDiscard, isEditing }: TeacherFormProps) {
+export function TeacherForm({ formData, onChange, onSave, isEditing }: TeacherFormProps) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="mb-6 border-b border-gray-100 pb-4">
@@ -65,9 +64,6 @@ export function TeacherForm({ formData, onChange, onSave, onDiscard, isEditing }
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
-                <Button variant="ghost" className="text-gray-500 hover:text-gray-900 hover:bg-gray-100" onClick={onDiscard}>
-                    Descartar
-                </Button>
                 <Button onClick={onSave}>
                     {isEditing ? 'Actualizar Profesor' : 'Guardar Profesor'}
                 </Button>
