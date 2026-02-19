@@ -123,7 +123,7 @@ export default function TeachersPage() {
     };
 
     return (
-        <div className="flex flex-col gap-8 max-w-6xl mx-auto">
+        <div className="flex flex-col gap-8">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900 flex items-center gap-2">
