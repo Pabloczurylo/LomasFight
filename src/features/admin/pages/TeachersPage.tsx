@@ -3,6 +3,7 @@ import { GraduationCap } from 'lucide-react';
 import { Teacher } from '../types';
 import { TeacherForm } from '../components/TeacherForm';
 import { TeacherList } from '../components/TeacherList';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 // --- MOCK DATA ---
 const MOCK_TEACHERS: Teacher[] = [
@@ -47,6 +48,9 @@ export default function TeachersPage() {
     });
     const [isEditing, setIsEditing] = useState(false);
 
+    // Estado para el modal de confirmación
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
     // --- MANEJADORES ---
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -58,12 +62,15 @@ export default function TeachersPage() {
         setIsEditing(false);
     };
 
-    const handleSave = () => {
+    const handleSaveClick = () => {
         if (!formData.nombre || !formData.apellido) {
             alert("El nombre y apellido son obligatorios.");
             return;
         }
+        setIsConfirmModalOpen(true);
+    };
 
+    const handleConfirmSave = () => {
         // Parsear disciplinas (separadas por coma)
         const disciplinasArray = formData.disciplinaInput
             .split(',')
@@ -97,6 +104,7 @@ export default function TeachersPage() {
         }
 
         handleDiscard(); // Limpiar form
+        setIsConfirmModalOpen(false);
     };
 
     const handleEditClick = (teacher: Teacher) => {
@@ -142,7 +150,7 @@ export default function TeachersPage() {
             <TeacherForm
                 formData={formData}
                 onChange={handleInputChange}
-                onSave={handleSave}
+                onSave={handleSaveClick}
                 isEditing={isEditing}
             />
 
@@ -154,6 +162,17 @@ export default function TeachersPage() {
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
                 onStatusChange={handleStatusChange}
+            />
+
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmSave}
+                title={isEditing ? "Confirmar Edición" : "Confirmar Creación"}
+                message={isEditing
+                    ? "¿Estás seguro de que deseas guardar los cambios realizados en este profesor?"
+                    : "¿Estás seguro de que deseas crear este nuevo profesor?"}
+                type="success"
             />
         </div>
     );
