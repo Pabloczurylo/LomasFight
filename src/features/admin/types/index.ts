@@ -69,3 +69,12 @@ export interface Pago {
     metodoPago: 'Efectivo' | 'Transferencia' | 'Tarjeta';
     estado: 'Pagado' | 'Pendiente' | 'Vencido';
 }
+
+export interface Teacher {
+    id: number;
+    nombre: string;
+    apellido: string;
+    disciplinas: string[];
+    presentacion: string;
+    estado: 'Activo' | 'De Vacaciones';
+}

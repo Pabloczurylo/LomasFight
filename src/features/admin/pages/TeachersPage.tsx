@@ -1,18 +1,8 @@
 import { useState } from 'react';
-import { Search, Trash2, Pencil, GraduationCap } from 'lucide-react';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
-
-// --- INTERFACES ---
-interface Teacher {
-    id: number;
-    nombre: string;
-    apellido: string;
-    disciplinas: string[];
-    presentacion: string;
-    estado: 'Activo' | 'De Vacaciones';
-}
+import { GraduationCap } from 'lucide-react';
+import { Teacher } from '../types';
+import { TeacherForm } from '../components/TeacherForm';
+import { TeacherList } from '../components/TeacherList';
 
 // --- MOCK DATA ---
 const MOCK_TEACHERS: Teacher[] = [
@@ -88,7 +78,7 @@ export default function TeachersPage() {
                         ...t,
                         nombre: formData.nombre,
                         apellido: formData.apellido,
-                        disciplinas: disciplinasArray.length > 0 ? disciplinasArray : t.disciplinas, // Mantener anteriores si no pone nada, o limpiar? Asumimos reemplazar.
+                        disciplinas: disciplinasArray.length > 0 ? disciplinasArray : t.disciplinas,
                         presentacion: formData.presentacion
                     }
                     : t
@@ -132,13 +122,6 @@ export default function TeachersPage() {
         }
     };
 
-    // --- FILTRADO ---
-    const filteredTeachers = teachers.filter(t =>
-        t.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.disciplinas.some(d => d.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-
     return (
         <div className="flex flex-col gap-8 max-w-6xl mx-auto">
             {/* Header */}
@@ -150,143 +133,22 @@ export default function TeachersPage() {
             </div>
 
             {/* SECCIÓN 1: FORMULARIO */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="mb-6 border-b border-gray-100 pb-4">
-                    <h2 className="text-lg font-bold text-gray-900">Crear / Editar Profesor</h2>
-                    <p className="text-gray-500 text-sm">Ingresa la información detallada del instructor para el sistema.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</label>
-                        <Input
-                            name="nombre"
-                            placeholder="Ej. Juan"
-                            value={formData.nombre}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Apellido</label>
-                        <Input
-                            name="apellido"
-                            placeholder="Ej. Pérez"
-                            value={formData.apellido}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="space-y-1.5 md:col-span-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Disciplina (Separadas por coma)</label>
-                        <Input
-                            name="disciplinaInput"
-                            placeholder="Ej. Muay Thai, Boxeo"
-                            value={formData.disciplinaInput}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="space-y-1.5 md:col-span-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Presentación</label>
-                        <textarea
-                            name="presentacion"
-                            className="flex min-h-[100px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red/50 focus-visible:bg-white disabled:cursor-not-allowed disabled:opacity-50 transition-all font-body resize-y"
-                            placeholder="Describe la experiencia y formación del profesor..."
-                            value={formData.presentacion}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
-                    <Button variant="ghost" className="text-gray-500 hover:text-gray-900 hover:bg-gray-100" onClick={handleDiscard}>
-                        Descartar
-                    </Button>
-                    <Button onClick={handleSave}>
-                        {isEditing ? 'Actualizar Profesor' : 'Guardar Profesor'}
-                    </Button>
-                </div>
-            </div>
+            <TeacherForm
+                formData={formData}
+                onChange={handleInputChange}
+                onSave={handleSave}
+                onDiscard={handleDiscard}
+                isEditing={isEditing}
+            />
 
             {/* SECCIÓN 2: LISTADO */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h2 className="text-lg font-bold text-gray-900">Listado de Profesores</h2>
-                    <div className="relative w-full md:w-72">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Buscar profesor..."
-                            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:bg-white transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50/50 text-gray-500 font-bold uppercase tracking-wider text-xs">
-                            <tr>
-                                <th className="px-6 py-4">Profesor</th>
-                                <th className="px-6 py-4">Disciplina</th>
-                                <th className="px-6 py-4">Estado</th>
-                                <th className="px-6 py-4 text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {filteredTeachers.length > 0 ? (
-                                filteredTeachers.map((teacher) => (
-                                    <tr key={teacher.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-gray-900">{teacher.nombre} {teacher.apellido}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {teacher.disciplinas.map((disc, idx) => (
-                                                    <Badge key={idx} variant="red" className="bg-red-50 text-brand-red border-red-100">
-                                                        {disc}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className={`w-2 h-2 rounded-full ${teacher.estado === 'Activo' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                                                <span className={`text-xs font-bold ${teacher.estado === 'Activo' ? 'text-green-600' : 'text-gray-500'}`}>
-                                                    {teacher.estado}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleEditClick(teacher)}
-                                                    className="p-1.5 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-md transition-all"
-                                                    title="Editar"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteClick(teacher.id)}
-                                                    className="p-1.5 text-gray-400 hover:text-brand-red hover:bg-red-50 rounded-md transition-all"
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-400">
-                                        No se encontraron profesores.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <TeacherList
+                teachers={teachers}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+            />
         </div>
     );
 }
