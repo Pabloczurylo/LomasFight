@@ -44,8 +44,11 @@ export default function TeachersPage() {
             setLoading(true);
             const [resProf, resDisc] = await Promise.all([
                 api.get<ProfesorBackend[]>('/profesores'),
-                api.get<Disciplina[]>('/disciplinas')
+                api.get<Disciplina[]>('/diciplinas') // Corregido según DisciplinasPage
             ]);
+
+            console.log("Profesores cargados:", resProf.data);
+            console.log("Disciplinas cargadas:", resDisc.data);
 
             const mappedTeachers: Teacher[] = resProf.data.map(p => ({
                 id: p.id_profesor,
