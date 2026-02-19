@@ -50,6 +50,7 @@ export default function TeachersPage() {
 
     // Estado para el modal de confirmación
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
     // --- MANEJADORES ---
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -121,12 +122,17 @@ export default function TeachersPage() {
     };
 
     const handleDeleteClick = (id: number) => {
-        if (window.confirm("¿Seguro que deseas eliminar este profesor?")) {
-            setTeachers(prev => prev.filter(t => t.id !== id));
+        setPendingDeleteId(id);
+    };
+
+    const handleConfirmDelete = () => {
+        if (pendingDeleteId) {
+            setTeachers(prev => prev.filter(t => t.id !== pendingDeleteId));
             // Si estaba editando este usuario, limpiar form
-            if (formData.id === id) {
+            if (formData.id === pendingDeleteId) {
                 handleDiscard();
             }
+            setPendingDeleteId(null);
         }
     };
 
@@ -173,6 +179,15 @@ export default function TeachersPage() {
                     ? "¿Estás seguro de que deseas guardar los cambios realizados en este profesor?"
                     : "¿Estás seguro de que deseas crear este nuevo profesor?"}
                 type="success"
+            />
+
+            <ConfirmModal
+                isOpen={!!pendingDeleteId}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Confirmar Eliminación"
+                message="¿Estás seguro de que deseas eliminar este profesor? Esta acción no se puede deshacer."
+                type="danger"
             />
         </div>
     );
