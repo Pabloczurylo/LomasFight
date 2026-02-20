@@ -1,110 +1,142 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Teacher } from '../types';
 import { TeacherForm } from '../components/TeacherForm';
 import { TeacherList } from '../components/TeacherList';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
+import { api } from '../../../services/api';
+import { Loader2 } from 'lucide-react';
 
-// --- MOCK DATA ---
-const MOCK_TEACHERS: Teacher[] = [
-    {
-        id: 1,
-        nombre: 'Marco',
-        apellido: "'El Toro' Torres",
-        disciplinas: ['BOXEO PRO', 'MMA'],
-        presentacion: 'Ex campeón regional de Boxeo con más de 10 años de experiencia enseñando.',
-        estado: 'Activo'
-    },
-    {
-        id: 2,
-        nombre: 'Elena',
-        apellido: 'Rodriguez',
-        disciplinas: ['MUAY THAI'],
-        presentacion: 'Especialista en técnicas de codo y rodilla. Formada en Tailandia.',
-        estado: 'Activo'
-    },
-    {
-        id: 3,
-        nombre: 'Carlos',
-        apellido: "'The King' Mendez",
-        disciplinas: ['KRAV MAGA', 'BJJ'],
-        presentacion: 'Instructor certificado en defensa personal y cinturón negro en BJJ.',
-        estado: 'Inactivo'
-    },
-];
+// Interfaces para tipar la respuesta del Backend
+interface Disciplina {
+    id_disciplina: number;
+    nombre_disciplina: string;
+}
+
+interface ProfesorBackend {
+    id_profesor: number;
+    nombre: string;
+    apellido: string;
+    id_disciplina: number;
+    activo: boolean;
+    disciplinas: Disciplina;
+}
 
 export default function TeachersPage() {
-    // --- ESTADOS ---
-    const [teachers, setTeachers] = useState<Teacher[]>(MOCK_TEACHERS);
+    const [teachers, setTeachers] = useState<Teacher[]>([]);
+    const [disciplines, setDisciplines] = useState<Disciplina[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Estado del formulario
     const [formData, setFormData] = useState({
         id: 0,
         nombre: '',
         apellido: '',
-        disciplinaInput: '',
-        presentacion: ''
+        id_disciplina: '', // Usaremos el ID de la DB
+        presentacion: ''   // Nota: No está en Prisma, se mantiene local por ahora
     });
     const [isEditing, setIsEditing] = useState(false);
-
-    // Estado para el modal de confirmación
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
+    // --- CARGA DE DATOS ---
+    const fetchAllData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [resProf, resDisc] = await Promise.all([
+                api.get<ProfesorBackend[]>('/profesores'),
+                api.get<Disciplina[]>('/diciplinas') // Corregido según DisciplinasPage
+            ]);
+
+            console.log("Profesores cargados:", resProf.data);
+            console.log("Disciplinas cargadas:", resDisc.data);
+
+            const mappedTeachers: Teacher[] = resProf.data.map(p => ({
+                id: p.id_profesor,
+                nombre: p.nombre,
+                apellido: p.apellido,
+                id_disciplina: p.id_disciplina,
+                disciplinas: [p.disciplinas.nombre_disciplina], // Mapeo para TeacherList
+                presentacion: '',
+                estado: p.activo ? 'Activo' : 'Inactivo'
+            }));
+
+            setTeachers(mappedTeachers);
+            setDisciplines(resDisc.data);
+        } catch (error) {
+            console.error("Error en carga:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchAllData(); }, [fetchAllData]);
+
     // --- MANEJADORES ---
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleDiscard = () => {
-        setFormData({ id: 0, nombre: '', apellido: '', disciplinaInput: '', presentacion: '' });
-        setIsEditing(false);
-    };
-
     const handleSaveClick = () => {
-        if (!formData.nombre || !formData.apellido) {
-            alert("El nombre y apellido son obligatorios.");
+        if (!formData.nombre || !formData.apellido || !formData.id_disciplina) {
+            alert("Completa los campos obligatorios.");
             return;
         }
         setIsConfirmModalOpen(true);
     };
 
-    const handleConfirmSave = () => {
-        // Parsear disciplinas (separadas por coma)
-        const disciplinasArray = formData.disciplinaInput
-            .split(',')
-            .map(d => d.trim())
-            .filter(d => d !== '');
-
-        if (isEditing) {
-            // EDITAR
-            setTeachers(prev => prev.map(t =>
-                t.id === formData.id
-                    ? {
-                        ...t,
-                        nombre: formData.nombre,
-                        apellido: formData.apellido,
-                        disciplinas: disciplinasArray.length > 0 ? disciplinasArray : t.disciplinas,
-                        presentacion: formData.presentacion
-                    }
-                    : t
-            ));
-        } else {
-            // CREAR
-            const newTeacher: Teacher = {
-                id: Date.now(), // Mock ID
+    const handleConfirmSave = async () => {
+        try {
+            const payload = {
                 nombre: formData.nombre,
                 apellido: formData.apellido,
-                disciplinas: disciplinasArray,
-                presentacion: formData.presentacion,
-                estado: 'Activo' // Por defecto
+                id_disciplina: Number(formData.id_disciplina)
             };
-            setTeachers(prev => [...prev, newTeacher]);
-        }
 
-        handleDiscard(); // Limpiar form
-        setIsConfirmModalOpen(false);
+            if (isEditing) {
+                await api.put(`/profesores/${formData.id}`, payload);
+            } else {
+                await api.post('/profesores', payload);
+            }
+
+            await fetchAllData();
+            handleDiscard();
+            setIsConfirmModalOpen(false);
+        } catch (error) {
+            console.error("Error al guardar:", error);
+        }
+    };
+
+    const handleConfirmDelete = async () => {
+        if (pendingDeleteId) {
+            await api.delete(`/profesores/${pendingDeleteId}`);
+            await fetchAllData();
+            setPendingDeleteId(null);
+        }
+    };
+
+    const handleStatusChange = async (id: number, status: Teacher['estado']) => {
+        const teacher = teachers.find(t => t.id === id);
+        if (!teacher) return;
+
+        const payload = {
+            nombre: teacher.nombre,
+            apellido: teacher.apellido,
+            id_disciplina: teacher.id_disciplina || 0, // Fallback if missing
+            activo: status === 'Activo'
+        };
+
+        try {
+            await api.put(`/profesores/${id}`, payload);
+            await fetchAllData();
+        } catch (error) {
+            console.error("Error al actualizar estado:", error);
+        }
+    };
+
+    const handleDiscard = () => {
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
+        setIsEditing(false);
     };
 
     const handleEditClick = (teacher: Teacher) => {
@@ -112,61 +144,37 @@ export default function TeachersPage() {
             id: teacher.id,
             nombre: teacher.nombre,
             apellido: teacher.apellido,
-            disciplinaInput: teacher.disciplinas.join(', '),
+            id_disciplina: teacher.id_disciplina ? teacher.id_disciplina.toString() : '',
             presentacion: teacher.presentacion
         });
         setIsEditing(true);
-        // Scroll to top or form?
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleDeleteClick = (id: number) => {
-        setPendingDeleteId(id);
-    };
-
-    const handleConfirmDelete = () => {
-        if (pendingDeleteId) {
-            setTeachers(prev => prev.filter(t => t.id !== pendingDeleteId));
-            // Si estaba editando este usuario, limpiar form
-            if (formData.id === pendingDeleteId) {
-                handleDiscard();
-            }
-            setPendingDeleteId(null);
-        }
-    };
-
-    const handleStatusChange = (id: number, newStatus: Teacher['estado']) => {
-        setTeachers(prev => prev.map(t =>
-            t.id === id ? { ...t, estado: newStatus } : t
-        ));
-    };
+    if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin text-brand-red w-10 h-10" /></div>;
 
     return (
         <div className="flex flex-col gap-8">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900 flex items-center gap-2">
-                    Gestíon de Profesores
-                </h1>
-                <p className="text-gray-500 text-sm mt-0.5 font-medium">Administra el equipo de instructores y sus disciplinas.</p>
-            </div>
+            <header>
+                <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900">Gestión de Profesores</h1>
+                <p className="text-gray-500 text-sm font-medium">Panel administrativo de instructores.</p>
+            </header>
 
-            {/* SECCIÓN 1: FORMULARIO */}
             <TeacherForm
                 formData={formData}
+                disciplines={disciplines}
                 onChange={handleInputChange}
                 onSave={handleSaveClick}
                 onCancel={handleDiscard}
                 isEditing={isEditing}
             />
 
-            {/* SECCIÓN 2: LISTADO */}
             <TeacherList
                 teachers={teachers}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
+                onDelete={(id) => setPendingDeleteId(id)}
                 onStatusChange={handleStatusChange}
             />
 
@@ -174,10 +182,8 @@ export default function TeachersPage() {
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={handleConfirmSave}
-                title={isEditing ? "Confirmar Edición" : "Confirmar Creación"}
-                message={isEditing
-                    ? "¿Estás seguro de que deseas guardar los cambios realizados en este profesor?"
-                    : "¿Estás seguro de que deseas crear este nuevo profesor?"}
+                title={isEditing ? "Actualizar" : "Crear"}
+                message="¿Confirmas los cambios en la nómina de profesores?"
                 type="success"
             />
 
@@ -185,8 +191,8 @@ export default function TeachersPage() {
                 isOpen={!!pendingDeleteId}
                 onClose={() => setPendingDeleteId(null)}
                 onConfirm={handleConfirmDelete}
-                title="Confirmar Eliminación"
-                message="¿Estás seguro de que deseas eliminar este profesor? Esta acción no se puede deshacer."
+                title="Eliminar Profesor"
+                message="Esta acción realizará un borrado lógico del instructor."
                 type="danger"
             />
         </div>

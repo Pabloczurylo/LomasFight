@@ -74,6 +74,7 @@ export interface Teacher {
     id: number;
     nombre: string;
     apellido: string;
+    id_disciplina?: number;
     disciplinas: string[];
     presentacion: string;
     estado: 'Activo' | 'Inactivo';
