@@ -116,8 +116,22 @@ export default function TeachersPage() {
     };
 
     const handleStatusChange = async (id: number, status: Teacher['estado']) => {
-        await api.put(`/profesores/${id}`, { activo: status === 'Activo' });
-        await fetchAllData();
+        const teacher = teachers.find(t => t.id === id);
+        if (!teacher) return;
+
+        const payload = {
+            nombre: teacher.nombre,
+            apellido: teacher.apellido,
+            id_disciplina: teacher.id_disciplina || 0, // Fallback if missing
+            activo: status === 'Activo'
+        };
+
+        try {
+            await api.put(`/profesores/${id}`, payload);
+            await fetchAllData();
+        } catch (error) {
+            console.error("Error al actualizar estado:", error);
+        }
     };
 
     const handleDiscard = () => {
