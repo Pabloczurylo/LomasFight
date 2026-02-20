@@ -8,7 +8,7 @@ import { api } from "../../../services/api";
 // --- INTERFACES DE TIPADO ---
 interface Disciplina {
     id_disciplina: number;
-    nombre: string;
+    nombre_disciplina: string;
 }
 
 interface Profesor {
@@ -71,9 +71,9 @@ export default function ClassesPage() {
                     id: h.id_horario,
                     day: dayName,
                     time: timeRange,
-                    discipline: h.disciplinas.nombre,
+                    discipline: h.disciplinas.nombre_disciplina,
                     instructor: h.profesores.nombre,
-                    variant: variantMap[h.disciplinas.nombre.toUpperCase()] || 'default'
+                    variant: variantMap[h.disciplinas.nombre_disciplina.toUpperCase()] || 'default'
                 };
             });
 
