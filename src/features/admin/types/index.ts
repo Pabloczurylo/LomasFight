@@ -56,6 +56,37 @@ export interface Profesor {
     imagen: string;
 }
 
+export interface PagoBackend {
+    id_pago: number;
+    id_cliente: number;
+    id_disciplina: number;
+    monto: number;
+    fecha_pago: string;
+    clientes?: { nombre: string; apellido: string };
+    disciplinas?: { nombre_disciplina: string };
+}
+
+export interface PagoDisciplinaBackend {
+    id_pago_disciplina: number;
+    id_disciplina: number;
+    monto_cuota: number;
+    periodo_pagado: string;
+    fecha_pago: string;
+    disciplinas?: { nombre_disciplina: string };
+}
+
+export interface UnifiedPago {
+    id: string; // normalizado a string para id de react
+    tipo: 'CUOTA' | 'ALQUILER';
+    fecha: string;
+    concepto: string; // Nombre del alumno o "Alquiler - Nombre Disciplina"
+    monto: number;
+    estado: 'Pagado' | 'Pendiente' | 'Vencido'; // El endpoint suele asumir todo lo que retorna está pagado, pero en el futuro podría cambiar. Pongo Pagado por defecto.
+    // Propiedades originales para debug/internos
+    originalId?: number;
+    disciplinaNombre?: string;
+}
+
 export interface Pago {
     id: string;
     alumnoId: string;

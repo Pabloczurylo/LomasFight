@@ -1,10 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Plus, Search, DollarSign, AlertCircle, CreditCard, Calendar } from 'lucide-react';
-import { Pago } from '../types';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Plus, Search, DollarSign, AlertCircle, Calendar, Dumbbell } from 'lucide-react';
+import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
-import RegistroPagoModal from '../components/RegistroPagoModal';
-
-import { MOCK_PAGOS, MOCK_ALUMNOS, MOCK_DISCIPLINAS } from '../data/mockData';
+import RegistroPagoModal, { CuotaPayload, AlquilerPayload } from '../components/RegistroPagoModal';
+import { api } from '../../../services/api';
 
 const MESES = [
     'Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -12,49 +11,153 @@ const MESES = [
 ];
 
 export default function PagosPage() {
-    const [pagos, setPagos] = useState<Pago[]>(MOCK_PAGOS);
+    const [pagos, setPagos] = useState<UnifiedPago[]>([]);
+    const [clientes, setClientes] = useState<ClienteBackend[]>([]);
+    const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+
+    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            // Fetch dependencies with individual error handling
+            const [clientesRes, disciplinasRes] = await Promise.allSettled([
+                api.get('/clientes'),
+                api.get('/diciplinas')
+            ]);
+
+            const clientesData = clientesRes.status === 'fulfilled' ? clientesRes.value.data : [];
+            const disciplinasData = disciplinasRes.status === 'fulfilled' ? disciplinasRes.value.data : [];
+
+            setClientes(clientesData);
+            setDisciplinas(disciplinasData);
+
+            if (clientesRes.status === 'rejected') console.error("Error fetching clientes:", clientesRes.reason);
+            if (disciplinasRes.status === 'rejected') console.error("Error fetching disciplinas:", disciplinasRes.reason);
+
+            // Fetch payments with individual error handling
+            const [pagosRes, pagosDisciplinaRes] = await Promise.allSettled([
+                api.get('/pagos'),
+                api.get('/pago-disciplina')
+            ]);
+
+            const cuotas: PagoBackend[] = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
+            const alquileres: PagoDisciplinaBackend[] = pagosDisciplinaRes.status === 'fulfilled' ? pagosDisciplinaRes.value.data : [];
+
+            if (pagosRes.status === 'rejected') console.error("Error fetching pagos:", pagosRes.reason);
+            if (pagosDisciplinaRes.status === 'rejected') console.error("Error fetching pagos-disciplina:", pagosDisciplinaRes.reason);
+
+            // Normalize
+            const normalizedCuotas: UnifiedPago[] = cuotas.map(c => ({
+                id: `cuota-${c.id_pago}`,
+                tipo: 'CUOTA',
+                fecha: c.fecha_pago,
+                concepto: c.clientes ? `${c.clientes.nombre} ${c.clientes.apellido}` : `Cliente ID: ${c.id_cliente}`,
+                monto: c.monto,
+                estado: 'Pagado',
+                originalId: c.id_pago,
+                disciplinaNombre: c.disciplinas?.nombre_disciplina
+            }));
+
+            const normalizedAlquileres: UnifiedPago[] = alquileres.map(a => ({
+                id: `alquiler-${a.id_pago_disciplina}`,
+                tipo: 'ALQUILER',
+                fecha: a.fecha_pago,
+                // Si tienes nombre_disciplina en endpoint, usarlo. Sino fallback.
+                concepto: a.disciplinas ? `Alquiler - ${a.disciplinas.nombre_disciplina}` : `Alquiler - Disciplina ID: ${a.id_disciplina}`,
+                monto: a.monto_cuota,
+                estado: 'Pagado',
+                originalId: a.id_pago_disciplina,
+                disciplinaNombre: a.disciplinas?.nombre_disciplina
+            }));
+
+            const allPagos = [...normalizedCuotas, ...normalizedAlquileres];
+
+            // Sort by Date DESC
+            allPagos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+            setPagos(allPagos);
+        } catch (error) {
+            console.error("Error inesperado cargando datos de pagos:", error);
+            // Mostrar error (idealmente con toast), pero no bloquear UI completamente
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
     // Métricas
     const metrics = useMemo(() => {
-        // 1. Total Mensual (Current Month)
-        // Note: Using hardcoded 'Febrero' for demo consistency with mock data, 
-        // in real app use capitalizedMonth
-        const targetMonth = 'Febrero';
+        const currentMonthIndex = new Date().getMonth() + 1; // 1 to 12. MESES[1] = Enero
+        const targetMonth = MESES[currentMonthIndex];
 
-        const totalMensual = pagos
-            .filter(p => p.mes === targetMonth && p.estado === 'Pagado')
-            .reduce((sum, p) => sum + p.monto, 0);
+        let totalMensual = 0;
+        let pendientes = 0;
+        let totalAlquileres = 0;
 
-        // 2. Pendientes (Total Count)
-        const pendientes = pagos.filter(p => p.estado === 'Pendiente' || p.estado === 'Vencido').length;
+        pagos.forEach(p => {
+            const pDate = new Date(p.fecha);
+            const pMonth = MESES[pDate.getMonth() + 1]; // getMonth() is 0-indexed, but MESES has 'Todos' at index 0, so +1
 
-        // 3. Método Preferido
-        const methods = pagos.reduce((acc, p) => {
-            acc[p.metodoPago] = (acc[p.metodoPago] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+            // Consider changing this logic to current month if needed, now we just sum everything for the demo if 'Todos'
+            if (p.estado === 'Pagado') {
+                if (targetMonth === 'Todos' || pMonth === targetMonth) {
+                    totalMensual += p.monto;
+                }
+            } else {
+                pendientes++;
+            }
 
-        const preferredMethod = Object.entries(methods).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+            if (p.tipo === 'ALQUILER' && p.estado === 'Pagado') {
+                if (targetMonth === 'Todos' || pMonth === targetMonth) {
+                    totalAlquileres += p.monto;
+                }
+            }
+        });
 
-        return { totalMensual, pendientes, preferredMethod };
+        return { totalMensual, pendientes, totalAlquileres };
     }, [pagos]);
 
     const filteredPagos = pagos.filter(pago => {
-        const matchesSearch = pago.alumnoNombre.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesMonth = selectedMonth === 'Todos' || pago.mes === selectedMonth;
+        const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());
+
+        let matchesMonth = true;
+        if (selectedMonth !== 'Todos' && pago.fecha) {
+            const date = new Date(pago.fecha);
+            // MESES[1] is Enero, date.getMonth() is 0 for Enero
+            const pMonth = MESES[date.getMonth() + 1];
+            matchesMonth = pMonth === selectedMonth;
+        }
+
         return matchesSearch && matchesMonth;
     });
 
-    const handleSavePago = (newPagoData: Omit<Pago, 'id'>) => {
-        const newPago: Pago = {
-            ...newPagoData,
-            id: Date.now().toString()
-        };
-        setPagos(prev => [newPago, ...prev]);
-        setIsModalOpen(false);
+    const handleSaveCuota = async (payload: CuotaPayload) => {
+        try {
+            await api.post('/pagos', payload);
+            setIsModalOpen(false);
+            fetchData();
+        } catch (error) {
+            console.error("Error guarding cuota:", error);
+            alert("Error al guardar la cuota.");
+        }
+    };
+
+    const handleSaveAlquiler = async (payload: AlquilerPayload) => {
+        try {
+            await api.post('/pago-disciplina', payload);
+            setIsModalOpen(false);
+            fetchData(); // reload
+        } catch (error) {
+            console.error("Error guarding alquiler:", error);
+            alert("Error al guardar el alquiler.");
+        }
     };
 
     const formatCurrency = (amount: number) => {
@@ -65,19 +168,26 @@ export default function PagosPage() {
         }).format(amount);
     };
 
+    const formatDate = (isoString: string) => {
+        if (!isoString) return '-';
+        return new Date(isoString).toLocaleDateString('es-AR', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Pagos</h2>
-                    <p className="text-gray-600">Control de cuotas y estado financiero</p>
+                    <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Ingresos</h2>
+                    <p className="text-gray-600">Control de cuotas y alquiler de salón</p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 px-4 py-3 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
                 >
                     <Plus className="w-5 h-5" />
-                    REGISTRAR PAGO
+                    REGISTRAR INGRESO
                 </button>
             </div>
 
@@ -88,8 +198,18 @@ export default function PagosPage() {
                         <DollarSign className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-gray-500">Ingresos del Mes</p>
+                        <p className="text-sm font-medium text-gray-500">Ingresos Totales (Mes)</p>
                         <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalMensual)}</h3>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+                        <Dumbbell className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-gray-500">Ingresos por Profesores (Mes)</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalAlquileres)}</h3>
                     </div>
                 </div>
 
@@ -98,18 +218,8 @@ export default function PagosPage() {
                         <AlertCircle className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-gray-500">Pagos Pendientes</p>
+                        <p className="text-sm font-medium text-gray-500">Pagos Pendientes / Atrasados</p>
                         <h3 className="text-2xl font-bold text-gray-900">{metrics.pendientes}</h3>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
-                        <CreditCard className="w-8 h-8" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-500">Método Preferido</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{metrics.preferredMethod}</h3>
                     </div>
                 </div>
             </div>
@@ -121,7 +231,7 @@ export default function PagosPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                             type="text"
-                            placeholder="Buscar alumno..."
+                            placeholder="Buscar por alumno o disciplina..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red"
@@ -143,57 +253,73 @@ export default function PagosPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[800px]">
-                        <thead>
-                            <tr className="border-b border-gray-100">
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider pl-4">Alumno</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Disciplina</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Monto</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider hidden md:table-cell">Método</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Mes/Año</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider hidden md:table-cell">Fecha Pago</th>
-                                <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {filteredPagos.map((pago) => (
-                                <tr key={pago.id} className="group hover:bg-gray-50 transition-colors">
-                                    <td className="py-5 pl-4 font-bold text-gray-900">{pago.alumnoNombre}</td>
-                                    <td className="py-5 text-gray-600">{pago.disciplinaNombre}</td>
-                                    <td className="py-5 font-bold text-gray-900">{formatCurrency(pago.monto)}</td>
-                                    <td className="py-5 text-gray-600 hidden md:table-cell">{pago.metodoPago}</td>
-                                    <td className="py-5 text-gray-600">{pago.mes} {pago.anio}</td>
-                                    <td className="py-5 text-gray-600 hidden md:table-cell">{pago.fechaPago}</td>
-                                    <td className="py-5">
-                                        <span className={cn(
-                                            "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
-                                            pago.estado === 'Pagado' && "bg-green-100 text-green-700",
-                                            pago.estado === 'Pendiente' && "bg-yellow-100 text-yellow-700",
-                                            pago.estado === 'Vencido' && "bg-red-100 text-red-700"
-                                        )}>
-                                            {pago.estado}
-                                        </span>
-                                    </td>
+                    {isLoading ? (
+                        <div className="py-8 text-center text-gray-500">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-4"></div>
+                            Cargando ingresos...
+                        </div>
+                    ) : (
+                        <table className="w-full text-left min-w-[800px]">
+                            <thead>
+                                <tr className="border-b border-gray-100">
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider pl-4">Fecha Pago</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Concepto</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Clasificación</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Monto</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Estado</th>
                                 </tr>
-                            ))}
-                            {filteredPagos.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="py-8 text-center text-gray-500">
-                                        No se encontraron registros de pago.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {filteredPagos.map((pago) => (
+                                    <tr key={pago.id} className="group hover:bg-gray-50 transition-colors">
+                                        <td className="py-5 pl-4 text-gray-600">{formatDate(pago.fecha)}</td>
+                                        <td className="py-5 font-bold text-gray-900">
+                                            {pago.concepto}
+                                            <div className="text-xs font-normal text-gray-500 mt-1">
+                                                {pago.disciplinaNombre && `Disciplina: ${pago.disciplinaNombre}`}
+                                            </div>
+                                        </td>
+                                        <td className="py-5">
+                                            <span className={cn(
+                                                "px-2 py-1 rounded text-xs font-bold uppercase tracking-wide",
+                                                pago.tipo === 'CUOTA' ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                            )}>
+                                                {pago.tipo}
+                                            </span>
+                                        </td>
+                                        <td className="py-5 font-bold text-gray-900">{formatCurrency(pago.monto)}</td>
+                                        <td className="py-5">
+                                            <span className={cn(
+                                                "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
+                                                pago.estado === 'Pagado' && "bg-green-100 text-green-700",
+                                                pago.estado === 'Pendiente' && "bg-yellow-100 text-yellow-700",
+                                                pago.estado === 'Vencido' && "bg-red-100 text-red-700"
+                                            )}>
+                                                {pago.estado}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredPagos.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="py-8 text-center text-gray-500">
+                                            No se encontraron registros de ingreso.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
 
             <RegistroPagoModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSave={handleSavePago}
-                alumnos={MOCK_ALUMNOS}
-                disciplinas={MOCK_DISCIPLINAS}
+                onSaveCuota={handleSaveCuota}
+                onSaveAlquiler={handleSaveAlquiler}
+                clientes={clientes}
+                disciplinas={disciplinas}
             />
         </div>
     );
