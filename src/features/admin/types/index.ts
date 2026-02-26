@@ -85,6 +85,7 @@ export interface UnifiedPago {
     // Propiedades originales para debug/internos
     originalId?: number;
     disciplinaNombre?: string;
+    idCliente?: number;
 }
 
 export interface Pago {

@@ -56,10 +56,11 @@ export default function PagosPage() {
                 tipo: 'CUOTA',
                 fecha: c.fecha_pago,
                 concepto: c.clientes ? `${c.clientes.nombre} ${c.clientes.apellido}` : `Cliente ID: ${c.id_cliente}`,
-                monto: c.monto,
+                monto: Number(c.monto),
                 estado: 'Pagado',
                 originalId: c.id_pago,
-                disciplinaNombre: c.disciplinas?.nombre_disciplina
+                disciplinaNombre: c.disciplinas?.nombre_disciplina,
+                idCliente: c.id_cliente
             }));
 
             const normalizedAlquileres: UnifiedPago[] = alquileres.map(a => ({
@@ -68,7 +69,7 @@ export default function PagosPage() {
                 fecha: a.fecha_pago,
                 // Si tienes nombre_disciplina en endpoint, usarlo. Sino fallback.
                 concepto: a.disciplinas ? `Alquiler - ${a.disciplinas.nombre_disciplina}` : `Alquiler - Disciplina ID: ${a.id_disciplina}`,
-                monto: a.monto_cuota,
+                monto: Number(a.monto_cuota),
                 estado: 'Pagado',
                 originalId: a.id_pago_disciplina,
                 disciplinaNombre: a.disciplinas?.nombre_disciplina
@@ -103,15 +104,12 @@ export default function PagosPage() {
 
         pagos.forEach(p => {
             const pDate = new Date(p.fecha);
-            const pMonth = MESES[pDate.getMonth() + 1]; // getMonth() is 0-indexed, but MESES has 'Todos' at index 0, so +1
+            const pMonth = MESES[pDate.getMonth() + 1];
 
-            // Consider changing this logic to current month if needed, now we just sum everything for the demo if 'Todos'
             if (p.estado === 'Pagado') {
                 if (targetMonth === 'Todos' || pMonth === targetMonth) {
                     totalMensual += p.monto;
                 }
-            } else {
-                pendientes++;
             }
 
             if (p.tipo === 'ALQUILER' && p.estado === 'Pagado') {
@@ -121,8 +119,31 @@ export default function PagosPage() {
             }
         });
 
+        // Cálculo dinámico de Deudores (Solo para KICKBOXING)
+        const monthToEvaluate = targetMonth === 'Todos' ? MESES[currentMonthIndex] : targetMonth;
+        const activeStudents = clientes.filter(c => c.activo);
+
+        activeStudents.forEach(student => {
+            // Solo el administrador gestiona cuotas de Kickboxing
+            const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
+            if (!isKickboxing) return;
+
+            const hasPaidThisMonth = pagos.some(p => {
+                if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return false;
+
+                const pDate = new Date(p.fecha);
+                const pMonth = MESES[pDate.getMonth() + 1];
+
+                return p.idCliente === student.id_cliente && pMonth === monthToEvaluate;
+            });
+
+            if (!hasPaidThisMonth) {
+                pendientes++;
+            }
+        });
+
         return { totalMensual, pendientes, totalAlquileres };
-    }, [pagos]);
+    }, [pagos, clientes]);
 
     const filteredPagos = pagos.filter(pago => {
         const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());

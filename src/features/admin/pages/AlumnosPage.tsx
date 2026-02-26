@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Alumno, ClienteBackend } from '../types';
+import { Alumno, ClienteBackend, PagoBackend } from '../types';
 import { cn } from '../../../lib/utils';
 import { Search, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import StudentModal from '../components/StudentModal';
@@ -35,16 +35,57 @@ export default function AlumnosPage() {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await api.get<ClienteBackend[]>('/clientes');
+            const [clientesRes, pagosRes] = await Promise.allSettled([
+                api.get<ClienteBackend[]>('/clientes'),
+                api.get<PagoBackend[]>('/pagos')
+            ]);
 
-            const mappedAlumnos: Alumno[] = response.data.map(cliente => ({
-                id: String(cliente.id_cliente),
-                nombre: cliente.nombre,
-                apellido: cliente.apellido,
-                disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
-                estadoPago: cliente.fecha_ultimo_pago ? 'al día' : 'pendiente',
-                fechaRegistro: cliente.fecha_ultimo_pago ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-            }));
+            if (clientesRes.status === 'rejected') {
+                throw clientesRes.reason;
+            }
+
+            const clientesData = clientesRes.value.data;
+            const pagosData = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
+
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth(); // 0 to 11
+            const currentYear = currentDate.getFullYear();
+
+            const mappedAlumnos: Alumno[] = clientesData.map(cliente => {
+                let estadoPago: 'al día' | 'pendiente' | 'atrasado' = 'pendiente';
+
+                if (cliente.activo === false) {
+                    // Si no está activo, se queda como pendiente o inactivo, para el demo lo dejamos pendiente.
+                    estadoPago = 'pendiente';
+                } else {
+                    const isKickboxing = cliente.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
+
+                    if (isKickboxing) {
+                        // Check if they have a 'CUOTA' payment in the current month/year
+                        const hasPaidThisMonth = pagosData.some(p => {
+                            if (!p.fecha_pago) return false;
+                            const pDate = new Date(p.fecha_pago);
+                            return p.id_cliente === cliente.id_cliente &&
+                                pDate.getMonth() === currentMonth &&
+                                pDate.getFullYear() === currentYear;
+                        });
+
+                        estadoPago = hasPaidThisMonth ? 'al día' : 'atrasado';
+                    } else {
+                        // Otras disciplinas: usamos la lógica original / manual
+                        estadoPago = cliente.fecha_ultimo_pago ? 'al día' : 'pendiente';
+                    }
+                }
+
+                return {
+                    id: String(cliente.id_cliente),
+                    nombre: cliente.nombre,
+                    apellido: cliente.apellido,
+                    disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
+                    estadoPago: estadoPago as any, // temporalmente as any para no romper la interfaz Alumno si no soporta 'atrasado'
+                    fechaRegistro: cliente.fecha_ultimo_pago ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+                };
+            });
 
             setAlumnos(mappedAlumnos);
         } catch (err) {
@@ -226,10 +267,10 @@ export default function AlumnosPage() {
                                     <td className="py-4">
                                         <span
                                             className={cn(
-                                                'px-3 py-1 rounded-full text-sm font-medium',
-                                                alumno.estadoPago === 'al día' && 'bg-green-100 text-green-700',
-                                                alumno.estadoPago === 'pendiente' && 'bg-yellow-100 text-yellow-700',
-                                                alumno.estadoPago === 'vencido' && 'bg-red-100 text-red-700'
+                                                'px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wide',
+                                                alumno.estadoPago as string === 'al día' && 'bg-green-100 text-green-700',
+                                                alumno.estadoPago as string === 'pendiente' && 'bg-yellow-100 text-yellow-700',
+                                                (alumno.estadoPago as string === 'vencido' || alumno.estadoPago as string === 'atrasado') && 'bg-red-100 text-red-700'
                                             )}
                                         >
                                             {alumno.estadoPago}
@@ -298,6 +339,6 @@ export default function AlumnosPage() {
                 message="¿Deseas guardar los cambios realizados?"
                 type="success"
             />
-        </div>
+        </div >
     );
 }
