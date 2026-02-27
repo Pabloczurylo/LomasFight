@@ -2,15 +2,19 @@ import { LayoutDashboard, Users, CreditCard, LogOut, X, Dumbbell, Shield, UserCh
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
 
-const NAV_ITEMS = [
-    { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
-    { name: "Alumnos", path: "/admin/alumnos", icon: Users },
-    { name: "Clases", path: "/admin/clases", icon: Calendar },
-    { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
-    { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
-    { name: "Roles & Usuarios", path: "/admin/usuarios", icon: Shield },
-    { name: "Gestión Estados", path: "/admin/estados-alumnos", icon: UserCheck },
-];
+const getNavItems = () => {
+    const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const isAdmin = user.rol === 'admin';
+    return [
+        { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+        { name: "Alumnos", path: "/admin/alumnos", icon: Users },
+        { name: "Clases", path: "/admin/clases", icon: Calendar },
+        { name: "Disciplinas", path: "/admin/disciplinas", icon: Dumbbell },
+        { name: "Pagos", path: "/admin/pagos", icon: CreditCard },
+        { name: "Roles & Usuarios", path: "/admin/usuarios", icon: Shield },
+        { name: isAdmin ? "Gestión Estados" : "Mis Alumnos", path: "/admin/estados-alumnos", icon: UserCheck },
+    ];
+};
 
 interface MobileSidebarProps {
     isOpen: boolean;
@@ -58,14 +62,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {NAV_ITEMS.filter(item => {
+                    {getNavItems().filter(item => {
                         const user = JSON.parse(localStorage.getItem('usuario') || '{}');
-                        // Check strict string role from backend
-                        const isProfessor = user.rol === 'profesor';
+                        const isProfessor = user.rol !== 'admin';
 
                         if (isProfessor) {
-                            // Professors only see Gestión Estados
-                            return ['Gestión Estados'].includes(item.name);
+                            // Teachers only see their discipline manager
+                            return ['Mis Alumnos'].includes(item.name);
                         }
                         return true;
                     }).map((item) => {

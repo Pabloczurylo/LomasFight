@@ -21,18 +21,16 @@ export default function LoginPage() {
         if (token && usuarioStr) {
             try {
                 const usuario = JSON.parse(usuarioStr);
-                if (usuario.rol === 'profesor') {
+                if (usuario.rol !== 'admin') {
                     navigate("/admin/estados-alumnos");
                 } else {
                     navigate("/admin");
                 }
             } catch (e) {
                 console.error("Error parsing user data", e);
-                // Fallback if data is corrupted
                 navigate("/admin");
             }
         } else if (token) {
-            // Token exists but no user data? unlikely but safe fallback
             navigate("/admin");
         }
     }, [navigate]);
@@ -55,8 +53,8 @@ export default function LoginPage() {
                 // Saving user object as a JSON string
                 localStorage.setItem("usuario", JSON.stringify(usuario));
 
-                // Redirect based on role
-                if (usuario.rol === 'profesor') {
+                // Redirect based on role — any non-admin goes to their discipline view
+                if (usuario.rol !== 'admin') {
                     navigate("/admin/estados-alumnos");
                 } else {
                     navigate("/admin");

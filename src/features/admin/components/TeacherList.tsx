@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, Trash2, Pencil, ChevronDown, Check, XCircle } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
+import { Pagination } from '../../../components/ui/Pagination';
 import { Teacher } from '../types';
+
+const PAGE_SIZE = 10;
 
 interface TeacherListProps {
     teachers: Teacher[];
@@ -14,6 +17,7 @@ interface TeacherListProps {
 
 export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDelete, onStatusChange }: TeacherListProps) {
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Filtrado inteligente: Busca por nombre, apellido o nombre de la disciplina
@@ -22,6 +26,12 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
         t.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.disciplinas.some(d => d.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    const totalPages = Math.ceil(filteredTeachers.length / PAGE_SIZE);
+    const pagedTeachers = filteredTeachers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    // Reset to page 1 on search change
+    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -71,8 +81,8 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {filteredTeachers.length > 0 ? (
-                            filteredTeachers.map((teacher) => (
+                        {pagedTeachers.length > 0 ? (
+                            pagedTeachers.map((teacher) => (
                                 <tr key={teacher.id} className="hover:bg-gray-50/50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-gray-900">{teacher.nombre} {teacher.apellido}</div>
@@ -91,11 +101,10 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
                                         <div className="relative">
                                             <button
                                                 onClick={(e) => toggleDropdown(teacher.id, e)}
-                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${
-                                                    teacher.estado === 'Activo'
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${teacher.estado === 'Activo'
                                                         ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
                                                         : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                                }`}
+                                                    }`}
                                             >
                                                 <span className={`w-2 h-2 rounded-full ${teacher.estado === 'Activo' ? 'bg-green-500' : 'bg-red-500'}`} />
                                                 {teacher.estado}
@@ -160,6 +169,16 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="px-6 border-t border-gray-100">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={filteredTeachers.length}
+                    itemsPerPage={PAGE_SIZE}
+                />
             </div>
         </div>
     );

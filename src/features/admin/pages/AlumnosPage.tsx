@@ -1,14 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Alumno, ClienteBackend, PagoBackend } from '../types';
+import { Alumno, ClienteBackend } from '../types';
 import { cn } from '../../../lib/utils';
 import { Search, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import StudentModal from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
+import { Pagination } from '../../../components/ui/Pagination';
 import { api } from '../../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 
-// Mapeo temporal de disciplinas (Debería venir del backend)
+const PAGE_SIZE = 10;
+
+
+// Derive 3-state status consistently across the app
+function deriveEstado(activo: boolean, fecha_ultimo_pago: string | null): 'al día' | 'pendiente' | 'inactivo' {
+    if (!activo) return 'inactivo';
+    if (!fecha_ultimo_pago) return 'pendiente';
+    const pago = new Date(fecha_ultimo_pago);
+    const diffDays = (Date.now() - pago.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 35 ? 'al día' : 'pendiente';
+}
+
+// Mapping discipline name → id (fallback for manual creation)
 const DISCIPLINA_ID_MAP: Record<string, number> = {
     'Kickboxing': 3,
     'Boxeo': 4,
@@ -22,6 +35,7 @@ export default function AlumnosPage() {
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Alumno | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
     const navigate = useNavigate();
 
     // Estados para ConfirmModals
@@ -35,9 +49,8 @@ export default function AlumnosPage() {
         try {
             setIsLoading(true);
             setError(null);
-            const [clientesRes, pagosRes] = await Promise.allSettled([
-                api.get<ClienteBackend[]>('/clientes'),
-                api.get<PagoBackend[]>('/pagos')
+            const [clientesRes] = await Promise.allSettled([
+                api.get<ClienteBackend[]>('/clientes')
             ]);
 
             if (clientesRes.status === 'rejected') {
@@ -45,45 +58,22 @@ export default function AlumnosPage() {
             }
 
             const clientesData = clientesRes.value.data;
-            const pagosData = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
-
-            const currentDate = new Date();
-            const currentMonth = currentDate.getMonth(); // 0 to 11
-            const currentYear = currentDate.getFullYear();
 
             const mappedAlumnos: Alumno[] = clientesData.map(cliente => {
-                let estadoPago: 'al día' | 'pendiente' | 'atrasado' = 'pendiente';
-
-                if (cliente.activo === false) {
-                    // Si no está activo, se queda como pendiente o inactivo, para el demo lo dejamos pendiente.
-                    estadoPago = 'pendiente';
-                } else {
-                    const isKickboxing = cliente.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
-
-                    if (isKickboxing) {
-                        // Check if they have a 'CUOTA' payment in the current month/year
-                        const hasPaidThisMonth = pagosData.some(p => {
-                            if (!p.fecha_pago) return false;
-                            const pDate = new Date(p.fecha_pago);
-                            return p.id_cliente === cliente.id_cliente &&
-                                pDate.getMonth() === currentMonth &&
-                                pDate.getFullYear() === currentYear;
-                        });
-
-                        estadoPago = hasPaidThisMonth ? 'al día' : 'atrasado';
-                    } else {
-                        // Otras disciplinas: usamos la lógica original / manual
-                        estadoPago = cliente.fecha_ultimo_pago ? 'al día' : 'pendiente';
-                    }
-                }
+                const estadoPago = deriveEstado(
+                    cliente.activo !== false,
+                    cliente.fecha_ultimo_pago || null
+                ) as any;
 
                 return {
                     id: String(cliente.id_cliente),
                     nombre: cliente.nombre,
                     apellido: cliente.apellido,
                     disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
-                    estadoPago: estadoPago as any, // temporalmente as any para no romper la interfaz Alumno si no soporta 'atrasado'
-                    fechaRegistro: cliente.fecha_ultimo_pago ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+                    estadoPago,
+                    fechaRegistro: cliente.fecha_ultimo_pago
+                        ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0]
+                        : new Date().toISOString().split('T')[0]
                 };
             });
 
@@ -107,10 +97,17 @@ export default function AlumnosPage() {
         fetchAlumnos();
     }, []);
 
-    const filteredAlumnos = alumnos.filter((alumno) =>
-        alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        alumno.apellido.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const STATUS_ORDER: Record<string, number> = { 'al día': 0, 'pendiente': 1, 'inactivo': 2 };
+
+    const filteredAlumnos = alumnos
+        .filter((alumno) =>
+            alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            alumno.apellido.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => (STATUS_ORDER[a.estadoPago as string] ?? 3) - (STATUS_ORDER[b.estadoPago as string] ?? 3));
+
+    const totalPages = Math.ceil(filteredAlumnos.length / PAGE_SIZE);
+    const pagedAlumnos = filteredAlumnos.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     const handleAddClick = () => {
         setSelectedStudent(undefined);
@@ -258,7 +255,7 @@ export default function AlumnosPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredAlumnos.map((alumno) => (
+                            {pagedAlumnos.map((alumno) => (
                                 <tr key={alumno.id} className="group hover:bg-gray-50">
                                     <td className="py-4 font-medium text-gray-900 group-hover:text-brand-red transition-colors">
                                         {alumno.nombre} {alumno.apellido}
@@ -270,10 +267,12 @@ export default function AlumnosPage() {
                                                 'px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wide',
                                                 alumno.estadoPago as string === 'al día' && 'bg-green-100 text-green-700',
                                                 alumno.estadoPago as string === 'pendiente' && 'bg-yellow-100 text-yellow-700',
-                                                (alumno.estadoPago as string === 'vencido' || alumno.estadoPago as string === 'atrasado') && 'bg-red-100 text-red-700'
+                                                alumno.estadoPago as string === 'inactivo' && 'bg-gray-100 text-gray-500'
                                             )}
                                         >
-                                            {alumno.estadoPago}
+                                            {alumno.estadoPago as string === 'al día' ? 'Al día' :
+                                                alumno.estadoPago as string === 'pendiente' ? 'Pendiente' :
+                                                    'Inactivo'}
                                         </span>
                                     </td>
                                     <td className="py-4 text-gray-500">{alumno.fechaRegistro}</td>
@@ -307,6 +306,15 @@ export default function AlumnosPage() {
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div className="px-4">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={filteredAlumnos.length}
+                    itemsPerPage={PAGE_SIZE}
+                />
             </div>
 
             <StudentModal

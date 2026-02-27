@@ -3,12 +3,18 @@ import { Eye, EyeOff, Mail, Lock, User as UserIcon, Shield, Plus } from 'lucide-
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 
+interface Disciplina {
+    id_disciplina: number;
+    nombre_disciplina: string;
+}
+
 interface UserFormProps {
     onSubmit: (userData: { nombre_usuario: string; mail_usuario: string; contrasena_usuario: string; rol: string }) => void;
     onCancel: () => void;
+    disciplines?: Disciplina[];
 }
 
-export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
+export default function UserForm({ onSubmit, onCancel, disciplines = [] }: UserFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         nombre: '',
@@ -114,7 +120,11 @@ export default function UserForm({ onSubmit, onCancel }: UserFormProps) {
                             >
                                 <option value="" disabled>Seleccione un rol</option>
                                 <option value="admin">Administrador</option>
-                                <option value="profesor">Profesor</option>
+                                {disciplines.map((d) => (
+                                    <option key={d.id_disciplina} value={d.nombre_disciplina}>
+                                        {d.nombre_disciplina}
+                                    </option>
+                                ))}
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>

@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { Pencil, Trash2, User as UserIcon } from 'lucide-react';
 import { Usuario } from '../types';
 import { cn } from '../../../lib/utils';
+import { Pagination } from '../../../components/ui/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface UserListProps {
     users: Usuario[];
@@ -9,12 +13,16 @@ interface UserListProps {
 }
 
 export default function UserList({ users, onEdit, onDelete }: UserListProps) {
+    const [currentPage, setCurrentPage] = useState(1);
+
     const getRoleName = (user: Usuario) => {
-        // Enforce role name based on string 'rol'
         if (user.rol === 'admin') return 'Administrador';
         if (user.rol === 'profesor') return 'Profesor';
         return user.rol || 'Desconocido';
     };
+
+    const totalPages = Math.ceil(users.length / PAGE_SIZE);
+    const pagedUsers = users.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -29,7 +37,7 @@ export default function UserList({ users, onEdit, onDelete }: UserListProps) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {users.map((user) => (
+                        {pagedUsers.map((user) => (
                             <tr key={user.id_usuario} className="group hover:bg-gray-50 transition-colors">
                                 <td className="py-4 pl-6 pr-4">
                                     <div className="flex items-center gap-3">
@@ -47,8 +55,9 @@ export default function UserList({ users, onEdit, onDelete }: UserListProps) {
                                 <td className="py-4 px-4">
                                     <span className={cn(
                                         "px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
-                                        (user.rol === 'admin' || getRoleName(user) === 'Administrador') && "bg-red-100 text-red-700",
-                                        (user.rol === 'profesor' || getRoleName(user) === 'Profesor') && "bg-green-100 text-green-700"
+                                        (user.rol === 'admin' || getRoleName(user) === 'Administrador') ? "bg-red-100 text-red-700" :
+                                            (user.rol === 'profesor' || getRoleName(user) === 'Profesor') ? "bg-green-100 text-green-700" :
+                                                "bg-blue-100 text-blue-700"
                                     )}>
                                         {getRoleName(user)}
                                     </span>
@@ -76,8 +85,19 @@ export default function UserList({ users, onEdit, onDelete }: UserListProps) {
                     </tbody>
                 </table>
             </div>
-            <div className="p-4 border-t border-gray-100 bg-gray-50/50 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">
-                <span>{users.length} usuarios registrados</span>
+            <div className="px-6 border-t border-gray-100">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={users.length}
+                    itemsPerPage={PAGE_SIZE}
+                />
+                {totalPages <= 1 && (
+                    <div className="py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">
+                        {users.length} usuarios registrados
+                    </div>
+                )}
             </div>
         </div>
     );
