@@ -1,4 +1,4 @@
-import { Activity, Shield, Target, Zap, Dumbbell, Heart, LucideIcon } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface Benefit {
     title: string;
