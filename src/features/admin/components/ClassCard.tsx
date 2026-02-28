@@ -9,14 +9,14 @@ interface ClassCardProps {
 }
 
 export function ClassCard({ discipline, time, instructor, onClick }: ClassCardProps) {
-    // Forced style as per user request: Red background, Black border.
-    const forcedStyle = "bg-brand-red text-white border-black border";
+    // Forced style as per user request: Red background, no border.
+    const forcedStyle = "bg-brand-red text-white";
 
     return (
         <div
             onClick={onClick}
             className={cn(
-                "p-1.5 rounded-md border text-xs cursor-pointer transition-all hover:brightness-95 flex flex-col gap-0.5 shadow-sm h-full",
+                "p-1.5 rounded-md text-xs cursor-pointer transition-all hover:brightness-95 flex flex-col gap-0.5 shadow-sm h-full",
                 forcedStyle
             )}
         >

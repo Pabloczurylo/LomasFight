@@ -1,4 +1,4 @@
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 
 
 interface AdminHeaderProps {
@@ -17,21 +17,6 @@ export function AdminHeader({ onMenuClick, title = "Dashboard" }: AdminHeaderPro
                     <Menu className="w-6 h-6" />
                 </button>
                 <h1 className="text-xl font-heading font-bold text-gray-900 uppercase tracking-wide">{title}</h1>
-            </div>
-
-            <div className="flex items-center gap-4">
-
-                <div className="flex items-center gap-2">
-                    <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-full relative">
-                        <Bell className="w-5 h-5" />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-brand-red rounded-full border border-white" />
-                    </button>
-
-                    {/* User Avatar Placeholder */}
-                    <div className="w-9 h-9 rounded-full bg-brand-dark flex items-center justify-center text-white font-heading font-bold text-sm border-2 border-brand-red cursor-pointer">
-                        AD
-                    </div>
-                </div>
             </div>
         </header>
     );
