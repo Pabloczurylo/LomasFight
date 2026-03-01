@@ -10,10 +10,10 @@ import { Button } from "../../../components/ui/Button";
 
 interface DisciplineData {
     id_disciplina: number;
-    nombre: string;
+    nombre_disciplina: string;
     descripcion: string;
-    cuota_mensual: number;
-    imagen_url: string;
+    cuota: number;
+    img_banner: string;
 }
 
 const GENERIC_BENEFITS = [
@@ -101,32 +101,37 @@ export default function DisciplineDetailPage() {
             {/* Hero Section */}
             <div className="relative h-[60vh] w-full bg-black">
                 <img
-                    src={discipline.imagen_url || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2020&auto=format&fit=crop"}
-                    alt={discipline.nombre}
+                    src={discipline?.img_banner || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2020&auto=format&fit=crop"}
+                    alt={discipline?.nombre_disciplina}
                     className="absolute inset-0 w-full h-full object-cover opacity-50"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="absolute bottom-0 left-0 w-full px-4 py-8 md:p-16 container mx-auto max-w-full">
                     <h1 className="text-2xl md:text-7xl font-heading font-bold text-white uppercase mb-4 hyphens-auto break-words text-balance">
-                        {discipline?.nombre || 'Cargando...'}
+                        {discipline?.nombre_disciplina || 'Cargando...'}
                     </h1>
-                    <p className="text-xl text-gray-300 max-w-2xl mb-8">
-                        {discipline?.descripcion || "Sumate a nuestras clases y superá tus límites día a día."}
-                    </p>
                 </div>
             </div>
 
+            {/* Dynamic Description Just Above Methodology */}
+            <section className="py-12 bg-white text-center px-4 max-w-4xl mx-auto">
+                <h2 className="text-3xl font-heading font-bold text-brand-dark mb-4 uppercase">¿DE QUÉ SE TRATA?</h2>
+                <p className="text-lg text-gray-600">
+                    {discipline?.descripcion || "Sumate a nuestras clases y superá tus límites día a día."}
+                </p>
+            </section>
+
             {/* Generic Benefits */}
             <BenefitsSection
-                disciplineName={discipline?.nombre || 'Disciplina'}
+                disciplineName={discipline?.nombre_disciplina || 'Disciplina'}
                 benefits={GENERIC_BENEFITS}
-                image={discipline?.imagen_url || ''}
+                image={discipline?.img_banner || ''}
             />
 
             {/* Membresía (Prices) */}
             <MembershipSection
-                planTitle={`PLAN ${(discipline?.nombre || 'CARGANDO...').toUpperCase()}`}
-                price={discipline?.cuota_mensual?.toString() || ''}
+                planTitle={`PLAN ${(discipline?.nombre_disciplina || 'CARGANDO...').toUpperCase()}`}
+                price={discipline?.cuota?.toString() || ''}
                 features={[
                     "3 Clases por semana",
                     "Equipo incluido",
@@ -139,21 +144,7 @@ export default function DisciplineDetailPage() {
             <ScheduleSection
                 id="horarios-disciplina"
                 title="HORARIOS"
-                subtitle={`CLASES DE ${(discipline?.nombre || 'CARGANDO...').toUpperCase()}`}
-                scheduleData={[
-                    {
-                        day: "LUNES",
-                        classes: [{ time: "18:00", class: discipline?.nombre || '', coach: "Staff" }, null, null]
-                    },
-                    {
-                        day: "MIÉRCOLES",
-                        classes: [{ time: "18:00", class: discipline?.nombre || '', coach: "Staff" }, null, null]
-                    },
-                    {
-                        day: "VIERNES",
-                        classes: [{ time: "18:00", class: discipline?.nombre || '', coach: "Staff" }, null, null]
-                    }
-                ]}
+                subtitle={`CLASES DE ${(discipline?.nombre_disciplina || 'CARGANDO...').toUpperCase()}`}
             />
 
             {/* Instructors Placeholder */}

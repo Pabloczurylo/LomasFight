@@ -46,7 +46,7 @@ export function DisciplinesSection() {
                                 title={discipline.nombre_disciplina}
                                 description={discipline.descripcion || "Entrena con los mejores profesionales en Lomas Fight."}
                                 image={discipline.img_banner || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"}
-                                slug={discipline.nombre_disciplina.toLowerCase().replace(/ /g, '-')}
+                                slug={discipline.nombre_disciplina.toLowerCase()}
                             />
                         ))
                     ) : (
