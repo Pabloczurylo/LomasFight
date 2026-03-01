@@ -41,13 +41,13 @@ export function AboutSection() {
 
             <div className="container mx-auto px-4 relative z-10">
                 <div className="flex flex-col gap-16">
-                    <div className="w-full max-w-3xl">
+                    <div className="w-full max-w-3xl mx-auto text-center">
                         <h2 className="text-brand-red font-heading font-bold tracking-widest text-lg mb-2 uppercase">NOSOTROS</h2>
                         <h3 className="text-4xl md:text-6xl font-heading font-bold text-white uppercase mb-8 leading-tight">
                             SOMOS MÁS QUE UN SIMPLE GIMNASIO
                         </h3>
 
-                        <p className="text-gray-200 text-lg md:text-xl leading-relaxed max-w-2xl">
+                        <p className="text-gray-200 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
                             En Lomas Fight, nos enorgullece ser un verdadero santuario para los entusiastas de las
                             artes marciales. Creemos en el poder transformador de la disciplina y el esfuerzo
                             constante.
