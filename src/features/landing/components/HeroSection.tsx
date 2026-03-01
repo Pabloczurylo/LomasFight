@@ -1,5 +1,9 @@
 import { Button } from "../../../components/ui/Button";
 
+const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+};
+
 export function HeroSection() {
     return (
         <section className="relative h-screen min-h-[600px] w-full flex items-center justify-center overflow-hidden bg-black">
@@ -28,10 +32,20 @@ export function HeroSection() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                    <Button variant="whatsapp" size="lg" className="w-full sm:w-auto">
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        className="w-full sm:w-auto"
+                        onClick={() => scrollTo('disciplinas')}
+                    >
                         ¡INSCRÍBETE AHORA!
                     </Button>
-                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full sm:w-auto"
+                        onClick={() => scrollTo('horarios-general')}
+                    >
                         VER HORARIOS
                     </Button>
                 </div>

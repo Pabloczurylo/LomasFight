@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [loggedUser, setLoggedUser] = useState<{ nombre_usuario: string; rol: string } | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -16,6 +17,21 @@ export function Navbar() {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Read user from localStorage on mount and when location changes
+    useEffect(() => {
+        const usuarioStr = localStorage.getItem('usuario');
+        const token = localStorage.getItem('token');
+        if (token && usuarioStr) {
+            try {
+                setLoggedUser(JSON.parse(usuarioStr));
+            } catch {
+                setLoggedUser(null);
+            }
+        } else {
+            setLoggedUser(null);
+        }
+    }, [location]);
 
     const scrollToSection = (id: string) => {
         const element = document.getElementById(id);
@@ -28,37 +44,37 @@ export function Navbar() {
         e.preventDefault();
         setIsMobileMenuOpen(false);
 
-        // Logic for 'HORARIOS'
         if (target === 'horarios') {
             if (location.pathname === '/') {
                 scrollToSection('horarios-general');
             } else if (location.pathname.startsWith('/disciplina/')) {
                 scrollToSection('horarios-disciplina');
             } else {
-                // Determine fallback, maybe go home and scroll
                 navigate('/');
                 setTimeout(() => scrollToSection('horarios-general'), 100);
             }
             return;
         }
 
-        // Logic for other anchors (NOSOTROS, DISCIPLINAS)
         if (location.pathname === '/') {
             scrollToSection(target);
         } else {
             navigate('/');
-            // Use setTimeout to allow navigation to complete before scrolling
-            // Ideally, pass state and handle in LandingPage useEffect, but this is a simpler quick impl
             setTimeout(() => {
                 scrollToSection(target);
             }, 100);
         }
     };
 
+    // Where to redirect when user clicks their name
+    const getPanelPath = () => {
+        if (!loggedUser) return '/login';
+        return loggedUser.rol !== 'admin' ? '/admin/estados-alumnos' : '/admin';
+    };
+
     const navLinks = [
         { name: 'INICIO', path: '/', isLink: true },
-        { name: 'MAESTROS', path: '#', isLink: false }, // Placeholder behavior
-        { name: 'NOSOTROS', target: 'nosotros', isLink: false }, // Added based on context
+        { name: 'NOSOTROS', target: 'nosotros', isLink: false },
         { name: 'DISCIPLINAS', target: 'disciplinas', isLink: false },
         { name: 'HORARIOS', target: 'horarios', isLink: false },
     ];
@@ -71,7 +87,6 @@ export function Navbar() {
             <div className="container mx-auto px-4 flex items-center justify-between">
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-2" onClick={() => window.scrollTo(0, 0)}>
-                    {/* Logo Placeholder Icon */}
                     <div className="h-8 w-8 bg-brand-red rounded transform skew-x-[-10deg]" />
                     <span className="text-2xl font-heading font-bold text-white uppercase tracking-wider">
                         LOMAS <span className="text-brand-red">FIGHT</span>
@@ -93,7 +108,6 @@ export function Navbar() {
                                 </Link>
                             )
                         }
-                        if (link.name === 'MAESTROS') return null; // Removing placeholder if not in sections
 
                         return (
                             <a
@@ -108,13 +122,24 @@ export function Navbar() {
                     })}
                 </div>
 
-                {/* CTA */}
+                {/* CTA — shows user name if logged in, otherwise login button */}
                 <div className="hidden md:block">
-                    <Link to="/login">
-                        <Button variant="primary" size="sm">
-                            INICIAR SESIÓN
-                        </Button>
-                    </Link>
+                    {loggedUser ? (
+                        <Link to={getPanelPath()}>
+                            <button className="flex items-center gap-2 bg-brand-red/10 hover:bg-brand-red/20 border border-brand-red text-white font-bold text-sm px-4 py-2 rounded-lg transition-all group cursor-pointer">
+                                <User size={16} className="text-brand-red group-hover:scale-110 transition-transform" />
+                                <span className="uppercase tracking-wide">
+                                    {loggedUser.nombre_usuario}
+                                </span>
+                            </button>
+                        </Link>
+                    ) : (
+                        <Link to="/login">
+                            <Button variant="primary" size="sm">
+                                INICIAR SESIÓN
+                            </Button>
+                        </Link>
+                    )}
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -142,7 +167,6 @@ export function Navbar() {
                                 </Link>
                             )
                         }
-                        if (link.name === 'MAESTROS') return null;
 
                         return (
                             <a
@@ -155,11 +179,21 @@ export function Navbar() {
                             </a>
                         );
                     })}
-                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button variant="primary" className="w-full mt-4">
-                            INICIAR SESIÓN
-                        </Button>
-                    </Link>
+
+                    {loggedUser ? (
+                        <Link to={getPanelPath()} onClick={() => setIsMobileMenuOpen(false)}>
+                            <button className="w-full flex items-center justify-center gap-2 border border-brand-red text-white font-bold px-4 py-3 rounded-lg mt-4 hover:bg-brand-red/20 transition-all cursor-pointer">
+                                <User size={16} className="text-brand-red" />
+                                <span className="uppercase tracking-wide">{loggedUser.nombre_usuario}</span>
+                            </button>
+                        </Link>
+                    ) : (
+                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Button variant="primary" className="w-full mt-4">
+                                INICIAR SESIÓN
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             )}
         </nav>

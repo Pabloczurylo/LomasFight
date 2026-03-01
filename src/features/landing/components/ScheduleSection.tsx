@@ -9,8 +9,8 @@ interface ScheduleItem {
 }
 
 interface ScheduleDay {
-    day: string; // LUNES, MARTES, etc.
-    classes: (ScheduleItem | null)[]; // null for empty slot
+    day: string;
+    classes: ScheduleItem[];
 }
 
 interface ScheduleSectionProps {
@@ -19,15 +19,8 @@ interface ScheduleSectionProps {
     subtitle?: string;
 }
 
-// Interfaces based on backend structure
-interface Disciplina {
-    nombre_disciplina: string;
-}
-
-interface Profesor {
-    nombre: string;
-}
-
+interface Disciplina { nombre_disciplina: string; }
+interface Profesor { nombre: string; apellido: string; }
 interface HorarioBackend {
     id_horario: number;
     dia_y_hora: string;
@@ -36,6 +29,9 @@ interface HorarioBackend {
 }
 
 const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'] as const;
+// JS getDay(): Sun=0, Mon=1 ... Sat=6
+// Our WEEK_DAYS index:  Mon=0, Tue=1 ... Sat=5
+const JS_DAY_TO_INDEX: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 };
 
 export function ScheduleSection({
     id,
@@ -43,6 +39,7 @@ export function ScheduleSection({
     subtitle = "HORARIOS DE CLASES"
 }: ScheduleSectionProps) {
     const [scheduleData, setScheduleData] = useState<ScheduleDay[]>([]);
+    const [maxSlots, setMaxSlots] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
@@ -52,49 +49,48 @@ export function ScheduleSection({
                 setLoading(true);
                 const { data } = await api.get<HorarioBackend[]>('/horarios');
 
-                // Initialize empty schedule mapped to our constant days
-                const newSchedule: Record<string, ScheduleItem[]> = {
-                    'LUNES': [], 'MARTES': [], 'MIÉRCOLES': [], 'JUEVES': [], 'VIERNES': [], 'SÁBADO': []
+                // Build per-day buckets
+                const buckets: Record<string, ScheduleItem[]> = {
+                    'LUNES': [], 'MARTES': [], 'MIÉRCOLES': [],
+                    'JUEVES': [], 'VIERNES': [], 'SÁBADO': []
                 };
 
-                // Populate with backend data
                 data.forEach((h) => {
+                    // Use UTC getters to avoid local-timezone day-shift on Timestamptz values
                     const date = new Date(h.dia_y_hora);
-                    // getDay() gives 0 for Sunday, 1 for Monday. Our WEEK_DAYS index starts Monday at 0.
-                    const dayIndex = date.getDay();
-                    if (dayIndex === 0) return; // Ignore Sundays if they exist
-                    
-                    const dayName = WEEK_DAYS[dayIndex - 1]; // Map to string
-                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    
-                    if (dayName && newSchedule[dayName]) {
-                        newSchedule[dayName].push({
-                            time: timeStr,
-                            class: h.disciplinas.nombre_disciplina,
-                            coach: h.profesores.nombre
-                        });
-                    }
+                    const utcDay = date.getUTCDay();                          // 0=Sun … 6=Sat
+                    const dayIdx = JS_DAY_TO_INDEX[utcDay];
+                    if (dayIdx === undefined) return;                         // ignore Sundays
+
+                    const dayName = WEEK_DAYS[dayIdx];
+                    const hh = String(date.getUTCHours()).padStart(2, '0');
+                    const mm = String(date.getUTCMinutes()).padStart(2, '0');
+
+                    buckets[dayName].push({
+                        time: `${hh}:${mm}`,
+                        class: h.disciplinas.nombre_disciplina,
+                        coach: `${h.profesores.nombre} ${h.profesores.apellido}`
+                    });
                 });
 
-                // Format structure into the visual array and sort times, max 3 slots to maintain visual design
-                const formattedSchedule: ScheduleDay[] = WEEK_DAYS.map(day => {
-                    // Sort items by time
-                    const sortedClasses = [...newSchedule[day]].sort((a, b) => {
+                // Sort each day's classes by time and build the final array
+                const formatted: ScheduleDay[] = WEEK_DAYS.map(day => ({
+                    day,
+                    classes: [...buckets[day]].sort((a, b) => {
                         const [ah, am] = a.time.split(':').map(Number);
                         const [bh, bm] = b.time.split(':').map(Number);
                         return ah * 60 + am - (bh * 60 + bm);
-                    });
+                    })
+                }));
 
-                    // Pad with nulls to guarantee exactly 3 elements for the grid design
-                    const paddedClasses = [sortedClasses[0] || null, sortedClasses[1] || null, sortedClasses[2] || null];
+                // Compute total rows needed (max classes in any single day)
+                const max = Math.max(...formatted.map(d => d.classes.length), 1);
 
-                    return { day, classes: paddedClasses };
-                });
-
-                setScheduleData(formattedSchedule);
+                setScheduleData(formatted);
+                setMaxSlots(max);
                 setError(false);
             } catch (err) {
-                console.error("Error fetching schedule for landing page:", err);
+                console.error("Error fetching schedule:", err);
                 setError(true);
             } finally {
                 setLoading(false);
@@ -122,6 +118,10 @@ export function ScheduleSection({
                         <div className="text-center py-20">
                             <p className="text-brand-red font-bold">Error al cargar los horarios. Por favor, intenta de nuevo más tarde.</p>
                         </div>
+                    ) : scheduleData.every(d => d.classes.length === 0) ? (
+                        <div className="text-center py-20">
+                            <p className="text-gray-400 font-heading font-bold uppercase tracking-widest">No hay horarios cargados todavía.</p>
+                        </div>
                     ) : (
                         <div className="min-w-[800px] overflow-hidden rounded-lg shadow-lg border border-gray-100">
                             {/* Header Row */}
@@ -131,18 +131,24 @@ export function ScheduleSection({
                                 ))}
                             </div>
 
+                            {/* Body — one row per time slot, dynamic count */}
                             <div className="bg-white divide-x divide-gray-100 grid grid-cols-6">
                                 {scheduleData.map((day, colIdx) => (
                                     <div key={colIdx} className="divide-y divide-gray-100">
-                                        {[0, 1, 2].map((rowIdx) => {
+                                        {Array.from({ length: maxSlots }).map((_, rowIdx) => {
                                             const item = day.classes[rowIdx];
                                             return (
-                                                <div key={rowIdx} className="p-4 h-32 flex flex-col justify-center items-center text-center hover:bg-gray-50 transition-colors">
+                                                <div
+                                                    key={rowIdx}
+                                                    className="p-4 h-32 flex flex-col justify-center items-center text-center hover:bg-gray-50 transition-colors"
+                                                >
                                                     {item ? (
                                                         <>
                                                             <span className="text-brand-red font-heading font-bold text-xl">{item.time}</span>
                                                             <span className="text-xs text-black font-bold uppercase mt-1">{item.class}</span>
-                                                            {item.coach && <span className="text-xs text-gray-500 mt-1">Coach: {item.coach}</span>}
+                                                            {item.coach && (
+                                                                <span className="text-xs text-gray-500 mt-1">Coach: {item.coach}</span>
+                                                            )}
                                                         </>
                                                     ) : (
                                                         <span className="text-gray-300 font-heading font-bold text-xl">--</span>

@@ -44,9 +44,18 @@ export function Footer() {
                             <a href="#" className="hover:text-brand-red transition-colors"><Instagram /></a>
                             <a href="#" className="hover:text-brand-red transition-colors"><Facebook /></a>
                         </div>
-                        {/* Map Placeholder */}
-                        <div className="w-full h-32 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-800">
-                            <span className="text-xs uppercase tracking-widest">Ver en Google Maps</span>
+                        {/* Google Maps */}
+                        <div className="w-full rounded-lg overflow-hidden border border-gray-800">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d445.22889402833033!2d-65.2268808871464!3d-26.78165166535376!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sJorge%20Luis%20Borges%201200%2C%20lomas!5e0!3m2!1ses-419!2sar!4v1772400193379!5m2!1ses-419!2sar"
+                                width="100%"
+                                height="180"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Ubicación Lomas Fight"
+                            />
                         </div>
                     </div>
                 </div>

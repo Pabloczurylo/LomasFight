@@ -1,13 +1,12 @@
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { Mail, Lock, CheckSquare, Square, Trophy, AlertCircle } from "lucide-react";
+import { Mail, Lock, Trophy, AlertCircle, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../../services/api";
 import { AxiosError } from "axios";
 
 export default function LoginPage() {
-    const [rememberMe, setRememberMe] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -76,7 +75,16 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen w-full">
+        <div className="flex min-h-screen w-full relative">
+            {/* Back button — top left */}
+            <Link
+                to="/"
+                className="absolute top-4 left-4 z-50 flex items-center gap-1.5 bg-brand-red text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md hover:bg-red-700 transition-colors"
+            >
+                <ChevronLeft size={18} />
+                VOLVER
+            </Link>
+
             {/* Left Side - Image & Branding */}
             <div className="hidden lg:flex w-1/2 relative bg-black items-end p-12 overflow-hidden">
                 {/* Background Image */}
@@ -164,26 +172,6 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <label className="flex items-center space-x-2 cursor-pointer group">
-                                <div
-                                    className="relative"
-                                    onClick={() => setRememberMe(!rememberMe)}
-                                >
-                                    {rememberMe ? (
-                                        <CheckSquare className="text-brand-red" size={20} />
-                                    ) : (
-                                        <Square className="text-gray-300 group-hover:text-gray-400 transition-colors" size={20} />
-                                    )}
-                                </div>
-                                <span className="text-sm text-gray-600 select-none" onClick={() => setRememberMe(!rememberMe)}>
-                                    Recordarme
-                                </span>
-                            </label>
-                            <Link to="#" className="text-sm font-bold text-brand-red hover:text-red-700 transition-colors">
-                                ¿Olvidaste tu contraseña?
-                            </Link>
-                        </div>
 
                         <Button
                             className="w-full h-12 text-lg shadow-lg shadow-brand-red/30"
@@ -195,13 +183,9 @@ export default function LoginPage() {
                         </Button>
                     </form>
 
-                    {/* Footer Links */}
-                    <div className="pt-8 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                        <p>© 2024 Lomas Fight Gym Management.</p>
-                        <div className="flex gap-4">
-                            <a href="#" className="hover:text-gray-600">Privacidad</a>
-                            <a href="#" className="hover:text-gray-600">Soporte</a>
-                        </div>
+                    {/* Footer */}
+                    <div className="pt-8 border-t border-gray-100 text-xs text-gray-400 text-center">
+                        <p>© 2026 Lomas Fight Gym Management.</p>
                     </div>
                 </div>
             </div>
