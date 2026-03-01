@@ -1,4 +1,3 @@
-import { Button } from "../../../components/ui/Button";
 
 export function AboutSection() {
     return (
@@ -8,8 +7,21 @@ export function AboutSection() {
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
             <div className="container mx-auto px-4 relative z-10">
-                <div className="flex flex-col md:flex-row items-center gap-12">
-                    <div className="w-full md:w-1/2 flex justify-center">
+                <div className="flex flex-col gap-16">
+                    <div className="w-full max-w-3xl">
+                        <h2 className="text-brand-red font-heading font-bold tracking-widest text-lg mb-2 uppercase">NOSOTROS</h2>
+                        <h3 className="text-4xl md:text-6xl font-heading font-bold text-white uppercase mb-8 leading-tight">
+                            SOMOS MÁS QUE UN SIMPLE GIMNASIO
+                        </h3>
+
+                        <p className="text-gray-200 text-lg md:text-xl leading-relaxed max-w-2xl">
+                            En Lomas Fight, nos enorgullece ser un verdadero santuario para los entusiastas de las
+                            artes marciales. Creemos en el poder transformador de la disciplina y el esfuerzo
+                            constante.
+                        </p>
+                    </div>
+
+                    <div className="w-full flex justify-center md:justify-start">
                         <div className="bg-[#111115] border border-white/5 rounded-2xl p-10 max-w-md w-full shadow-2xl flex flex-col items-center relative overflow-hidden group">
                             {/* Top subtle glow */}
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-brand-red/10 blur-3xl rounded-full" />
@@ -67,30 +79,6 @@ export function AboutSection() {
                                     <path fillRule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clipRule="evenodd" />
                                 </svg>
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="w-full md:w-1/2">
-                        <h2 className="text-brand-red font-heading font-bold tracking-widest text-lg mb-2">NOSOTROS</h2>
-                        <h3 className="text-4xl md:text-5xl font-heading font-bold text-white uppercase mb-6 leading-tight">
-                            SOMOS MÁS QUE <br /> UN SIMPLE GIMNASIO
-                        </h3>
-
-                        <p className="text-gray-300 text-lg mb-6 leading-relaxed">
-                            En Lomas Fight, nos enorgullece ser un verdadero santuario para los entusiastas de las artes marciales.
-                            Creemos en el poder transformador de la disciplina y el esfuerzo constante.
-                        </p>
-
-                        <p className="text-gray-400 mb-8 leading-relaxed">
-                            Nuestro enfoque combina técnicas tradicionales con métodos de entrenamiento moderno, creando un ambiente
-                            donde principiantes y competidores de élite pueden superar sus límites juntos. Aquí no solo entrenas tu cuerpo,
-                            sino que fortaleces tu mente y espíritu.
-                        </p>
-
-                        <div className="flex gap-4">
-                            <Button variant="primary" size="lg">
-                                CONOCE EL EQUIPO
-                            </Button>
                         </div>
                     </div>
                 </div>
