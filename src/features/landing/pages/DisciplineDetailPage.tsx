@@ -67,7 +67,7 @@ export default function DisciplineDetailPage() {
                 // Fetch and filter Teachers
                 const responseTeachers = await api.get<ProfesorBackend[]>('/profesores');
                 const activos = responseTeachers.data.filter(
-                    p => p.activo && p.id_disciplina === Number(id)
+                    p => p.activo && p.id_disciplina === responseDiscipline.data.id_disciplina
                 );
                 setProfesores(activos);
 

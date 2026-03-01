@@ -1,0 +1,136 @@
+[
+  {
+    "id_profesor": 4,
+    "nombre": "Carlos",
+    "apellido": "López",
+    "id_disciplina": 7,
+    "activo": true,
+    "clientes": [],
+    "horarios": [
+      {
+        "id_horario": 6,
+        "dia_y_hora": "2026-02-17T17:00:00.000Z",
+        "id_disciplina": 8,
+        "id_profesor": 4,
+        "activo": true
+      },
+      {
+        "id_horario": 13,
+        "dia_y_hora": "2026-03-06T15:30:00.000Z",
+        "id_disciplina": 9,
+        "id_profesor": 4,
+        "activo": true
+      }
+    ],
+    "disciplinas": {
+      "id_disciplina": 7,
+      "nombre_disciplina": "Muay Thai",
+      "cuota": "5000",
+      "descripcion": "En está disciplina no sé que se hace.",
+      "img_banner": "https://images.pexels.com/photos/8612492/pexels-photo-8612492.jpeg",
+      "img_preview": "https://images.pexels.com/photos/8612492/pexels-photo-8612492.jpeg",
+      "activo": false
+    }
+  },
+  {
+    "id_profesor": 6,
+    "nombre": "Eripo",
+    "apellido": "Moreno",
+    "id_disciplina": 4,
+    "activo": true,
+    "clientes": [],
+    "horarios": [],
+    "disciplinas": {
+      "id_disciplina": 4,
+      "nombre_disciplina": "Boxeo",
+      "cuota": "22000",
+      "descripcion": "Entrena para competir o recreativo, nos adaptamos a vos",
+      "img_banner": "https://images.pexels.com/photos/5750955/pexels-photo-5750955.jpeg",
+      "img_preview": "https://images.pexels.com/photos/5750955/pexels-photo-5750955.jpeg",
+      "activo": true
+    }
+  },
+  {
+    "id_profesor": 7,
+    "nombre": "Nicolás",
+    "apellido": "Zingale",
+    "id_disciplina": 5,
+    "activo": true,
+    "clientes": [],
+    "horarios": [],
+    "disciplinas": {
+      "id_disciplina": 5,
+      "nombre_disciplina": "Fuerza",
+      "cuota": "23000",
+      "descripcion": "Lleva tu cuerpo a su mejor versión.",
+      "img_banner": "https://images.pexels.com/photos/669584/pexels-photo-669584.jpeg",
+      "img_preview": "https://images.pexels.com/photos/669584/pexels-photo-669584.jpeg",
+      "activo": true
+    }
+  },
+  {
+    "id_profesor": 8,
+    "nombre": "Cristiano",
+    "apellido": "Ronaldo",
+    "id_disciplina": 9,
+    "activo": true,
+    "clientes": [],
+    "horarios": [],
+    "disciplinas": {
+      "id_disciplina": 9,
+      "nombre_disciplina": "Kun Fu",
+      "cuota": "28000",
+      "descripcion": "Vas a ser el mismísimo guerrero dragón ",
+      "img_banner": "https://i.pinimg.com/736x/3e/14/ad/3e14adf6f86d7a04cc0f54fbd81fc42a.jpg",
+      "img_preview": "https://i.pinimg.com/736x/3e/14/ad/3e14adf6f86d7a04cc0f54fbd81fc42a.jpg",
+      "activo": true
+    }
+  },
+  {
+    "id_profesor": 1,
+    "nombre": "Nicolás",
+    "apellido": "Lechessi",
+    "id_disciplina": 10,
+    "activo": true,
+    "clientes": [],
+    "horarios": [
+      {
+        "id_horario": 5,
+        "dia_y_hora": "2026-02-16T12:30:00.000Z",
+        "id_disciplina": 3,
+        "id_profesor": 1,
+        "activo": true
+      },
+      {
+        "id_horario": 9,
+        "dia_y_hora": "2026-02-26T12:00:00.000Z",
+        "id_disciplina": 5,
+        "id_profesor": 1,
+        "activo": true
+      },
+      {
+        "id_horario": 11,
+        "dia_y_hora": "2026-02-25T17:00:00.000Z",
+        "id_disciplina": 5,
+        "id_profesor": 1,
+        "activo": true
+      },
+      {
+        "id_horario": 12,
+        "dia_y_hora": "2026-02-24T12:00:00.000Z",
+        "id_disciplina": 3,
+        "id_profesor": 1,
+        "activo": true
+      }
+    ],
+    "disciplinas": {
+      "id_disciplina": 10,
+      "nombre_disciplina": "Pakua",
+      "cuota": "25000",
+      "descripcion": "Aprende como atajar golpes con la cara, vas a ser el mejor como maxi",
+      "img_banner": "https://images.pexels.com/photos/6005459/pexels-photo-6005459.jpeg",
+      "img_preview": "https://images.pexels.com/photos/6005459/pexels-photo-6005459.jpeg",
+      "activo": true
+    }
+  }
+]
