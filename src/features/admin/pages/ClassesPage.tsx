@@ -188,7 +188,7 @@ export default function ClassesPage() {
                             <button onClick={() => setView('day')} className={`px-3 py-1.5 rounded-md transition-all uppercase ${view === 'day' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>Día</button>
                         </div>
 
-                        <Button size="sm" onClick={() => { setEditingClass(null); setIsAddModalOpen(true); }} className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-500/30 uppercase tracking-wider font-bold text-xs h-8">
+                        <Button size="sm" onClick={() => { setEditingClass(null); setIsAddModalOpen(true); }} className="bg-brand-red hover:bg-red-700 text-white uppercase tracking-wider font-bold text-xs h-8">
                             <Plus className="w-4 h-4 mr-1.5" /> Añadir Horario
                         </Button>
                     </div>

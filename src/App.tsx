@@ -21,7 +21,7 @@ function App() {
         {/* Public Routes - Wrapped in PublicLayout */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/disciplina/:slug" element={<DisciplineDetailPage />} />
+          <Route path="/disciplina/:id" element={<DisciplineDetailPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
