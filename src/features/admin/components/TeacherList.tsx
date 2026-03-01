@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Search, Trash2, Pencil, ChevronDown, Check, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Trash2, Pencil } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { Pagination } from '../../../components/ui/Pagination';
 import { Teacher } from '../types';
@@ -12,13 +12,10 @@ interface TeacherListProps {
     onSearchChange: (term: string) => void;
     onEdit: (teacher: Teacher) => void;
     onDelete: (id: number) => void;
-    onStatusChange: (id: number, status: Teacher['estado']) => void;
 }
 
-export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDelete, onStatusChange }: TeacherListProps) {
-    const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDelete }: TeacherListProps) {
     const [currentPage, setCurrentPage] = useState(1);
-    const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Filtrado inteligente: Busca por nombre, apellido o nombre de la disciplina
     const filteredTeachers = teachers.filter(t =>
@@ -32,23 +29,6 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
 
     // Reset to page 1 on search change
     useEffect(() => { setCurrentPage(1); }, [searchTerm]);
-
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
-
-    const toggleDropdown = (id: number, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setOpenDropdownId(openDropdownId === id ? null : id);
-    };
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[400px]">
@@ -76,7 +56,6 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
                         <tr>
                             <th className="px-6 py-4">Profesor</th>
                             <th className="px-6 py-4">Especialidad</th>
-                            <th className="px-6 py-4">Estado</th>
                             <th className="px-6 py-4 text-right">Gestión</th>
                         </tr>
                     </thead>
@@ -95,49 +74,6 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
                                                     {disc}
                                                 </Badge>
                                             ))}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="relative">
-                                            <button
-                                                onClick={(e) => toggleDropdown(teacher.id, e)}
-                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold ${teacher.estado === 'Activo'
-                                                        ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                                        : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                                    }`}
-                                            >
-                                                <span className={`w-2 h-2 rounded-full ${teacher.estado === 'Activo' ? 'bg-green-500' : 'bg-red-500'}`} />
-                                                {teacher.estado}
-                                                <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
-                                            </button>
-
-                                            {openDropdownId === teacher.id && (
-                                                <div
-                                                    ref={dropdownRef}
-                                                    className="absolute top-full left-0 mt-1 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50"
-                                                >
-                                                    <div className="p-1">
-                                                        <button
-                                                            onClick={() => {
-                                                                onStatusChange(teacher.id, 'Activo');
-                                                                setOpenDropdownId(null);
-                                                            }}
-                                                            className={`flex items-center w-full px-3 py-2 text-xs font-medium rounded-md ${teacher.estado === 'Activo' ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}
-                                                        >
-                                                            <Check className="w-3 h-3 mr-2" /> Activo
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                onStatusChange(teacher.id, 'Inactivo');
-                                                                setOpenDropdownId(null);
-                                                            }}
-                                                            className={`flex items-center w-full px-3 py-2 text-xs font-medium rounded-md ${teacher.estado === 'Inactivo' ? 'bg-red-50 text-red-700' : 'hover:bg-gray-50'}`}
-                                                        >
-                                                            <XCircle className="w-3 h-3 mr-2" /> Inactivo
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">

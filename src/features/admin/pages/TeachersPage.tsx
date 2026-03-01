@@ -116,24 +116,7 @@ export default function TeachersPage() {
         }
     };
 
-    const handleStatusChange = async (id: number, status: Teacher['estado']) => {
-        const teacher = teachers.find(t => t.id === id);
-        if (!teacher) return;
 
-        const payload = {
-            nombre: teacher.nombre,
-            apellido: teacher.apellido,
-            id_disciplina: teacher.id_disciplina || 0, // Fallback if missing
-            activo: status === 'Activo'
-        };
-
-        try {
-            await api.put(`/profesores/${id}`, payload);
-            await fetchAllData();
-        } catch (error) {
-            console.error("Error al actualizar estado:", error);
-        }
-    };
 
     const handleDiscard = () => {
         setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
@@ -193,7 +176,6 @@ export default function TeachersPage() {
                 onSearchChange={setSearchTerm}
                 onEdit={handleEditClick}
                 onDelete={(id) => setPendingDeleteId(id)}
-                onStatusChange={handleStatusChange}
             />
 
             <ConfirmModal
