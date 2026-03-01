@@ -24,7 +24,7 @@ export function ClassCard({ discipline, time, instructor, onClick }: ClassCardPr
                 {discipline}
             </div>
             <div className="font-semibold text-[10px] text-white/90">
-                {time}
+                {time.split(' - ')[0]}
             </div>
             {instructor && (
                 <div className="text-[9px] italic mt-auto truncate text-white/80">
