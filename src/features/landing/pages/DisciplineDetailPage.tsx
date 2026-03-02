@@ -161,11 +161,12 @@ export default function DisciplineDetailPage() {
                 ]}
             />
 
-            {/* Static Schedule (Mocked for now since API might not have it or we don't have it in scope) */}
+            {/* Discipline Schedule */}
             <ScheduleSection
                 id="horarios-disciplina"
                 title="HORARIOS"
                 subtitle={`CLASES DE ${(discipline?.nombre_disciplina || 'CARGANDO...').toUpperCase()}`}
+                disciplineId={discipline?.id_disciplina}
             />
 
             {/* Instructors Section */}
