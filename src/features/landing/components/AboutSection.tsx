@@ -55,7 +55,7 @@ export function AboutSection() {
                         </p>
                     </div>
 
-                    <div className="w-full flex justify-center md:justify-start gap-8 flex-wrap">
+                    <div className="w-full flex justify-center gap-8 flex-wrap">
                         {profesores.map((profesor) => (
                             <div key={profesor.id_profesor} className="bg-[#111115] border border-white/5 rounded-2xl p-10 max-w-md w-full shadow-2xl flex flex-col items-center relative overflow-hidden group">
                                 {/* Top subtle glow */}
