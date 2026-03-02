@@ -37,6 +37,7 @@ export default function TeachersPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     // --- CARGA DE DATOS ---
     const fetchAllData = useCallback(async () => {
@@ -115,28 +116,12 @@ export default function TeachersPage() {
         }
     };
 
-    const handleStatusChange = async (id: number, status: Teacher['estado']) => {
-        const teacher = teachers.find(t => t.id === id);
-        if (!teacher) return;
 
-        const payload = {
-            nombre: teacher.nombre,
-            apellido: teacher.apellido,
-            id_disciplina: teacher.id_disciplina || 0, // Fallback if missing
-            activo: status === 'Activo'
-        };
-
-        try {
-            await api.put(`/profesores/${id}`, payload);
-            await fetchAllData();
-        } catch (error) {
-            console.error("Error al actualizar estado:", error);
-        }
-    };
 
     const handleDiscard = () => {
         setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
         setIsEditing(false);
+        setIsFormOpen(false);
     };
 
     const handleEditClick = (teacher: Teacher) => {
@@ -148,19 +133,35 @@ export default function TeachersPage() {
             presentacion: teacher.presentacion
         });
         setIsEditing(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsFormOpen(true);
+    };
+
+    const handleAddNewClick = () => {
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
+        setIsEditing(false);
+        setIsFormOpen(true);
     };
 
     if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin text-brand-red w-10 h-10" /></div>;
 
     return (
         <div className="flex flex-col gap-8">
-            <header>
-                <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900">Gestión de Profesores</h1>
-                <p className="text-gray-500 text-sm font-medium">Panel administrativo de instructores.</p>
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900">Gestión de Profesores</h1>
+                    <p className="text-gray-500 text-sm font-medium">Panel administrativo de instructores.</p>
+                </div>
+                <button
+                    onClick={handleAddNewClick}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                    Añadir nuevo profesor
+                </button>
             </header>
 
             <TeacherForm
+                isOpen={isFormOpen}
                 formData={formData}
                 disciplines={disciplines}
                 onChange={handleInputChange}
@@ -175,7 +176,6 @@ export default function TeachersPage() {
                 onSearchChange={setSearchTerm}
                 onEdit={handleEditClick}
                 onDelete={(id) => setPendingDeleteId(id)}
-                onStatusChange={handleStatusChange}
             />
 
             <ConfirmModal

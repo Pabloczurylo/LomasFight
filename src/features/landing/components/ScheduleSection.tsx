@@ -17,9 +17,10 @@ interface ScheduleSectionProps {
     id?: string;
     title?: string;
     subtitle?: string;
+    disciplineId?: number; // Optional prop to filter classes
 }
 
-interface Disciplina { nombre_disciplina: string; }
+interface Disciplina { id_disciplina: number; nombre_disciplina: string; }
 interface Profesor { nombre: string; apellido: string; }
 interface HorarioBackend {
     id_horario: number;
@@ -36,7 +37,8 @@ const JS_DAY_TO_INDEX: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 
 export function ScheduleSection({
     id,
     title = "DISPONIBILIDAD",
-    subtitle = "HORARIOS DE CLASES"
+    subtitle = "HORARIOS DE CLASES",
+    disciplineId
 }: ScheduleSectionProps) {
     const [scheduleData, setScheduleData] = useState<ScheduleDay[]>([]);
     const [maxSlots, setMaxSlots] = useState(0);
@@ -55,7 +57,11 @@ export function ScheduleSection({
                     'JUEVES': [], 'VIERNES': [], 'SÁBADO': []
                 };
 
-                data.forEach((h) => {
+                const filteredData = disciplineId
+                    ? data.filter(h => h.disciplinas.id_disciplina === disciplineId)
+                    : data;
+
+                filteredData.forEach((h) => {
                     // Use UTC getters to avoid local-timezone day-shift on Timestamptz values
                     const date = new Date(h.dia_y_hora);
                     const utcDay = date.getUTCDay();                          // 0=Sun … 6=Sat
@@ -98,7 +104,7 @@ export function ScheduleSection({
         };
 
         fetchSchedule();
-    }, []);
+    }, [disciplineId]);
 
     return (
         <section id={id} className="py-20 bg-white">
