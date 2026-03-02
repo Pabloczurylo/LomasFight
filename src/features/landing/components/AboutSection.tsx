@@ -12,6 +12,7 @@ interface ProfesorBackend {
     apellido: string;
     id_disciplina: number;
     activo: boolean;
+    descripcion: string | null;
     disciplinas: Disciplina;
 }
 
@@ -95,9 +96,7 @@ export function AboutSection() {
                                 </div>
 
                                 <p className="text-gray-400 text-sm text-center leading-relaxed mb-10 px-2 line-clamp-4">
-                                    Especialista en entrenamiento de alto rendimiento. Nuestro compromiso es forjar
-                                    atletas con excelente técnica y acondicionamiento físico inquebrantable a través
-                                    de la disciplina de {profesor.disciplinas?.nombre_disciplina || "las artes marciales"}.
+                                    {profesor.descripcion || "Especialista en entrenamiento de alto rendimiento. Nuestro compromiso es forjar atletas con excelente técnica y acondicionamiento físico inquebrantable."}
                                 </p>
 
                                 <div className="flex flex-wrap justify-center gap-2 mb-10">
