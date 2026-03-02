@@ -218,7 +218,7 @@ export default function DisciplineDetailPage() {
                                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[6px] bg-brand-red/20 blur-[2px]" />
                                     </div>
 
-                                    <p className="text-gray-400 text-sm text-center leading-relaxed mb-10 px-2 line-clamp-4">
+                                    <p className="text-gray-400 text-sm text-center leading-relaxed mb-10 px-2 break-words line-clamp-4 h-[80px] overflow-hidden">
                                         {profesor.descripcion || "Especialista en entrenamiento de alto rendimiento. Nuestro compromiso es forjar atletas con excelente técnica y acondicionamiento físico inquebrantable."}
                                     </p>
 
