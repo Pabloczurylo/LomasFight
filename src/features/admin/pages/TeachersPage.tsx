@@ -18,6 +18,7 @@ interface ProfesorBackend {
     apellido: string;
     id_disciplina: number;
     activo: boolean;
+    descripcion: string | null;
     disciplinas: Disciplina;
 }
 
@@ -57,7 +58,7 @@ export default function TeachersPage() {
                 apellido: p.apellido,
                 id_disciplina: p.id_disciplina,
                 disciplinas: [p.disciplinas.nombre_disciplina], // Mapeo para TeacherList
-                presentacion: '',
+                presentacion: p.descripcion || '',
                 estado: p.activo ? 'Activo' : 'Inactivo'
             }));
 
@@ -91,7 +92,8 @@ export default function TeachersPage() {
             const payload = {
                 nombre: formData.nombre,
                 apellido: formData.apellido,
-                id_disciplina: Number(formData.id_disciplina)
+                id_disciplina: Number(formData.id_disciplina),
+                descripcion: formData.presentacion
             };
 
             if (isEditing) {
