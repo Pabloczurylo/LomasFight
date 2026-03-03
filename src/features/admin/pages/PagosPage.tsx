@@ -120,7 +120,7 @@ export default function PagosPage() {
         });
 
         // Cálculo dinámico de Deudores (Solo para KICKBOXING)
-        const monthToEvaluate = targetMonth === 'Todos' ? MESES[currentMonthIndex] : targetMonth;
+        const currentDate = new Date();
         const activeStudents = clientes.filter(c => c.activo);
 
         activeStudents.forEach(student => {
@@ -128,16 +128,29 @@ export default function PagosPage() {
             const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
             if (!isKickboxing) return;
 
-            const hasPaidThisMonth = pagos.some(p => {
-                if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return false;
+            // Get all CUOTA payments for this student
+            const studentCuotas = pagos.filter(p =>
+                p.idCliente === student.id_cliente &&
+                p.tipo === 'CUOTA' &&
+                p.estado === 'Pagado'
+            );
 
-                const pDate = new Date(p.fecha);
-                const pMonth = MESES[pDate.getMonth() + 1];
+            // Sort by date DESC
+            const sortedCuotas = [...studentCuotas].sort((a, b) =>
+                new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+            );
 
-                return p.idCliente === student.id_cliente && pMonth === monthToEvaluate;
-            });
+            if (sortedCuotas.length > 0) {
+                const latestPagoDate = new Date(sortedCuotas[0].fecha);
+                const diffTime = Math.abs(currentDate.getTime() - latestPagoDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            if (!hasPaidThisMonth) {
+                // If it's more than 30 days, we count it as pending
+                if (diffDays > 30) {
+                    pendientes++;
+                }
+            } else {
+                // Never paid
                 pendientes++;
             }
         });

@@ -91,18 +91,35 @@ export default function DashboardHome() {
         const activeStudents = clientes.filter(c => c.activo);
 
         // 3. Pending payments (Focusing on Kickboxing specifically as requested)
+        const currentDate = new Date();
+
         activeStudents.forEach(student => {
             const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
             if (!isKickboxing) return;
 
-            const hasPaidThisMonth = pagos.some(p => {
-                if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return false;
-                const pDate = new Date(p.fecha);
-                const pMonth = MESES[pDate.getMonth() + 1];
-                return p.idCliente === student.id_cliente && pMonth === targetMonth;
-            });
+            // Get all CUOTA payments for this student
+            const studentCuotas = pagos.filter(p =>
+                p.idCliente === student.id_cliente &&
+                p.tipo === 'CUOTA' &&
+                p.estado === 'Pagado'
+            );
 
-            if (!hasPaidThisMonth) {
+            // Sort by date DESC
+            const sortedCuotas = [...studentCuotas].sort((a, b) =>
+                new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+            );
+
+            if (sortedCuotas.length > 0) {
+                const latestPagoDate = new Date(sortedCuotas[0].fecha);
+                const diffTime = Math.abs(currentDate.getTime() - latestPagoDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                // If it's more than 30 days, we count it as pending
+                if (diffDays > 30) {
+                    pendientesKickboxing++;
+                }
+            } else {
+                // Never paid
                 pendientesKickboxing++;
             }
         });
