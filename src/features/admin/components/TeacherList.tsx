@@ -65,7 +65,6 @@ export function TeacherList({ teachers, searchTerm, onSearchChange, onEdit, onDe
                                 <tr key={teacher.id} className="hover:bg-gray-50/50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-gray-900">{teacher.nombre} {teacher.apellido}</div>
-                                        <div className="text-[10px] text-gray-400 uppercase tracking-tighter">ID: #{teacher.id}</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-wrap gap-1.5">

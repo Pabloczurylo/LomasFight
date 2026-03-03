@@ -17,6 +17,7 @@ interface TeacherFormProps {
         apellido: string;
         id_disciplina: string | number;
         presentacion: string;
+        imagen: string;
     };
     disciplines: Disciplina[];
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
@@ -115,6 +116,45 @@ export function TeacherForm({ isOpen, formData, disciplines, onChange, onSave, o
                                 onChange={onChange}
                             />
                         </div>
+
+                        {/* Campo Imagen URL */}
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase tracking-widest">URL de Foto de Perfil</label>
+                            <Input
+                                type="url"
+                                name="imagen"
+                                placeholder="https://ejemplo.com/foto-instructor.jpg"
+                                value={formData.imagen}
+                                onChange={onChange}
+                                className="h-12 rounded-xl border-gray-200"
+                            />
+                        </div>
+
+                        {/* Preview de Imagen */}
+                        {formData.imagen && (
+                            <div className="md:col-span-2 flex justify-center mt-2">
+                                <div className="relative w-48 h-48 rounded-full overflow-hidden group border-4 border-gray-100 shadow-md">
+                                    <img
+                                        src={formData.imagen}
+                                        alt="Vista previa"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Error+Carga';
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => onChange({ target: { name: 'imagen', value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+                                            className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50 transition-colors transform hover:scale-110"
+                                            title="Limpiar imagen"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Footer / Botones */}
