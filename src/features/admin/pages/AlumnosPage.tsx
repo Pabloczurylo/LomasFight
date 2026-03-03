@@ -54,8 +54,6 @@ export default function AlumnosPage() {
             const pagosData = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
 
             const currentDate = new Date();
-            const currentMonth = currentDate.getMonth();
-            const currentYear = currentDate.getFullYear();
 
             const mappedAlumnos: Alumno[] = clientesData.map(cliente => {
                 const isActivo = cliente.activo !== false;
@@ -67,17 +65,26 @@ export default function AlumnosPage() {
                         ? cliente.pagos
                         : pagosData.filter((p: any) => p.id_cliente === cliente.id_cliente);
 
-                    const hasPaidThisMonth = clientPagos.some((pago: any) => {
-                        const pDate = new Date(pago.fecha_pago || pago.fecha);
-                        const isCuota = pago.tipo === 'CUOTA' || !pago.tipo;
-                        const isPagado = pago.estado?.toUpperCase() === 'PAGADO' || !pago.estado;
+                    // Sort client pagos descending by date to find the latest
+                    const sortedPagos = [...clientPagos]
+                        .filter((p: any) => (p.tipo === 'CUOTA' || !p.tipo) && (p.estado?.toUpperCase() === 'PAGADO' || !p.estado))
+                        .sort((a, b) => new Date(b.fecha_pago || b.fecha).getTime() - new Date(a.fecha_pago || a.fecha).getTime());
 
-                        return isCuota && isPagado &&
-                            pDate.getMonth() === currentMonth &&
-                            pDate.getFullYear() === currentYear;
-                    });
+                    if (sortedPagos.length > 0) {
+                        const latestPagoDate = new Date(sortedPagos[0].fecha_pago || sortedPagos[0].fecha);
+                        const diffTime = Math.abs(currentDate.getTime() - latestPagoDate.getTime());
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                    estadoPago = hasPaidThisMonth ? 'al día' : 'pendiente';
+                        if (diffDays <= 24) {
+                            estadoPago = 'al día';
+                        } else if (diffDays >= 25 && diffDays <= 30) {
+                            estadoPago = 'próximo a vencer';
+                        } else {
+                            estadoPago = 'pendiente';
+                        }
+                    } else {
+                        estadoPago = 'pendiente';
+                    }
                 }
 
                 return {
@@ -112,7 +119,7 @@ export default function AlumnosPage() {
         fetchAlumnos();
     }, []);
 
-    const STATUS_ORDER: Record<string, number> = { 'al día': 0, 'pendiente': 1, 'inactivo': 2 };
+    const STATUS_ORDER: Record<string, number> = { 'al día': 0, 'próximo a vencer': 1, 'pendiente': 2, 'inactivo': 3 };
 
     const filteredAlumnos = alumnos
         .filter((alumno) =>
@@ -281,13 +288,15 @@ export default function AlumnosPage() {
                                             className={cn(
                                                 'px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wide',
                                                 alumno.estadoPago as string === 'al día' && 'bg-green-100 text-green-700',
-                                                alumno.estadoPago as string === 'pendiente' && 'bg-yellow-100 text-yellow-700',
+                                                alumno.estadoPago as string === 'próximo a vencer' && 'bg-yellow-100 text-yellow-700',
+                                                alumno.estadoPago as string === 'pendiente' && 'bg-red-100 text-red-700',
                                                 alumno.estadoPago as string === 'inactivo' && 'bg-gray-100 text-gray-500'
                                             )}
                                         >
                                             {alumno.estadoPago as string === 'al día' ? 'Al día' :
-                                                alumno.estadoPago as string === 'pendiente' ? 'Pendiente' :
-                                                    'Inactivo'}
+                                                alumno.estadoPago as string === 'próximo a vencer' ? 'Próximo a Vencer' :
+                                                    alumno.estadoPago as string === 'pendiente' ? 'Pendiente' :
+                                                        'Inactivo'}
                                         </span>
                                     </td>
                                     <td className="py-4 text-gray-500">{alumno.fechaRegistro}</td>
