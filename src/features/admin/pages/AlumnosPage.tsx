@@ -12,15 +12,6 @@ import { AxiosError } from 'axios';
 const PAGE_SIZE = 10;
 
 
-// Derive 3-state status consistently across the app
-function deriveEstado(activo: boolean, fecha_ultimo_pago: string | null): 'al día' | 'pendiente' | 'inactivo' {
-    if (!activo) return 'inactivo';
-    if (!fecha_ultimo_pago) return 'pendiente';
-    const pago = new Date(fecha_ultimo_pago);
-    const diffDays = (Date.now() - pago.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 35 ? 'al día' : 'pendiente';
-}
-
 // Mapping discipline name → id (fallback for manual creation)
 const DISCIPLINA_ID_MAP: Record<string, number> = {
     'Kickboxing': 3,
@@ -49,8 +40,10 @@ export default function AlumnosPage() {
         try {
             setIsLoading(true);
             setError(null);
-            const [clientesRes] = await Promise.allSettled([
-                api.get<ClienteBackend[]>('/clientes')
+
+            const [clientesRes, pagosRes] = await Promise.allSettled([
+                api.get<ClienteBackend[]>('/clientes'),
+                api.get('/pagos')
             ]);
 
             if (clientesRes.status === 'rejected') {
@@ -58,19 +51,41 @@ export default function AlumnosPage() {
             }
 
             const clientesData = clientesRes.value.data;
+            const pagosData = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
+
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth();
+            const currentYear = currentDate.getFullYear();
 
             const mappedAlumnos: Alumno[] = clientesData.map(cliente => {
-                const estadoPago = deriveEstado(
-                    cliente.activo !== false,
-                    cliente.fecha_ultimo_pago || null
-                ) as any;
+                const isActivo = cliente.activo !== false;
+
+                let estadoPago = 'inactivo';
+
+                if (isActivo) {
+                    const clientPagos = Array.isArray(cliente.pagos) && cliente.pagos.length > 0
+                        ? cliente.pagos
+                        : pagosData.filter((p: any) => p.id_cliente === cliente.id_cliente);
+
+                    const hasPaidThisMonth = clientPagos.some((pago: any) => {
+                        const pDate = new Date(pago.fecha_pago || pago.fecha);
+                        const isCuota = pago.tipo === 'CUOTA' || !pago.tipo;
+                        const isPagado = pago.estado?.toUpperCase() === 'PAGADO' || !pago.estado;
+
+                        return isCuota && isPagado &&
+                            pDate.getMonth() === currentMonth &&
+                            pDate.getFullYear() === currentYear;
+                    });
+
+                    estadoPago = hasPaidThisMonth ? 'al día' : 'pendiente';
+                }
 
                 return {
                     id: String(cliente.id_cliente),
                     nombre: cliente.nombre,
                     apellido: cliente.apellido,
                     disciplina: cliente.disciplinas?.nombre_disciplina || 'Sin Disciplina',
-                    estadoPago,
+                    estadoPago: estadoPago as any,
                     fechaRegistro: cliente.fecha_ultimo_pago
                         ? new Date(cliente.fecha_ultimo_pago).toISOString().split('T')[0]
                         : new Date().toISOString().split('T')[0]
