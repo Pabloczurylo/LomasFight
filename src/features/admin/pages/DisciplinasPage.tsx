@@ -84,8 +84,9 @@ export default function DisciplinasPage() {
             nombre_disciplina: disciplina.nombre_disciplina,
             descripcion: disciplina.descripcion,
             img_banner: disciplina.img_banner,
-            img_preview: disciplina.img_banner,
-            cuota: disciplina.cuota || 0 // Use value from modal or 0 as fallback
+            img_preview: disciplina.img_preview,
+            numero_celular: disciplina.numero_celular || null,
+            cuota: disciplina.cuota || 0
         };
 
         try {
