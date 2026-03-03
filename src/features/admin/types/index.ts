@@ -109,5 +109,6 @@ export interface Teacher {
     id_disciplina?: number;
     disciplinas: string[];
     presentacion: string;
+    imagen?: string;
     estado: 'Activo' | 'Inactivo';
 }

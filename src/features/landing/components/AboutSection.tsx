@@ -13,6 +13,7 @@ interface ProfesorBackend {
     id_disciplina: number;
     activo: boolean;
     descripcion: string | null;
+    imagen: string | null;
     disciplinas: Disciplina;
 }
 
@@ -65,9 +66,8 @@ export function AboutSection() {
                                 <div className="relative mb-8 mt-2">
                                     <div className="w-48 h-48 rounded-full p-1 bg-gradient-to-b from-brand-red via-brand-red/50 to-transparent">
                                         <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900">
-                                            {/* Foto hardcodeada como se solicitó "Ignora el campo de la foto de perfil por el momento" */}
                                             <img
-                                                src="https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&q=80&w=400"
+                                                src={profesor.imagen || "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&q=80&w=400"}
                                                 alt={`${profesor.nombre} ${profesor.apellido}`}
                                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                             />

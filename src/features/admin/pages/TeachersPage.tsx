@@ -19,6 +19,7 @@ interface ProfesorBackend {
     id_disciplina: number;
     activo: boolean;
     descripcion: string | null;
+    imagen: string | null;
     disciplinas: Disciplina;
 }
 
@@ -33,7 +34,8 @@ export default function TeachersPage() {
         nombre: '',
         apellido: '',
         id_disciplina: '', // Usaremos el ID de la DB
-        presentacion: ''   // Nota: No está en Prisma, se mantiene local por ahora
+        presentacion: '',   // Nota: No está en Prisma, se mantiene local por ahora
+        imagen: ''
     });
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -59,6 +61,7 @@ export default function TeachersPage() {
                 id_disciplina: p.id_disciplina,
                 disciplinas: [p.disciplinas.nombre_disciplina], // Mapeo para TeacherList
                 presentacion: p.descripcion || '',
+                imagen: p.imagen || '',
                 estado: p.activo ? 'Activo' : 'Inactivo'
             }));
 
@@ -93,7 +96,8 @@ export default function TeachersPage() {
                 nombre: formData.nombre,
                 apellido: formData.apellido,
                 id_disciplina: Number(formData.id_disciplina),
-                descripcion: formData.presentacion
+                descripcion: formData.presentacion,
+                imagen: formData.imagen || null
             };
 
             if (isEditing) {
@@ -121,7 +125,7 @@ export default function TeachersPage() {
 
 
     const handleDiscard = () => {
-        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '' });
         setIsEditing(false);
         setIsFormOpen(false);
     };
@@ -132,14 +136,15 @@ export default function TeachersPage() {
             nombre: teacher.nombre,
             apellido: teacher.apellido,
             id_disciplina: teacher.id_disciplina ? teacher.id_disciplina.toString() : '',
-            presentacion: teacher.presentacion
+            presentacion: teacher.presentacion,
+            imagen: teacher.imagen || ''
         });
         setIsEditing(true);
         setIsFormOpen(true);
     };
 
     const handleAddNewClick = () => {
-        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '' });
         setIsEditing(false);
         setIsFormOpen(true);
     };
