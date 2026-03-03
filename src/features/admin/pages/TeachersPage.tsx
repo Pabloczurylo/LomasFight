@@ -18,6 +18,8 @@ interface ProfesorBackend {
     apellido: string;
     id_disciplina: number;
     activo: boolean;
+    descripcion: string | null;
+    imagen: string | null;
     disciplinas: Disciplina;
 }
 
@@ -32,11 +34,13 @@ export default function TeachersPage() {
         nombre: '',
         apellido: '',
         id_disciplina: '', // Usaremos el ID de la DB
-        presentacion: ''   // Nota: No está en Prisma, se mantiene local por ahora
+        presentacion: '',   // Nota: No está en Prisma, se mantiene local por ahora
+        imagen: ''
     });
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     // --- CARGA DE DATOS ---
     const fetchAllData = useCallback(async () => {
@@ -56,7 +60,8 @@ export default function TeachersPage() {
                 apellido: p.apellido,
                 id_disciplina: p.id_disciplina,
                 disciplinas: [p.disciplinas.nombre_disciplina], // Mapeo para TeacherList
-                presentacion: '',
+                presentacion: p.descripcion || '',
+                imagen: p.imagen || '',
                 estado: p.activo ? 'Activo' : 'Inactivo'
             }));
 
@@ -90,7 +95,9 @@ export default function TeachersPage() {
             const payload = {
                 nombre: formData.nombre,
                 apellido: formData.apellido,
-                id_disciplina: Number(formData.id_disciplina)
+                id_disciplina: Number(formData.id_disciplina),
+                descripcion: formData.presentacion,
+                imagen: formData.imagen || null
             };
 
             if (isEditing) {
@@ -115,28 +122,12 @@ export default function TeachersPage() {
         }
     };
 
-    const handleStatusChange = async (id: number, status: Teacher['estado']) => {
-        const teacher = teachers.find(t => t.id === id);
-        if (!teacher) return;
 
-        const payload = {
-            nombre: teacher.nombre,
-            apellido: teacher.apellido,
-            id_disciplina: teacher.id_disciplina || 0, // Fallback if missing
-            activo: status === 'Activo'
-        };
-
-        try {
-            await api.put(`/profesores/${id}`, payload);
-            await fetchAllData();
-        } catch (error) {
-            console.error("Error al actualizar estado:", error);
-        }
-    };
 
     const handleDiscard = () => {
-        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '' });
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '' });
         setIsEditing(false);
+        setIsFormOpen(false);
     };
 
     const handleEditClick = (teacher: Teacher) => {
@@ -145,22 +136,39 @@ export default function TeachersPage() {
             nombre: teacher.nombre,
             apellido: teacher.apellido,
             id_disciplina: teacher.id_disciplina ? teacher.id_disciplina.toString() : '',
-            presentacion: teacher.presentacion
+            presentacion: teacher.presentacion,
+            imagen: teacher.imagen || ''
         });
         setIsEditing(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsFormOpen(true);
+    };
+
+    const handleAddNewClick = () => {
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '' });
+        setIsEditing(false);
+        setIsFormOpen(true);
     };
 
     if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin text-brand-red w-10 h-10" /></div>;
 
     return (
         <div className="flex flex-col gap-8">
-            <header>
-                <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900">Gestión de Profesores</h1>
-                <p className="text-gray-500 text-sm font-medium">Panel administrativo de instructores.</p>
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-heading font-black uppercase tracking-wide text-gray-900">Gestión de Profesores</h1>
+                    <p className="text-gray-500 text-sm font-medium">Panel administrativo de instructores.</p>
+                </div>
+                <button
+                    onClick={handleAddNewClick}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                    Añadir nuevo profesor
+                </button>
             </header>
 
             <TeacherForm
+                isOpen={isFormOpen}
                 formData={formData}
                 disciplines={disciplines}
                 onChange={handleInputChange}
@@ -175,7 +183,6 @@ export default function TeachersPage() {
                 onSearchChange={setSearchTerm}
                 onEdit={handleEditClick}
                 onDelete={(id) => setPendingDeleteId(id)}
-                onStatusChange={handleStatusChange}
             />
 
             <ConfirmModal
