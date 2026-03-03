@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Disciplina } from '../types';
 
+const getSafeUrl = (url?: string) => {
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+        return `http://${url}`;
+    }
+    return url;
+};
+
 interface DisciplinaModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -45,8 +53,8 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
             id_disciplina: initialData?.id_disciplina || 0, // 0 indicates new
             nombre_disciplina: nombre,
             descripcion: descripcion,
-            img_banner: imagen,
-            img_preview: imagen,
+            img_banner: getSafeUrl(imagen),
+            img_preview: getSafeUrl(imagen),
             cuota: parseFloat(cuota) || 0
         });
         onClose();
@@ -127,7 +135,7 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
                     {imagen && (
                         <div className="relative w-full h-48 rounded-lg overflow-hidden group border border-gray-200">
                             <img
-                                src={imagen}
+                                src={getSafeUrl(imagen)}
                                 alt="Preview"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
