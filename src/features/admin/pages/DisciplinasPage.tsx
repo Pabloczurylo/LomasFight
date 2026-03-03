@@ -7,6 +7,14 @@ import { api } from '../../../services/api';
 import { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+const getSafeUrl = (url?: string) => {
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+        return `http://${url}`;
+    }
+    return url;
+};
+
 export default function DisciplinasPage() {
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
     const [loading, setLoading] = useState(true);
@@ -178,7 +186,7 @@ export default function DisciplinasPage() {
                                             <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                                                 {disciplina.img_preview || disciplina.img_banner ? (
                                                     <img
-                                                        src={disciplina.img_preview || disciplina.img_banner}
+                                                        src={getSafeUrl(disciplina.img_preview || disciplina.img_banner)}
                                                         alt={disciplina.nombre_disciplina}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -200,7 +208,7 @@ export default function DisciplinasPage() {
                                             </p>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => setDisciplinaModal({ isOpen: true, data: disciplina })}
                                                     className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-colors"
