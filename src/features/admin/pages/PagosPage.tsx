@@ -120,8 +120,9 @@ export default function PagosPage() {
         });
 
         // Cálculo dinámico de Deudores (Solo para KICKBOXING)
+        // Excluir alumnos inactivos — no deben contar como pendientes
         const monthToEvaluate = targetMonth === 'Todos' ? MESES[currentMonthIndex] : targetMonth;
-        const activeStudents = clientes.filter(c => c.activo);
+        const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
 
         activeStudents.forEach(student => {
             // Solo el administrador gestiona cuotas de Kickboxing

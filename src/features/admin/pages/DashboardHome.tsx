@@ -3,7 +3,6 @@ import { DollarSign, Dumbbell, AlertCircle, Users } from 'lucide-react';
 import { api } from '../../../services/api';
 import { ClienteBackend, PagoBackend, PagoDisciplinaBackend, UnifiedPago } from '../../admin/types';
 import { cn } from '../../../lib/utils';
-import { MOCK_SCHEDULE } from '../data/mockData';
 
 const MESES = [
     'Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -13,22 +12,34 @@ const MESES = [
 export default function DashboardHome() {
     const [clientes, setClientes] = useState<ClienteBackend[]>([]);
     const [pagos, setPagos] = useState<UnifiedPago[]>([]);
+    const [classesToday, setClassesToday] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [clientesRes, pagosRes, pagosDisciplinaRes] = await Promise.allSettled([
+            const [clientesRes, pagosRes, pagosDisciplinaRes, horariosRes] = await Promise.allSettled([
                 api.get('/clientes'),
                 api.get('/pagos'),
-                api.get('/pago-disciplina')
+                api.get('/pago-disciplina'),
+                api.get('/horarios')
             ]);
 
             const clientesData = clientesRes.status === 'fulfilled' ? clientesRes.value.data : [];
             const cuotasData: PagoBackend[] = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
             const alquileresData: PagoDisciplinaBackend[] = pagosDisciplinaRes.status === 'fulfilled' ? pagosDisciplinaRes.value.data : [];
+            const horariosData: { dia_y_hora: string }[] = horariosRes.status === 'fulfilled' ? horariosRes.value.data : [];
 
             setClientes(clientesData);
+
+            // Calculate classes today from real horarios data
+            const daysMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+            const todayName = daysMap[new Date().getDay()];
+            const todayCount = horariosData.filter(h => {
+                const dayOfWeek = daysMap[new Date(h.dia_y_hora).getDay()];
+                return dayOfWeek === todayName;
+            }).length;
+            setClassesToday(todayCount);
 
             // Normalize payments (similar to PagosPage)
             const normalizedCuotas: UnifiedPago[] = cuotasData.map(c => ({
@@ -87,10 +98,11 @@ export default function DashboardHome() {
             }
         });
 
-        // 2. Active Students count
-        const activeStudents = clientes.filter(c => c.activo);
+        // 2. Active Students count (exclude inactivos)
+        const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
 
         // 3. Pending payments (Focusing on Kickboxing specifically as requested)
+        // Exclude inactivos — they are on a break and should not count as pending
         activeStudents.forEach(student => {
             const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
             if (!isKickboxing) return;
@@ -116,11 +128,7 @@ export default function DashboardHome() {
 
     const recentPayments = pagos.slice(0, 5);
 
-    // MOCK Classes for today until API for classes is live
-    const daysMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
-    const todayIndex = new Date().getDay();
-    const todayName = daysMap[todayIndex];
-    const classesToday = MOCK_SCHEDULE.filter(c => c.day === todayName).length;
+
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-AR', {

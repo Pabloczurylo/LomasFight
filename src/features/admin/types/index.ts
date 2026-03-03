@@ -18,6 +18,7 @@ export interface ClienteBackend {
     id_profesor_que_cargo: number | null;
     fecha_ultimo_pago: string | null;
     activo: boolean | null;
+    inactivo: boolean | null;
     disciplinas?: {
         nombre_disciplina: string;
     };
