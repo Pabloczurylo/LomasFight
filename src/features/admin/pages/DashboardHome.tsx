@@ -239,12 +239,10 @@ export default function DashboardHome() {
         const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
         activeStudents.forEach(student => {
             if (student.disciplinas?.nombre_disciplina?.toUpperCase() !== 'KICKBOXING') return;
-            const hasPaid = pagos.some(p =>
-                p.tipo === 'CUOTA' && p.estado === 'Pagado' &&
-                MESES[new Date(p.fecha).getMonth() + 1] === targetMonth &&
-                p.idCliente === student.id_cliente
-            );
-            if (!hasPaid) pendientesKickboxing++;
+            const lastPago = student.fecha_ultimo_pago;
+            const isPendiente = !lastPago ||
+                (Date.now() - new Date(lastPago).getTime()) / (1000 * 60 * 60 * 24) > 30;
+            if (isPendiente) pendientesKickboxing++;
         });
 
         return { activeStudents: activeStudents.length, totalRecaudadoMes, pendientesKickboxing };

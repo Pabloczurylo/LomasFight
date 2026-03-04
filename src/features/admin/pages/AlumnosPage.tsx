@@ -36,7 +36,7 @@ function deriveEstado(inactivo: boolean, fecha_ultimo_pago: string | null): Esta
     if (inactivo) return 'inactivo';
     if (!fecha_ultimo_pago) return 'pendiente';
     const diffDays = (Date.now() - new Date(fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 35 ? 'al día' : 'pendiente';
+    return diffDays <= 30 ? 'al día' : 'pendiente';
 }
 
 const dash = (v: string | null | undefined) => v || '-';
@@ -56,12 +56,13 @@ const STATUS_ORDER: Record<EstadoPago, number> = { 'al día': 0, 'pendiente': 1,
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export default function AlumnosPage() {
-    const [alumnos,      setAlumnos]     = useState<AlumnoRow[]>([]);
-    const [disciplinas,  setDisciplinas] = useState<DisciplinaOption[]>([]);
-    const [searchTerm,   setSearchTerm]  = useState('');
-    const [isLoading,    setIsLoading]   = useState(true);
-    const [error,        setError]       = useState<string | null>(null);
-    const [currentPage,  setCurrentPage] = useState(1);
+    const [alumnos,              setAlumnos]           = useState<AlumnoRow[]>([]);
+    const [disciplinas,          setDisciplinas]       = useState<DisciplinaOption[]>([]);
+    const [searchTerm,           setSearchTerm]        = useState('');
+    const [selectedDisciplina,   setSelectedDisciplina] = useState<string>('Todas');
+    const [isLoading,            setIsLoading]         = useState(true);
+    const [error,                setError]             = useState<string | null>(null);
+    const [currentPage,          setCurrentPage]       = useState(1);
     const navigate = useNavigate();
 
     // Modal state
@@ -125,12 +126,18 @@ export default function AlumnosPage() {
     // ── Derived list ──────────────────────────────────────────────────────────
 
     const filtered = alumnos
-        .filter(a =>
-            a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            a.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (a.dni || '').includes(searchTerm)
-        )
+        .filter(a => {
+            const matchesSearch =
+                a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                a.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (a.dni || '').includes(searchTerm);
+            const matchesDisciplina =
+                selectedDisciplina === 'Todas' || a.disciplinaNombre === selectedDisciplina;
+            return matchesSearch && matchesDisciplina;
+        })
         .sort((a, b) => (STATUS_ORDER[a.estadoPago] ?? 3) - (STATUS_ORDER[b.estadoPago] ?? 3));
+
+    const pendientesCount = filtered.filter(a => a.estadoPago === 'pendiente').length;
 
     const totalPages  = Math.ceil(filtered.length / PAGE_SIZE);
     const paged       = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -238,13 +245,38 @@ export default function AlumnosPage() {
             </div>
 
             <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="mb-6 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-5 w-5 text-gray-400" />
+                <div className="mb-6 flex flex-col sm:flex-row gap-3">
+                    {/* Search */}
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input type="text" placeholder="Buscar por nombre, apellido o DNI..."
+                            className="pl-10 w-full rounded-lg border border-gray-300 focus:border-brand-red focus:ring-1 focus:ring-brand-red py-2 text-gray-900 placeholder:text-gray-500"
+                            value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
                     </div>
-                    <input type="text" placeholder="Buscar por nombre, apellido o DNI..."
-                        className="pl-10 w-full sm:w-80 rounded-lg border border-gray-300 focus:border-brand-red focus:ring-1 focus:ring-brand-red py-2 text-gray-900 placeholder:text-gray-500"
-                        value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+
+                    {/* Discipline filter */}
+                    <select
+                        className="rounded-lg border border-gray-300 focus:border-brand-red focus:ring-1 focus:ring-brand-red py-2 px-3 text-gray-900 bg-white"
+                        value={selectedDisciplina}
+                        onChange={e => { setSelectedDisciplina(e.target.value); setCurrentPage(1); }}
+                    >
+                        <option value="Todas">Todas las disciplinas</option>
+                        {disciplinas.map(d => (
+                            <option key={d.id_disciplina} value={d.nombre_disciplina}>
+                                {d.nombre_disciplina}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Pending badge */}
+                    {pendientesCount > 0 && (
+                        <div className="flex items-center gap-1 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm font-semibold whitespace-nowrap">
+                            <span>{pendientesCount}</span>
+                            <span>pendiente{pendientesCount !== 1 ? 's' : ''}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="w-full overflow-x-auto rounded-lg">

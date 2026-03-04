@@ -119,28 +119,19 @@ export default function PagosPage() {
             }
         });
 
-        // Cálculo dinámico de Deudores (Solo para KICKBOXING)
-        // Excluir alumnos inactivos — no deben contar como pendientes
-        const monthToEvaluate = targetMonth === 'Todos' ? MESES[currentMonthIndex] : targetMonth;
+        // Deudores: mismo criterio que deriveEstado en AlumnosPage
+        // Pendiente = inactivo=false Y (sin pago o último pago hace >35 días)
         const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
 
         activeStudents.forEach(student => {
-            // Solo el administrador gestiona cuotas de Kickboxing
             const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
             if (!isKickboxing) return;
 
-            const hasPaidThisMonth = pagos.some(p => {
-                if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return false;
+            const lastPago = student.fecha_ultimo_pago;
+            const isPendiente = !lastPago ||
+                (Date.now() - new Date(lastPago).getTime()) / (1000 * 60 * 60 * 24) > 30;
 
-                const pDate = new Date(p.fecha);
-                const pMonth = MESES[pDate.getMonth() + 1];
-
-                return p.idCliente === student.id_cliente && pMonth === monthToEvaluate;
-            });
-
-            if (!hasPaidThisMonth) {
-                pendientes++;
-            }
+            if (isPendiente) pendientes++;
         });
 
         return { totalMensual, pendientes, totalAlquileres };
