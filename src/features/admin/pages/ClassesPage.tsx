@@ -144,14 +144,41 @@ export default function ClassesPage() {
         }
     };
 
+    const [disciplinasMaster, setDisciplinasMaster] = useState<Disciplina[]>([]);
+    const [profesoresMaster, setProfesoresMaster] = useState<Profesor[]>([]);
+
+    useEffect(() => {
+        const fetchMasterData = async () => {
+            try {
+                const [resDisc, resProf] = await Promise.all([
+                    api.get<Disciplina[]>('/diciplinas'),
+                    api.get<Profesor[]>('/profesores')
+                ]);
+                setDisciplinasMaster(resDisc.data);
+                setProfesoresMaster(resProf.data);
+            } catch (error) {
+                console.error("Error cargando diccionarios para edición", error);
+            }
+        }
+        fetchMasterData();
+    }, []);
+
     // --- MANEJO DE UI ---
     const handleEventClick = (classItem: CalendarEvent) => {
+        // Find matching IDs from our master lists based on the displayed names.
+        const foundDiscipline = disciplinasMaster.find(d => d.nombre_disciplina === classItem.discipline);
+        const foundInstructor = profesoresMaster.find(p => p.nombre === classItem.instructor);
+
+        const [startTimeStr] = classItem.time.split(' - ');
+
         setEditingClass({
             id: classItem.id,
-            discipline: classItem.discipline, // Aquí podrías mapear a ID si el modal lo requiere
-            instructor: classItem.instructor,
+            raw: {
+                id_disciplina: foundDiscipline?.id_disciplina,
+                id_profesor: foundInstructor?.id_profesor
+            },
             days: [classItem.day],
-            startTime: classItem.time,
+            startTime: startTimeStr.trim(),
         });
         setIsAddModalOpen(true);
     };
