@@ -7,6 +7,9 @@ import { AxiosError } from 'axios';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { Pagination } from '../../../components/ui/Pagination';
 
+const GRUPOS_SANGUINEOS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+
 const PAGE_SIZE = 10;
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -22,17 +25,23 @@ interface Alumno {
     id_cliente: number;
     nombre: string;
     apellido: string;
+    dni: string | null;
     fecha_registro: string;
     fecha_ultimo_pago: string | null;
+    fecha_nacimiento: string | null;
+    grupo_sanguineo: string | null;
     activo: boolean;
+    inactivo: boolean;
     id_disciplina: number;
+    id_profesor_que_cargo: number | null;
+    profesorNombre: string | null;
     // computed
     estado: EstadoAlumno;
 }
 
 // Derive 3-state status from raw data
-function deriveEstado(activo: boolean, fecha_ultimo_pago: string | null): EstadoAlumno {
-    if (!activo) return 'inactivo';
+function deriveEstado(inactivo: boolean, fecha_ultimo_pago: string | null): EstadoAlumno {
+    if (inactivo) return 'inactivo';
     if (!fecha_ultimo_pago) return 'pendiente';
     const pago = new Date(fecha_ultimo_pago);
     const now = new Date();
@@ -45,11 +54,11 @@ function deriveEstado(activo: boolean, fecha_ultimo_pago: string | null): Estado
 function estadoToPayload(estado: EstadoAlumno): object {
     switch (estado) {
         case 'al día':
-            return { activo: true, fecha_ultimo_pago: new Date().toISOString() };
+            return { activo: true, inactivo: false, fecha_ultimo_pago: new Date().toISOString() };
         case 'pendiente':
-            return { activo: true, fecha_ultimo_pago: null };
+            return { activo: true, inactivo: false, fecha_ultimo_pago: null };
         case 'inactivo':
-            return { activo: false };
+            return { activo: true, inactivo: true }; // activo=true, solo marcamos inactivo=true
     }
 }
 
@@ -64,20 +73,31 @@ const ESTADO_CONFIG: Record<EstadoAlumno, { label: string; classes: string }> = 
 interface AlumnoFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (data: { nombre: string; apellido: string }) => void;
+    onSave: (data: {
+        nombre: string; apellido: string;
+        dni: string | null; fecha_nacimiento: string | null;
+        grupo_sanguineo: string | null;
+    }) => void;
     initialData?: Alumno | null;
     fixedDisciplina: string;
 }
 
 function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina }: AlumnoFormModalProps) {
-    const [nombre, setNombre] = useState('');
-    const [apellido, setApellido] = useState('');
+    const [nombre,          setNombre]          = useState('');
+    const [apellido,        setApellido]        = useState('');
+    const [dni,             setDni]             = useState('');
+    const [fechaNac,        setFechaNac]        = useState('');
+    const [grupoSanguineo,  setGrupoSanguineo]  = useState('');
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
     useEffect(() => {
         if (isOpen) {
             setNombre(initialData?.nombre || '');
             setApellido(initialData?.apellido || '');
+            setDni(initialData?.dni || '');
+            setFechaNac(initialData?.fecha_nacimiento
+                ? new Date(initialData.fecha_nacimiento).toISOString().split('T')[0] : '');
+            setGrupoSanguineo(initialData?.grupo_sanguineo || '');
             setErrors({ nombre: '', apellido: '' });
         }
     }, [isOpen, initialData]);
@@ -95,41 +115,71 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
 
     const handleSubmit = (ev: React.FormEvent) => {
         ev.preventDefault();
-        if (validate()) onSave({ nombre: nombre.trim(), apellido: apellido.trim() });
+        if (validate()) onSave({
+            nombre: nombre.trim(),
+            apellido: apellido.trim(),
+            dni: dni.trim() || null,
+            fecha_nacimiento: fechaNac || null,
+            grupo_sanguineo: grupoSanguineo || null,
+        });
     };
+
+    const iClass = (err?: string) => cn(
+        'w-full px-4 py-2.5 rounded-lg border bg-white outline-none text-gray-900 transition-all focus:ring-2 focus:ring-opacity-20',
+        err ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-brand-red focus:ring-brand-red'
+    );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 className="text-xl font-heading font-bold text-gray-900">
                         {initialData ? 'Editar Alumno' : 'Nuevo Alumno'}
                     </h3>
                     <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">✕</button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+                    {/* Disciplina fija */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-bold text-gray-700">Disciplina</label>
-                        <div className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-600 font-semibold">
-                            {fixedDisciplina}
+                        <div className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-600 font-semibold">{fixedDisciplina}</div>
+                    </div>
+
+                    {/* Nombre + Apellido */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Nombre <span className="text-red-500">*</span></label>
+                            <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Juan" className={iClass(errors.nombre)} />
+                            {errors.nombre && <p className="text-xs text-red-500">{errors.nombre}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Apellido <span className="text-red-500">*</span></label>
+                            <input type="text" value={apellido} onChange={e => setApellido(e.target.value)} placeholder="Ej: Pérez" className={iClass(errors.apellido)} />
+                            {errors.apellido && <p className="text-xs text-red-500">{errors.apellido}</p>}
                         </div>
                     </div>
+
+                    {/* DNI */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-gray-700">Nombre <span className="text-red-500">*</span></label>
-                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Juan"
-                            className={cn("w-full px-4 py-2.5 rounded-lg border bg-white outline-none text-gray-900 transition-all focus:ring-2 focus:ring-opacity-20",
-                                errors.nombre ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-brand-red focus:ring-brand-red")}
-                        />
-                        {errors.nombre && <p className="text-xs text-red-500">{errors.nombre}</p>}
+                        <label className="text-sm font-bold text-gray-700">DNI <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                        <input type="text" value={dni} onChange={e => setDni(e.target.value)} placeholder="Ej: 38123456" className={iClass()} />
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-gray-700">Apellido <span className="text-red-500">*</span></label>
-                        <input type="text" value={apellido} onChange={e => setApellido(e.target.value)} placeholder="Ej: Pérez"
-                            className={cn("w-full px-4 py-2.5 rounded-lg border bg-white outline-none text-gray-900 transition-all focus:ring-2 focus:ring-opacity-20",
-                                errors.apellido ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:border-brand-red focus:ring-brand-red")}
-                        />
-                        {errors.apellido && <p className="text-xs text-red-500">{errors.apellido}</p>}
+
+                    {/* Fecha Nac + Grupo Sanguíneo */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Fecha Nacimiento <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                            <input type="date" value={fechaNac} onChange={e => setFechaNac(e.target.value)} className={iClass()} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Grupo Sanguíneo <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                            <select value={grupoSanguineo} onChange={e => setGrupoSanguineo(e.target.value)} className={iClass()}>
+                                <option value="">— Sin especificar —</option>
+                                {GRUPOS_SANGUINEOS.map(g => <option key={g} value={g}>{g}</option>)}
+                            </select>
+                        </div>
                     </div>
+
                     <div className="flex gap-3 pt-4 border-t border-gray-50">
                         <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                             Cancelar
@@ -199,18 +249,26 @@ export default function AlumnosPorDisciplina() {
         setLoading(true);
         try {
             const response = await api.get('/clientes');
-            const filtered = (response.data as any[]).filter(c => c.id_disciplina === selectedDisciplina);
-            const mapped: Alumno[] = filtered.map(c => ({
-                id_cliente: c.id_cliente || c.id,
-                nombre: c.nombre,
-                apellido: c.apellido,
-                fecha_registro: c.fecha_registro || new Date().toISOString(),
-                fecha_ultimo_pago: c.fecha_ultimo_pago || null,
-                activo: c.activo !== false,
-                id_disciplina: c.id_disciplina,
-                estado: deriveEstado(c.activo !== false, c.fecha_ultimo_pago || null),
-            }));
-            setAlumnos(mapped);
+            if (response.data) {
+                const filtered = (response.data as any[]).filter(c => c.id_disciplina === selectedDisciplina);
+                const mapped: Alumno[] = filtered.map(c => ({
+                    id_cliente:            c.id_cliente || c.id,
+                    nombre:                c.nombre,
+                    apellido:              c.apellido,
+                    dni:                   c.dni || null,
+                    fecha_registro:        c.fecha_registro || new Date().toISOString(),
+                    fecha_ultimo_pago:     c.fecha_ultimo_pago || null,
+                    fecha_nacimiento:      c.fecha_nacimiento || null,
+                    grupo_sanguineo:       c.grupo_sanguineo || null,
+                    activo:                c.activo !== false,
+                    inactivo:              c.inactivo === true,
+                    id_disciplina:         c.id_disciplina,
+                    id_profesor_que_cargo: c.id_profesor_que_cargo || null,
+                    profesorNombre:        null,
+                    estado:                deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
+                }));
+                setAlumnos(mapped);
+            }
         } catch (error) {
             if (error instanceof AxiosError && error.response?.status === 401) navigate('/login');
         } finally {
@@ -238,12 +296,24 @@ export default function AlumnosPorDisciplina() {
     };
 
     // Create / Edit
-    const handleSave = async (data: { nombre: string; apellido: string }) => {
+    const handleSave = async (data: {
+        nombre: string; apellido: string;
+        dni: string | null; fecha_nacimiento: string | null;
+        grupo_sanguineo: string | null;
+    }) => {
         try {
+            const payload = {
+                nombre:           data.nombre,
+                apellido:         data.apellido,
+                id_disciplina:    selectedDisciplina,
+                dni:              data.dni,
+                fecha_nacimiento: data.fecha_nacimiento,
+                grupo_sanguineo:  data.grupo_sanguineo,
+            };
             if (editingAlumno) {
-                await api.put(`/clientes/${editingAlumno.id_cliente}`, { nombre: data.nombre, apellido: data.apellido, id_disciplina: selectedDisciplina });
+                await api.put(`/clientes/${editingAlumno.id_cliente}`, payload);
             } else {
-                await api.post('/clientes', { nombre: data.nombre, apellido: data.apellido, id_disciplina: selectedDisciplina, dni: null, fecha_nacimiento: null, grupo_sanguineo: null, id_profesor_que_cargo: null });
+                await api.post('/clientes', payload);
             }
             await fetchAlumnos();
             setIsFormOpen(false);

@@ -119,40 +119,19 @@ export default function PagosPage() {
             }
         });
 
-        // Cálculo dinámico de Deudores (Solo para KICKBOXING)
-        const currentDate = new Date();
-        const activeStudents = clientes.filter(c => c.activo);
+        // Deudores: mismo criterio que deriveEstado en AlumnosPage
+        // Pendiente = inactivo=false Y (sin pago o último pago hace >35 días)
+        const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
 
         activeStudents.forEach(student => {
-            // Solo el administrador gestiona cuotas de Kickboxing
             const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
             if (!isKickboxing) return;
 
-            // Get all CUOTA payments for this student
-            const studentCuotas = pagos.filter(p =>
-                p.idCliente === student.id_cliente &&
-                p.tipo === 'CUOTA' &&
-                p.estado === 'Pagado'
-            );
+            const lastPago = student.fecha_ultimo_pago;
+            const isPendiente = !lastPago ||
+                (Date.now() - new Date(lastPago).getTime()) / (1000 * 60 * 60 * 24) > 30;
 
-            // Sort by date DESC
-            const sortedCuotas = [...studentCuotas].sort((a, b) =>
-                new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-            );
-
-            if (sortedCuotas.length > 0) {
-                const latestPagoDate = new Date(sortedCuotas[0].fecha);
-                const diffTime = Math.abs(currentDate.getTime() - latestPagoDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                // If it's more than 30 days, we count it as pending
-                if (diffDays > 30) {
-                    pendientes++;
-                }
-            } else {
-                // Never paid
-                pendientes++;
-            }
+            if (isPendiente) pendientes++;
         });
 
         return { totalMensual, pendientes, totalAlquileres };

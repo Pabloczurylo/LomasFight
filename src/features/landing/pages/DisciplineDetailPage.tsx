@@ -14,6 +14,8 @@ interface DisciplineData {
     descripcion: string;
     cuota: number;
     img_banner: string;
+    img_preview: string;
+    numero_celular: string | null;
 }
 
 interface ProfesorBackend {
@@ -148,19 +150,17 @@ export default function DisciplineDetailPage() {
             <BenefitsSection
                 disciplineName={discipline?.nombre_disciplina || 'Disciplina'}
                 benefits={GENERIC_BENEFITS}
-                image={discipline?.img_banner || ''}
+                image={discipline?.img_preview || discipline?.img_banner || ''}
             />
 
             {/* Membresía (Prices) */}
             <MembershipSection
                 planTitle={`PLAN ${(discipline?.nombre_disciplina || 'CARGANDO...').toUpperCase()}`}
                 price={discipline?.cuota?.toString() || ''}
-                features={[
-                    "3 Clases por semana",
-                    "Equipo incluido",
-                    "Acceso a vestuarios",
-                    "Instructor certificado"
-                ]}
+                whatsappLink={discipline?.numero_celular
+                    ? `https://wa.me/${discipline.numero_celular.replace(/\D/g, '')}`
+                    : undefined
+                }
             />
 
             {/* Discipline Schedule */}

@@ -5,8 +5,9 @@ import { api } from "../../../services/api";
 interface Discipline {
     id_disciplina: number;
     nombre_disciplina: string;
-    descripcion: string; // Corrected to match Supabase
-    img_banner: string; // Corrected to match Supabase
+    descripcion: string;
+    img_banner: string;
+    img_preview: string;
 }
 
 export function DisciplinesSection() {
@@ -45,7 +46,7 @@ export function DisciplinesSection() {
                                 key={discipline.id_disciplina}
                                 title={discipline.nombre_disciplina}
                                 description={discipline.descripcion || "Entrena con los mejores profesionales en Lomas Fight."}
-                                image={discipline.img_banner || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"}
+                                image={discipline.img_preview || discipline.img_banner || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"}
                                 slug={discipline.nombre_disciplina.toLowerCase()}
                             />
                         ))

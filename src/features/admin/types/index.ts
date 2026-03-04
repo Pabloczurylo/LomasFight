@@ -18,6 +18,7 @@ export interface ClienteBackend {
     id_profesor_que_cargo: number | null;
     fecha_ultimo_pago: string | null;
     activo: boolean | null;
+    inactivo: boolean | null;
     disciplinas?: {
         nombre_disciplina: string;
     };
@@ -25,12 +26,13 @@ export interface ClienteBackend {
 }
 
 export interface Disciplina {
-    id_disciplina: number; // Backend uses snake_case and number
+    id_disciplina: number;
     nombre_disciplina: string;
-    descripcion: string; // Corrected to match Supabase
-    img_banner: string; // Corrected to match Supabase
-    img_preview?: string; // Optional or mapped
-    cuota: number; // Added as per latest backend requirements
+    descripcion: string;
+    img_banner: string;
+    img_preview: string;
+    cuota: number;
+    numero_celular?: string | null;
 }
 
 // Frontend adapter type if we want to keep UI clean, but better to match backend for now

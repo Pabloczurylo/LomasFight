@@ -8,9 +8,9 @@ export default function LandingPage() {
     return (
         <>
             <HeroSection />
-            <AboutSection />
             <DisciplinesSection />
             <ScheduleSection id="horarios-general" />
+            <AboutSection />
         </>
     );
 }

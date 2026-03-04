@@ -1,21 +1,13 @@
-import { Button } from "../../../components/ui/Button";
-import { Check } from "lucide-react";
-
 interface MembershipSectionProps {
     planTitle?: string;
     price?: string;
-    features?: string[];
+    whatsappLink?: string;
 }
 
 export function MembershipSection({
     planTitle = "PLAN KICK BOXING",
     price = "4500",
-    features = [
-        "3 Clases por semana",
-        "Equipo incluido (bolsas y pads)",
-        "Acceso a vestuarios",
-        "Instructor certificado"
-    ]
+    whatsappLink
 }: MembershipSectionProps) {
     return (
         <section className="py-20 bg-gray-50 flex items-center justify-center">
@@ -26,24 +18,20 @@ export function MembershipSection({
                 <div className="mx-auto max-w-md bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-transparent hover:border-brand-red/50 transition-colors duration-300">
                     <div className="p-8 text-center bg-gradient-to-br from-brand-dark to-black">
                         <h4 className="text-brand-red font-heading font-bold text-xl uppercase tracking-widest mb-4">{planTitle}</h4>
-                        <div className="flex justify-center items-baseline mb-6">
+                        <div className="flex justify-center items-baseline mb-8">
                             <span className="text-xl text-gray-400 mr-2">$</span>
                             <span className="text-5xl md:text-6xl font-heading font-bold text-white">{price}</span>
                             <span className="text-gray-400 ml-2">/ mes</span>
                         </div>
 
-                        <ul className="space-y-4 mb-8 text-left max-w-xs mx-auto">
-                            {features.map((item, i) => (
-                                <li key={i} className="flex items-center text-gray-300">
-                                    <Check className="w-5 h-5 text-brand-red mr-3 flex-shrink-0" />
-                                    <span className="font-body text-sm font-medium">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-
-                        <Button variant="whatsapp" className="w-full h-12 text-lg">
+                        <a
+                            href={whatsappLink || 'https://wa.me/'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-full h-12 text-lg font-bold rounded-lg bg-[#25D366] hover:bg-[#1ebe5d] text-white transition-colors duration-200"
+                        >
                             INSCRIBIRSE POR WHATSAPP
-                        </Button>
+                        </a>
                     </div>
                 </div>
             </div>

@@ -28,13 +28,12 @@ export function Sidebar() {
 
     return (
         <aside className="hidden lg:flex flex-col w-64 bg-black text-white h-screen fixed left-0 top-0 border-r border-zinc-800">
-            {/* Logo Area */}
-            <div className="p-6 flex items-center gap-2 border-b border-zinc-800">
+            <Link to="/" className="p-6 flex items-center gap-2 border-b border-zinc-800 hover:opacity-80 transition-opacity">
                 <div className="h-8 w-8 bg-brand-red rounded transform skew-x-[-10deg]" />
                 <span className="text-xl font-heading font-bold uppercase tracking-wider">
                     LOMAS <span className="text-brand-red">FIGHT</span>
                 </span>
-            </div>
+            </Link>
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2">
