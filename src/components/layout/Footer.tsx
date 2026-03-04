@@ -41,7 +41,7 @@ export function Footer() {
                     <div>
                         <h4 className="text-white font-heading font-bold uppercase tracking-wide mb-4">SÍGUENOS</h4>
                         <div className="flex gap-4 mb-6">
-                            <a href="#" className="hover:text-brand-red transition-colors"><Instagram /></a>
+                            <a href="https://www.instagram.com/lomasfight?igsh=MXVudm8zenk4b2NpNQ==" target="_blank" rel="noopener noreferrer" className="hover:text-brand-red transition-colors"><Instagram /></a>
                             <a href="#" className="hover:text-brand-red transition-colors"><Facebook /></a>
                         </div>
                         {/* Google Maps */}

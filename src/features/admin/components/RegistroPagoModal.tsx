@@ -224,9 +224,6 @@ export default function RegistroPagoModal({
                                         required
                                         disabled={isLoading}
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Este valor se enviará como "monto".
-                                    </p>
                                 </div>
                             </div>
                         </>
@@ -292,9 +289,6 @@ export default function RegistroPagoModal({
                                         required
                                         disabled={isLoading}
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Este valor se enviará como "monto_cuota".
-                                    </p>
                                 </div>
                             </div>
                         </>
