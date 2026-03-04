@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../services/api';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -21,20 +21,49 @@ interface ProfesorBackend {
 export function AboutSection() {
     const [profesores, setProfesores] = useState<ProfesorBackend[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(3);
 
-    const next = () => {
-        if (currentIndex + 3 < profesores.length) {
-            setCurrentIndex(prev => prev + 1);
+    // Update items per page based on screen width
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) { // lg breakpoint in Tailwind is 1024px
+                setItemsPerPage(1);
+            } else {
+                setItemsPerPage(3);
+            }
+        };
+
+        // Initial check
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const next = useCallback(() => {
+        setCurrentIndex(prev => {
+            const nextIndex = prev + itemsPerPage;
+            return nextIndex < profesores.length ? nextIndex : prev;
+        });
+    }, [itemsPerPage, profesores.length]);
+
+    const prev = useCallback(() => {
+        setCurrentIndex(prev => {
+            const nextIndex = prev - itemsPerPage;
+            return nextIndex >= 0 ? nextIndex : 0;
+        });
+    }, [itemsPerPage]);
+
+    // Ensure currentIndex is valid when itemsPerPage or profesores.length changes
+    useEffect(() => {
+        // Reset to first slide if current index is suddenly out of bounds
+        if (currentIndex >= profesores.length && profesores.length > 0) {
+            setCurrentIndex(0);
         }
-    };
+    }, [itemsPerPage, profesores.length, currentIndex]);
 
-    const prev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(prev => prev - 1);
-        }
-    };
 
-    const visibleProfesores = profesores.slice(currentIndex, currentIndex + 3);
+    const visibleProfesores = profesores.slice(currentIndex, currentIndex + itemsPerPage);
 
     useEffect(() => {
         const fetchProfesores = async () => {
@@ -69,11 +98,11 @@ export function AboutSection() {
 
                     <div className="relative w-full flex items-center justify-center">
                         {/* Prev Button */}
-                        {profesores.length > 3 && (
+                        {profesores.length > itemsPerPage && (
                             <button
                                 onClick={prev}
                                 disabled={currentIndex === 0}
-                                className="absolute left-0 sm:left-4 lg:left-8 z-20 p-2 sm:p-3 rounded-full bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20 hover:bg-brand-red/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                className="absolute left-0 sm:left-4 md:left-8 z-20 p-2 sm:p-3 rounded-full bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20 hover:bg-brand-red/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
                             </button>
@@ -139,11 +168,11 @@ export function AboutSection() {
                         </div>
 
                         {/* Next Button */}
-                        {profesores.length > 3 && (
+                        {profesores.length > itemsPerPage && (
                             <button
                                 onClick={next}
-                                disabled={currentIndex + 3 >= profesores.length}
-                                className="absolute right-0 sm:right-4 lg:right-8 z-20 p-2 sm:p-3 rounded-full bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20 hover:bg-brand-red/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                disabled={currentIndex + itemsPerPage >= profesores.length}
+                                className="absolute right-0 sm:right-4 md:right-8 z-20 p-2 sm:p-3 rounded-full bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20 hover:bg-brand-red/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
                             </button>
