@@ -79,9 +79,9 @@ export function AboutSection() {
                             </button>
                         )}
 
-                        <div className="w-full flex justify-center gap-8 flex-wrap px-12 sm:px-16 md:px-24">
+                        <div className="w-full flex justify-center gap-6 lg:gap-8 flex-col lg:flex-row px-12 sm:px-16 md:px-24 items-center lg:items-stretch">
                             {visibleProfesores.map((profesor) => (
-                                <div key={profesor.id_profesor} className="bg-[#111115] border border-white/5 rounded-2xl p-10 max-w-md w-full shadow-2xl flex flex-col items-center relative overflow-hidden group">
+                                <div key={profesor.id_profesor} className="bg-[#111115] border border-white/5 rounded-2xl p-8 lg:p-10 w-full max-w-sm lg:max-w-none lg:flex-1 shadow-2xl flex flex-col items-center relative overflow-hidden group">
                                     {/* Top subtle glow */}
                                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-brand-red/10 blur-3xl rounded-full" />
 
