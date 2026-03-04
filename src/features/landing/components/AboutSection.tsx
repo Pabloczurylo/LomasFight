@@ -128,9 +128,11 @@ export function AboutSection() {
                                     </div>
 
                                     {/* Info */}
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-wide mb-2 text-center break-words max-w-full">
-                                        {profesor.nombre} {profesor.apellido}
-                                    </h3>
+                                    <div className="min-h-[64px] flex items-center justify-center w-full mb-2">
+                                        <h3 className="text-2xl font-black text-white uppercase tracking-wide text-center break-words max-w-full line-clamp-2">
+                                            {profesor.nombre} {profesor.apellido}
+                                        </h3>
+                                    </div>
                                     <p className="text-brand-red font-bold text-xs tracking-[0.1em] uppercase mb-4 text-center">
                                         INSTRUCTOR DE {profesor.disciplinas?.nombre_disciplina || 'ARTES MARCIALES'}
                                     </p>
