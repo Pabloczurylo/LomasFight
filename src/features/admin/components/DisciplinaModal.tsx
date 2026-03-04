@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Disciplina } from '../types';
 
+const getSafeUrl = (url?: string) => {
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+        return `http://${url}`;
+    }
+    return url;
+};
+
 interface DisciplinaModalProps {
     isOpen: boolean;
     onClose: () => void;

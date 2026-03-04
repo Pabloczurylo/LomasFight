@@ -3,7 +3,7 @@ export interface Alumno {
     nombre: string;
     apellido: string;
     disciplina: string;
-    estadoPago: 'al día' | 'pendiente' | 'vencido';
+    estadoPago: 'al día' | 'próximo a vencer' | 'pendiente' | 'inactivo';
     fechaRegistro: string; // ISO format YYYY-MM-DD
 }
 
