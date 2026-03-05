@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Calendar, Users, Dumbbell } from 'lucide-react';
-import { ClienteBackend, Disciplina } from '../types';
+import { X, DollarSign, Calendar, Users, Dumbbell, Edit3 } from 'lucide-react';
+import { ClienteBackend, Disciplina, UnifiedPago } from '../types';
 
 export type CuotaPayload = {
     id_cliente: number;
@@ -21,6 +21,7 @@ interface RegistroPagoModalProps {
     onSaveAlquiler: (data: AlquilerPayload) => Promise<void>;
     clientes: ClienteBackend[]; // Usamos el tipo backend real
     disciplinas: Disciplina[];
+    initialData?: UnifiedPago | null;
 }
 
 export default function RegistroPagoModal({
@@ -29,7 +30,8 @@ export default function RegistroPagoModal({
     onSaveCuota,
     onSaveAlquiler,
     clientes,
-    disciplinas
+    disciplinas,
+    initialData
 }: RegistroPagoModalProps) {
     const [tipoPago, setTipoPago] = useState<'CUOTA' | 'ALQUILER'>('CUOTA');
     const [isLoading, setIsLoading] = useState(false);
@@ -46,17 +48,43 @@ export default function RegistroPagoModal({
 
     useEffect(() => {
         if (isOpen) {
-            setTipoPago('CUOTA');
-            setCuotaClienteId('');
-            setCuotaDisciplinaId('');
-            setCuotaMonto('');
-
-            setAlquilerDisciplinaId('');
-            setAlquilerMonto('');
-            setAlquilerPeriodo(new Date().toISOString().split('T')[0]);
             setIsLoading(false);
+            if (initialData) {
+                setTipoPago(initialData.tipo);
+                if (initialData.tipo === 'CUOTA') {
+                    setCuotaClienteId(initialData.idCliente?.toString() || '');
+
+                    // Search for discipline via the client if needed, or if disciplineNombre matches
+                    let matchingDiscipline = disciplinas.find(d => d.nombre_disciplina === initialData.disciplinaNombre);
+                    if (!matchingDiscipline && initialData.idCliente) {
+                        const cliente = clientes.find(c => c.id_cliente === initialData.idCliente);
+                        if (cliente?.id_disciplina) {
+                            matchingDiscipline = disciplinas.find(d => d.id_disciplina === cliente.id_disciplina);
+                        }
+                    }
+
+                    setCuotaDisciplinaId(matchingDiscipline?.id_disciplina?.toString() || '');
+                    setCuotaMonto(initialData.monto.toString());
+                } else {
+                    const matchingDiscipline = disciplinas.find(d => d.nombre_disciplina === initialData.disciplinaNombre);
+                    setAlquilerDisciplinaId(matchingDiscipline?.id_disciplina?.toString() || '');
+
+                    setAlquilerMonto(initialData.monto.toString());
+                    // Extract Date part for YYYY-MM-DD format
+                    setAlquilerPeriodo(new Date(initialData.fecha).toISOString().split('T')[0]);
+                }
+            } else {
+                setTipoPago('CUOTA');
+                setCuotaClienteId('');
+                setCuotaDisciplinaId('');
+                setCuotaMonto('');
+
+                setAlquilerDisciplinaId('');
+                setAlquilerMonto('');
+                setAlquilerPeriodo(new Date().toISOString().split('T')[0]);
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, initialData, clientes, disciplinas]);
 
     // Filtrar solo clientes activos
     const clientesActivos = clientes.filter(c => c.activo === true);
@@ -137,25 +165,27 @@ export default function RegistroPagoModal({
                 </button>
 
                 <h3 className="text-xl font-heading font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <DollarSign className="w-6 h-6 text-brand-red" />
-                    Registrar Nuevo Ingreso
+                    {initialData ? <Edit3 className="w-6 h-6 text-brand-red" /> : <DollarSign className="w-6 h-6 text-brand-red" />}
+                    {initialData ? 'Editar Ingreso' : 'Registrar Nuevo Ingreso'}
                 </h3>
 
                 {/* Tabs / Toggle */}
                 <div className="flex bg-gray-100 p-1 rounded-lg mb-6">
                     <button
                         type="button"
+                        disabled={!!initialData}
                         onClick={() => setTipoPago('CUOTA')}
                         className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${tipoPago === 'CUOTA' ? 'bg-white shadow-sm text-brand-red' : 'text-gray-500 hover:text-gray-700'
-                            }`}
+                            } ${!!initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         Cobro de Cuota
                     </button>
                     <button
                         type="button"
+                        disabled={!!initialData}
                         onClick={() => setTipoPago('ALQUILER')}
                         className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${tipoPago === 'ALQUILER' ? 'bg-white shadow-sm text-brand-red' : 'text-gray-500 hover:text-gray-700'
-                            }`}
+                            } ${!!initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         Pago de Alquiler
                     </button>
@@ -308,7 +338,7 @@ export default function RegistroPagoModal({
                             className="flex-1 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md disabled:bg-red-400 flex items-center justify-center gap-2"
                             disabled={isLoading}
                         >
-                            {isLoading ? 'Registrando...' : 'Registrar Ingreso'}
+                            {isLoading ? 'Guardando...' : initialData ? 'Guardar Cambios' : 'Registrar Ingreso'}
                         </button>
                     </div>
                 </form>

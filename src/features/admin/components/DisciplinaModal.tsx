@@ -2,14 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Disciplina } from '../types';
 
-const getSafeUrl = (url?: string) => {
-    if (!url) return '';
-    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
-        return `http://${url}`;
-    }
-    return url;
-};
-
 interface DisciplinaModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -21,12 +13,12 @@ const inputClass = "w-full px-4 py-2 border border-gray-200 rounded-lg text-blac
 const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
 
 export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }: DisciplinaModalProps) {
-    const [nombre, setNombre]           = useState('');
+    const [nombre, setNombre] = useState('');
     const [descripcion, setDescripcion] = useState('');
-    const [imgBanner, setImgBanner]     = useState('');
-    const [imgPreview, setImgPreview]   = useState('');
-    const [cuota, setCuota]             = useState<string>('0');
-    const [telefono, setTelefono]       = useState('');
+    const [imgBanner, setImgBanner] = useState('');
+    const [imgPreview, setImgPreview] = useState('');
+    const [cuota, setCuota] = useState<string>('0');
+    const [telefono, setTelefono] = useState('');
 
     useEffect(() => {
         if (initialData) {
