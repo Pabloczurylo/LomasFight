@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram } from 'lucide-react';
 
 export function Footer() {
     return (
@@ -42,7 +42,6 @@ export function Footer() {
                         <h4 className="text-white font-heading font-bold uppercase tracking-wide mb-4">SÍGUENOS</h4>
                         <div className="flex gap-4 mb-6">
                             <a href="https://www.instagram.com/lomasfight?igsh=MXVudm8zenk4b2NpNQ==" target="_blank" rel="noopener noreferrer" className="hover:text-brand-red transition-colors"><Instagram /></a>
-                            <a href="#" className="hover:text-brand-red transition-colors"><Facebook /></a>
                         </div>
                         {/* Google Maps */}
                         <div className="w-full rounded-lg overflow-hidden border border-gray-800">
