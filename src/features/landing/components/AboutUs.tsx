@@ -13,7 +13,7 @@ export function AboutUs() {
                             SOBRE NOSOTROS
                         </h2>
                         <h3 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white uppercase mb-6 leading-tight">
-                            FORJANDO CAMPEONES DESDE 2015
+                            FORJANDO CAMPEONES
                         </h3>
 
                         <div className="w-20 h-1 bg-brand-red mb-8"></div>
@@ -30,16 +30,6 @@ export function AboutUs() {
                             tu mejor forma física en un ambiente motivador.
                         </p>
 
-                        <div className="grid grid-cols-2 gap-6 mt-4">
-                            <div className="border-l-2 border-brand-red pl-4">
-                                <h4 className="text-3xl font-heading font-bold text-white mb-1">+500</h4>
-                                <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">Alumnos Activos</p>
-                            </div>
-                            <div className="border-l-2 border-brand-red pl-4">
-                                <h4 className="text-3xl font-heading font-bold text-white mb-1">+50</h4>
-                                <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">Títulos Ganados</p>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Image */}
