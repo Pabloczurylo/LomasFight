@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, Instagram } from 'lucide-react';
+import { MapPin, Phone, Instagram } from 'lucide-react';
 
 export function Footer() {
     return (
@@ -24,15 +24,11 @@ export function Footer() {
                         <ul className="space-y-3 text-sm">
                             <li className="flex items-start gap-3">
                                 <MapPin className="w-5 h-5 text-brand-red shrink-0" />
-                                <span>Calle Lomas 123, Ciudad, CP 1000</span>
+                                <span>Jorge Luis Borges 1200, Lomas de Tafí</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone className="w-5 h-5 text-brand-red shrink-0" />
-                                <span>+1 (555) 123-4567</span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <Mail className="w-5 h-5 text-brand-red shrink-0" />
-                                <span>contacto@lomasfight.com</span>
+                                <span>+54 9 381 366-5677</span>
                             </li>
                         </ul>
                     </div>
