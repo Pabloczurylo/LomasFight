@@ -70,7 +70,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                             // Teachers only see their discipline manager
                             return ['Mis Alumnos'].includes(item.name);
                         }
-                        return true;
+                        // Admins don't see Gestión Estados as requested
+                        return item.name !== 'Gestión Estados';
                     }).map((item) => {
                         const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
                         return (
