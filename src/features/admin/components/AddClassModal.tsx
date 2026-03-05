@@ -127,6 +127,19 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
         }
     };
 
+    const handleDeleteClick = () => {
+        if (!onDelete) return;
+        setConfirmState({
+            isOpen: true,
+            type: 'danger',
+            title: '¿Eliminar clase?',
+            message: 'Esta acción no se puede deshacer y eliminará la clase del calendario de forma permanente.',
+            action: () => {
+                onDelete();
+            }
+        });
+    };
+
     const isEditing = !!initialData;
 
     return (
@@ -237,7 +250,7 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                             {isEditing && onDelete && (
                                 <button
                                     type="button"
-                                    onClick={onDelete}
+                                    onClick={handleDeleteClick}
                                     className="px-4 py-3 border border-red-100/50 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 rounded-xl transition-all"
                                     title="Eliminar clase"
                                 >
