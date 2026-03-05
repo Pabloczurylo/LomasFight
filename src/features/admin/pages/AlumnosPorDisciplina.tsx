@@ -83,11 +83,11 @@ interface AlumnoFormModalProps {
 }
 
 function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina }: AlumnoFormModalProps) {
-    const [nombre,          setNombre]          = useState('');
-    const [apellido,        setApellido]        = useState('');
-    const [dni,             setDni]             = useState('');
-    const [fechaNac,        setFechaNac]        = useState('');
-    const [grupoSanguineo,  setGrupoSanguineo]  = useState('');
+    const [nombre, setNombre] = useState('');
+    const [apellido, setApellido] = useState('');
+    const [dni, setDni] = useState('');
+    const [fechaNac, setFechaNac] = useState('');
+    const [grupoSanguineo, setGrupoSanguineo] = useState('');
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
     useEffect(() => {
@@ -252,20 +252,20 @@ export default function AlumnosPorDisciplina() {
             if (response.data) {
                 const filtered = (response.data as any[]).filter(c => c.id_disciplina === selectedDisciplina);
                 const mapped: Alumno[] = filtered.map(c => ({
-                    id_cliente:            c.id_cliente || c.id,
-                    nombre:                c.nombre,
-                    apellido:              c.apellido,
-                    dni:                   c.dni || null,
-                    fecha_registro:        c.fecha_registro || new Date().toISOString(),
-                    fecha_ultimo_pago:     c.fecha_ultimo_pago || null,
-                    fecha_nacimiento:      c.fecha_nacimiento || null,
-                    grupo_sanguineo:       c.grupo_sanguineo || null,
-                    activo:                c.activo !== false,
-                    inactivo:              c.inactivo === true,
-                    id_disciplina:         c.id_disciplina,
+                    id_cliente: c.id_cliente || c.id,
+                    nombre: c.nombre,
+                    apellido: c.apellido,
+                    dni: c.dni || null,
+                    fecha_registro: c.fecha_registro || new Date().toISOString(),
+                    fecha_ultimo_pago: c.fecha_ultimo_pago || null,
+                    fecha_nacimiento: c.fecha_nacimiento || null,
+                    grupo_sanguineo: c.grupo_sanguineo || null,
+                    activo: c.activo !== false,
+                    inactivo: c.inactivo === true,
+                    id_disciplina: c.id_disciplina,
                     id_profesor_que_cargo: c.id_profesor_que_cargo || null,
-                    profesorNombre:        null,
-                    estado:                deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
+                    profesorNombre: null,
+                    estado: deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
                 }));
                 setAlumnos(mapped);
             }
@@ -303,12 +303,12 @@ export default function AlumnosPorDisciplina() {
     }) => {
         try {
             const payload = {
-                nombre:           data.nombre,
-                apellido:         data.apellido,
-                id_disciplina:    selectedDisciplina,
-                dni:              data.dni,
+                nombre: data.nombre,
+                apellido: data.apellido,
+                id_disciplina: selectedDisciplina,
+                dni: data.dni,
                 fecha_nacimiento: data.fecha_nacimiento,
-                grupo_sanguineo:  data.grupo_sanguineo,
+                grupo_sanguineo: data.grupo_sanguineo,
             };
             if (editingAlumno) {
                 await api.put(`/clientes/${editingAlumno.id_cliente}`, payload);
@@ -420,6 +420,9 @@ export default function AlumnosPorDisciplina() {
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
+                                <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">DNI</th>
+                                <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">F. Nacimiento</th>
+                                <th className="hidden sm:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">G. Sanguíneo</th>
                                 <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Inicio</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Estado</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Acciones</th>
@@ -427,7 +430,7 @@ export default function AlumnosPorDisciplina() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={4} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
+                                <tr><td colSpan={7} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
                             ) : filteredAlumnos.length > 0 ? (
                                 pagedAlumnos.map(alumno => (
                                     <tr key={alumno.id_cliente} className="hover:bg-gray-50 transition-colors group">
@@ -440,6 +443,19 @@ export default function AlumnosPorDisciplina() {
                                                     {alumno.nombre} {alumno.apellido}
                                                 </span>
                                             </div>
+                                        </td>
+                                        <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
+                                            {alumno.dni || '-'}
+                                        </td>
+                                        <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
+                                            {alumno.fecha_nacimiento ? new Date(alumno.fecha_nacimiento).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="hidden sm:table-cell px-6 py-4 text-gray-500 text-sm font-medium">
+                                            {alumno.grupo_sanguineo ? (
+                                                <span className="px-2 py-1 bg-red-50 text-brand-red rounded-md border border-red-100 uppercase text-xs">
+                                                    {alumno.grupo_sanguineo}
+                                                </span>
+                                            ) : '-'}
                                         </td>
                                         <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm">
                                             {new Date(alumno.fecha_registro).toLocaleDateString()}
@@ -482,7 +498,7 @@ export default function AlumnosPorDisciplina() {
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
+                                <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
                             )}
                         </tbody>
                     </table>
