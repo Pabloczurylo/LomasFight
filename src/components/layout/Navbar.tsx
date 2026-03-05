@@ -74,9 +74,10 @@ export function Navbar() {
 
     const navLinks = [
         { name: 'INICIO', path: '/', isLink: true },
-        { name: 'NOSOTROS', target: 'nosotros', isLink: false },
+        { name: 'CONOCENOS', target: 'sobre-nosotros', isLink: false },
         { name: 'DISCIPLINAS', target: 'disciplinas', isLink: false },
         { name: 'HORARIOS', target: 'horarios', isLink: false },
+        { name: 'NOSOTROS', target: 'nosotros', isLink: false },
     ];
 
     return (
