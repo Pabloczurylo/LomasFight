@@ -7,7 +7,7 @@ import { api } from '../../../services/api';
 import { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const getSafeUrl = (url?: string) => {
+const getSafeUrl = (url?: string | null) => {
     if (!url) return '';
     if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
         return `http://${url}`;

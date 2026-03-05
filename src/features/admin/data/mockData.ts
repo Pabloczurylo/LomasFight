@@ -22,7 +22,7 @@ export const MOCK_ALUMNOS: Alumno[] = [
         nombre: 'Carlos',
         apellido: 'López',
         disciplina: 'Fuerza',
-        estadoPago: 'vencido',
+        estadoPago: 'inactivo',
         fechaRegistro: '2023-03-10',
     },
     {
@@ -46,7 +46,7 @@ export const MOCK_ALUMNOS: Alumno[] = [
         nombre: 'Laura',
         apellido: 'Rodríguez',
         disciplina: 'Fuerza',
-        estadoPago: 'vencido',
+        estadoPago: 'inactivo',
         fechaRegistro: '2023-06-25',
     },
     {
@@ -107,6 +107,7 @@ export const MOCK_DISCIPLINAS: Disciplina[] = [
         nombre_disciplina: 'Kickboxing',
         descripcion: 'Entrenamiento de alta intensidad que combina técnicas de boxeo con patadas de artes marciales.',
         img_banner: 'https://images.unsplash.com/photo-1555597673-b21d5c935865?auto=format&fit=crop&q=80&w=600',
+        img_preview: 'https://images.unsplash.com/photo-1555597673-b21d5c935865?auto=format&fit=crop&q=80&w=600',
         cuota: 15000
     },
     {
@@ -114,6 +115,7 @@ export const MOCK_DISCIPLINAS: Disciplina[] = [
         nombre_disciplina: 'Boxeo',
         descripcion: 'Deporte de combate en el que dos personas luchan utilizando únicamente sus puños con guantes.',
         img_banner: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&q=80&w=600',
+        img_preview: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&q=80&w=600',
         cuota: 15000
     },
     {
@@ -121,6 +123,7 @@ export const MOCK_DISCIPLINAS: Disciplina[] = [
         nombre_disciplina: 'Muay Thai',
         descripcion: 'Arte marcial tailandés conocido como "el arte de las ocho extremidades".',
         img_banner: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=600',
+        img_preview: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=600',
         cuota: 15000
     }
 ];

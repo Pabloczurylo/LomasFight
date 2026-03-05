@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, DollarSign, AlertCircle, Calendar, Dumbbell } from 'lucide-react';
+import { Plus, Search, DollarSign, AlertCircle, Calendar, Dumbbell, Edit2, Trash2 } from 'lucide-react';
 import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
 import RegistroPagoModal, { CuotaPayload, AlquilerPayload } from '../components/RegistroPagoModal';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
 
 const MESES = [
@@ -19,6 +20,8 @@ export default function PagosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPago, setEditingPago] = useState<UnifiedPago | null>(null);
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; pago: UnifiedPago | null }>({ isOpen: false, pago: null });
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -153,8 +156,13 @@ export default function PagosPage() {
 
     const handleSaveCuota = async (payload: CuotaPayload) => {
         try {
-            await api.post('/pagos', payload);
+            if (editingPago && editingPago.tipo === 'CUOTA') {
+                await api.put(`/pagos/${editingPago.originalId}`, payload);
+            } else {
+                await api.post('/pagos', payload);
+            }
             setIsModalOpen(false);
+            setEditingPago(null);
             fetchData();
         } catch (error) {
             console.error("Error guarding cuota:", error);
@@ -164,13 +172,46 @@ export default function PagosPage() {
 
     const handleSaveAlquiler = async (payload: AlquilerPayload) => {
         try {
-            await api.post('/pago-disciplina', payload);
+            if (editingPago && editingPago.tipo === 'ALQUILER') {
+                await api.put(`/pago-disciplina/${editingPago.originalId}`, payload);
+            } else {
+                await api.post('/pago-disciplina', payload);
+            }
             setIsModalOpen(false);
+            setEditingPago(null);
             fetchData(); // reload
         } catch (error) {
             console.error("Error guarding alquiler:", error);
             alert("Error al guardar el alquiler.");
         }
+    };
+
+    const handleDeleteClick = (pago: UnifiedPago) => {
+        setDeleteModal({ isOpen: true, pago });
+    };
+
+    const handleConfirmDelete = async () => {
+        const pago = deleteModal.pago;
+        if (!pago) return;
+
+        try {
+            if (pago.tipo === 'CUOTA') {
+                await api.delete(`/pagos/${pago.originalId}`);
+            } else {
+                await api.delete(`/pago-disciplina/${pago.originalId}`);
+            }
+            fetchData();
+        } catch (error) {
+            console.error("Error al eliminar el pago:", error);
+            alert("Error al eliminar el pago.");
+        } finally {
+            setDeleteModal({ isOpen: false, pago: null });
+        }
+    };
+
+    const handleEditClick = (pago: UnifiedPago) => {
+        setEditingPago(pago);
+        setIsModalOpen(true);
     };
 
     const formatCurrency = (amount: number) => {
@@ -196,7 +237,10 @@ export default function PagosPage() {
                     <p className="text-gray-600">Control de cuotas y alquiler de salón</p>
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                        setEditingPago(null);
+                        setIsModalOpen(true);
+                    }}
                     className="flex items-center gap-2 px-4 py-3 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
                 >
                     <Plus className="w-5 h-5" />
@@ -280,6 +324,7 @@ export default function PagosPage() {
                                     <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Clasificación</th>
                                     <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Monto</th>
                                     <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Estado</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider text-right pr-4">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -311,11 +356,29 @@ export default function PagosPage() {
                                                 {pago.estado}
                                             </span>
                                         </td>
+                                        <td className="py-5 pr-4 text-right">
+                                            <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => handleEditClick(pago)}
+                                                    className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteClick(pago)}
+                                                    className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                                 {filteredPagos.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="py-8 text-center text-gray-500">
+                                        <td colSpan={6} className="py-8 text-center text-gray-500">
                                             No se encontraron registros de ingreso.
                                         </td>
                                     </tr>
@@ -328,11 +391,24 @@ export default function PagosPage() {
 
             <RegistroPagoModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingPago(null);
+                }}
                 onSaveCuota={handleSaveCuota}
                 onSaveAlquiler={handleSaveAlquiler}
                 clientes={clientes}
                 disciplinas={disciplinas}
+                initialData={editingPago}
+            />
+
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, pago: null })}
+                onConfirm={handleConfirmDelete}
+                title="Eliminar Ingreso"
+                message={`¿Estás seguro que deseas eliminar el registro de pago de ${deleteModal.pago?.concepto}? Esta acción no se puede deshacer y ajustará los balances contables.`}
+                type="danger"
             />
         </div>
     );
