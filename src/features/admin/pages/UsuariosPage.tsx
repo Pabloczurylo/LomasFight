@@ -7,6 +7,7 @@ import { api } from '../../../services/api';
 import { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 interface Disciplina {
     id_disciplina: number;
@@ -153,6 +154,7 @@ export default function UsuariosPage() {
     const [disciplines, setDisciplines] = useState<Disciplina[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState<Usuario | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; userId: number | null }>({ isOpen: false, userId: null });
     const navigate = useNavigate();
 
     const fetchUsuarios = async () => {
@@ -201,17 +203,22 @@ export default function UsuariosPage() {
     };
 
     const handleDeleteUser = async (userId: number) => {
-        if (confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
-            try {
-                await api.delete(`/usuarios/${userId}`);
-                setUsers(prev => prev.filter(u => u.id_usuario !== userId));
-            } catch (error) {
-                console.error("Error deleting usuario:", error);
-                if (error instanceof AxiosError && error.response?.status === 401) {
-                    localStorage.clear();
-                    navigate('/login');
-                }
+        setConfirmDelete({ isOpen: true, userId });
+    };
+
+    const confirmDeleteAction = async () => {
+        if (!confirmDelete.userId) return;
+        try {
+            await api.delete(`/usuarios/${confirmDelete.userId}`);
+            setUsers(prev => prev.filter(u => u.id_usuario !== confirmDelete.userId));
+        } catch (error) {
+            console.error("Error deleting usuario:", error);
+            if (error instanceof AxiosError && error.response?.status === 401) {
+                localStorage.clear();
+                navigate('/login');
             }
+        } finally {
+            setConfirmDelete({ isOpen: false, userId: null });
         }
     };
 
@@ -269,6 +276,15 @@ export default function UsuariosPage() {
                 disciplines={disciplines}
                 onClose={() => setEditingUser(null)}
                 onSave={handleSaveEdit}
+            />
+
+            <ConfirmModal
+                isOpen={confirmDelete.isOpen}
+                onClose={() => setConfirmDelete({ isOpen: false, userId: null })}
+                onConfirm={confirmDeleteAction}
+                title="¿Eliminar Usuario?"
+                message="Esta acción no se puede deshacer y el usuario perderá acceso al sistema."
+                type="danger"
             />
         </div>
     );

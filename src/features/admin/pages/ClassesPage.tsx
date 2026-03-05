@@ -133,7 +133,7 @@ export default function ClassesPage() {
 
     // --- 4. ELIMINAR (DELETE) ---
     const handleDeleteClass = async () => {
-        if (!editingClass?.id || !window.confirm("¿Estás seguro de eliminar este horario?")) return;
+        if (!editingClass?.id) return;
 
         try {
             await api.delete(`/horarios/${editingClass.id}`);
