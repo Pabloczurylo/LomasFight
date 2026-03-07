@@ -247,7 +247,7 @@ export default function RegistroPagoModal({
                                                                 setClienteSearch(`${c.nombre} ${c.apellido}`);
                                                                 setShowClienteDropdown(false);
                                                             }}
-                                                            className="w-full text-left px-4 py-2.5 hover:bg-red-50 hover:text-brand-red transition-colors text-sm border-b border-gray-50 last:border-0"
+                                                            className="w-full text-left px-4 py-2.5 text-gray-800 hover:bg-red-50 hover:text-brand-red transition-colors text-sm border-b border-gray-50 last:border-0"
                                                         >
                                                             <span className="font-semibold">{c.nombre} {c.apellido}</span>
                                                             {c.dni && <span className="text-gray-400 ml-2 text-xs">DNI: {c.dni}</span>}
