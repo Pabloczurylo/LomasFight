@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, DollarSign, Calendar, Users, Dumbbell, Edit3 } from 'lucide-react';
 import { ClienteBackend, Disciplina, UnifiedPago } from '../types';
 
@@ -41,6 +41,11 @@ export default function RegistroPagoModal({
     const [cuotaDisciplinaId, setCuotaDisciplinaId] = useState('');
     const [cuotaMonto, setCuotaMonto] = useState('');
 
+    // Combobox búsqueda de alumnos
+    const [clienteSearch, setClienteSearch] = useState('');
+    const [showClienteDropdown, setShowClienteDropdown] = useState(false);
+    const comboRef = useRef<HTMLDivElement>(null);
+
     // Form fields Alquiler
     const [alquilerDisciplinaId, setAlquilerDisciplinaId] = useState('');
     const [alquilerMonto, setAlquilerMonto] = useState('');
@@ -53,6 +58,8 @@ export default function RegistroPagoModal({
                 setTipoPago(initialData.tipo);
                 if (initialData.tipo === 'CUOTA') {
                     setCuotaClienteId(initialData.idCliente?.toString() || '');
+                    const clienteFound = clientes.find(c => c.id_cliente === initialData.idCliente);
+                    setClienteSearch(clienteFound ? `${clienteFound.nombre} ${clienteFound.apellido}` : '');
 
                     // Search for discipline via the client if needed, or if disciplineNombre matches
                     let matchingDiscipline = disciplinas.find(d => d.nombre_disciplina === initialData.disciplinaNombre);
@@ -76,6 +83,7 @@ export default function RegistroPagoModal({
             } else {
                 setTipoPago('CUOTA');
                 setCuotaClienteId('');
+                setClienteSearch('');
                 setCuotaDisciplinaId('');
                 setCuotaMonto('');
 
@@ -88,6 +96,16 @@ export default function RegistroPagoModal({
 
     // Filtrar solo clientes activos
     const clientesActivos = clientes.filter(c => c.activo === true);
+
+    // Clientes filtrados según lo que escribe el usuario en el combobox
+    const filteredClientes = useMemo(() => {
+        const q = clienteSearch.trim().toLowerCase();
+        if (!q) return clientesActivos;
+        return clientesActivos.filter(c => {
+            const full = `${c.nombre} ${c.apellido}`.toLowerCase();
+            return full.includes(q) || (c.dni?.toLowerCase().includes(q));
+        });
+    }, [clienteSearch, clientesActivos]);
 
     // Auto-completar disciplina si el cliente solo tiene una (o pre-seleccionada en backend)
     useEffect(() => {
@@ -201,20 +219,54 @@ export default function RegistroPagoModal({
                                         <Users className="w-4 h-4 text-gray-400" />
                                         Alumno (Activo)
                                     </label>
-                                    <select
-                                        value={cuotaClienteId}
-                                        onChange={(e) => setCuotaClienteId(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white transition-all"
-                                        required
-                                        disabled={isLoading}
-                                    >
-                                        <option value="">Seleccionar alumno activo...</option>
-                                        {clientesActivos.map((a) => (
-                                            <option key={a.id_cliente} value={a.id_cliente}>
-                                                {a.nombre} {a.apellido} {a.dni ? `(${a.dni})` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="relative" ref={comboRef}>
+                                        <input
+                                            type="text"
+                                            value={clienteSearch}
+                                            onChange={(e) => {
+                                                setClienteSearch(e.target.value);
+                                                setCuotaClienteId('');
+                                                setShowClienteDropdown(true);
+                                            }}
+                                            onFocus={() => setShowClienteDropdown(true)}
+                                            onBlur={() => setTimeout(() => setShowClienteDropdown(false), 150)}
+                                            placeholder="Buscar por nombre, apellido o DNI..."
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                                            disabled={isLoading}
+                                            autoComplete="off"
+                                        />
+                                        {showClienteDropdown && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-52 overflow-y-auto">
+                                                {filteredClientes.length > 0 ? (
+                                                    filteredClientes.map(c => (
+                                                        <button
+                                                            key={c.id_cliente}
+                                                            type="button"
+                                                            onMouseDown={() => {
+                                                                setCuotaClienteId(c.id_cliente.toString());
+                                                                setClienteSearch(`${c.nombre} ${c.apellido}`);
+                                                                setShowClienteDropdown(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 hover:bg-red-50 hover:text-brand-red transition-colors text-sm border-b border-gray-50 last:border-0"
+                                                        >
+                                                            <span className="font-semibold">{c.nombre} {c.apellido}</span>
+                                                            {c.dni && <span className="text-gray-400 ml-2 text-xs">DNI: {c.dni}</span>}
+                                                            {c.disciplinas?.nombre_disciplina && (
+                                                                <span className="text-gray-400 ml-1 text-xs">· {c.disciplinas.nombre_disciplina}</span>
+                                                            )}
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    <div className="px-4 py-3 text-sm text-gray-500">
+                                                        No se encontraron alumnos activos.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {!cuotaClienteId && clienteSearch && (
+                                        <p className="text-xs text-amber-600 mt-1">Seleccioná un alumno de la lista.</p>
+                                    )}
                                 </div>
 
                                 <div>
