@@ -62,15 +62,14 @@ export function ScheduleSection({
                     : data;
 
                 filteredData.forEach((h) => {
-                    // Use UTC getters to avoid local-timezone day-shift on Timestamptz values
                     const date = new Date(h.dia_y_hora);
-                    const utcDay = date.getUTCDay();                          // 0=Sun … 6=Sat
-                    const dayIdx = JS_DAY_TO_INDEX[utcDay];
+                    const localDay = date.getDay();                          // 0=Sun … 6=Sat
+                    const dayIdx = JS_DAY_TO_INDEX[localDay];
                     if (dayIdx === undefined) return;                         // ignore Sundays
 
                     const dayName = WEEK_DAYS[dayIdx];
-                    const hh = String(date.getUTCHours()).padStart(2, '0');
-                    const mm = String(date.getUTCMinutes()).padStart(2, '0');
+                    const hh = String(date.getHours()).padStart(2, '0');
+                    const mm = String(date.getMinutes()).padStart(2, '0');
 
                     buckets[dayName].push({
                         time: `${hh}:${mm}`,
