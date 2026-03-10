@@ -22,6 +22,7 @@ interface AlumnoRow {
     nombre: string;
     apellido: string;
     dni: string | null;
+    domicilio: string | null;
     disciplinaNombre: string;
     id_disciplina: number;
     estadoPago: EstadoPago;
@@ -104,6 +105,7 @@ export default function AlumnosPage() {
                 nombre:          c.nombre,
                 apellido:        c.apellido,
                 dni:             c.dni || null,
+                domicilio:       c.domicilio || null,
                 disciplinaNombre:c.disciplinas?.nombre_disciplina || '-',
                 id_disciplina:   c.id_disciplina,
                 estadoPago:      deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
@@ -157,6 +159,7 @@ export default function AlumnosPage() {
         dni:                   editingAlumno.dni,
         fecha_nacimiento:      editingAlumno.fechaNacimiento,
         grupo_sanguineo:       editingAlumno.grupoSanguineo,
+        domicilio:             editingAlumno.domicilio,
     } : undefined;
 
     const handleSave = (data: StudentFormData) => {
@@ -172,6 +175,7 @@ export default function AlumnosPage() {
                 dni:              data.dni,
                 fecha_nacimiento: data.fecha_nacimiento,
                 grupo_sanguineo:  data.grupo_sanguineo,
+                domicilio:        data.domicilio,
             };
             api.post('/clientes', payload)
                 .then(() => { fetchAll(); setIsModalOpen(false); })
@@ -196,6 +200,7 @@ export default function AlumnosPage() {
                 dni:              pendingData.dni,
                 fecha_nacimiento: pendingData.fecha_nacimiento,
                 grupo_sanguineo:  pendingData.grupo_sanguineo,
+                domicilio:        pendingData.domicilio,
             });
             await fetchAll();
             setIsSaveConfirmOpen(false);
@@ -285,6 +290,7 @@ export default function AlumnosPage() {
                             <tr className="border-b border-gray-100 bg-gray-50/50">
                                 <th className="pb-3 pt-3 pl-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Nombre</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">DNI</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Domicilio</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Disciplina</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Fecha Nac.</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Grupo</th>
@@ -299,6 +305,7 @@ export default function AlumnosPage() {
                                         {a.nombre} {a.apellido}
                                     </td>
                                     <td className="py-4 text-gray-500 text-sm">{dash(a.dni)}</td>
+                                    <td className="py-4 text-gray-500 text-sm">{dash(a.domicilio)}</td>
                                     <td className="py-4 text-gray-600 text-sm">{a.disciplinaNombre}</td>
                                     <td className="py-4 text-gray-500 text-sm">
                                         {a.fechaNacimiento ? new Date(a.fechaNacimiento).toLocaleDateString('es-AR') : '-'}
@@ -327,7 +334,7 @@ export default function AlumnosPage() {
                                 </tr>
                             ))}
                             {filtered.length === 0 && (
-                                <tr><td colSpan={6} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
+                                <tr><td colSpan={8} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
                             )}
                         </tbody>
                     </table>
