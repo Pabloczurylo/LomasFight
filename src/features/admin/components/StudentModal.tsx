@@ -12,6 +12,7 @@ export interface StudentFormData {
     dni: string | null;
     fecha_nacimiento: string | null;
     grupo_sanguineo: string | null;
+    domicilio: string | null;
 }
 
 interface DisciplinaOption { id_disciplina: number; nombre_disciplina: string; }
@@ -35,6 +36,7 @@ export default function StudentModal({
     const [dni,                setDni]               = useState('');
     const [fechaNacimiento,    setFechaNacimiento]   = useState('');
     const [grupoSanguineo,     setGrupoSanguineo]    = useState('');
+    const [domicilio,          setDomicilio]         = useState('');
 
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
@@ -50,6 +52,7 @@ export default function StudentModal({
                 ? new Date(initialData.fecha_nacimiento).toISOString().split('T')[0]
                 : '');
             setGrupoSanguineo(initialData.grupo_sanguineo || '');
+            setDomicilio(initialData.domicilio || '');
         } else {
             setNombre('');
             setApellido('');
@@ -58,6 +61,7 @@ export default function StudentModal({
             setDni('');
             setFechaNacimiento('');
             setGrupoSanguineo('');
+            setDomicilio('');
         }
         setErrors({ nombre: '', apellido: '' });
     }, [isOpen, initialData, disciplinas]);
@@ -84,6 +88,7 @@ export default function StudentModal({
             dni:                   dni.trim()            || null,
             fecha_nacimiento:      fechaNacimiento        || null,
             grupo_sanguineo:       grupoSanguineo         || null,
+            domicilio:             domicilio.trim()       || null,
         });
         onClose();
     };
@@ -134,6 +139,13 @@ export default function StudentModal({
                         <label className={labelClass}>DNI <span className={optionalClass}>(opcional)</span></label>
                         <input type="text" value={dni} onChange={e => setDni(e.target.value)}
                             placeholder="Ej: 38123456" className={inputClass()} />
+                    </div>
+
+                    {/* Domicilio */}
+                    <div className="space-y-1.5">
+                        <label className={labelClass}>Domicilio <span className={optionalClass}>(opcional)</span></label>
+                        <input type="text" value={domicilio} onChange={e => setDomicilio(e.target.value)}
+                            placeholder="Ej: Av. Siempre Viva 123" className={inputClass()} />
                     </div>
 
                     {/* Disciplina */}

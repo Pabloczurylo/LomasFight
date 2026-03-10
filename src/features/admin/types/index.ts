@@ -14,6 +14,7 @@ export interface ClienteBackend {
     dni: string | null;
     fecha_nacimiento: string | null;
     grupo_sanguineo: string | null;
+    domicilio: string | null;
     id_disciplina: number;
     id_profesor_que_cargo: number | null;
     fecha_ultimo_pago: string | null;

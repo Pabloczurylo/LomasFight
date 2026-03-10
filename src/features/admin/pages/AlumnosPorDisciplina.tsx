@@ -26,6 +26,7 @@ interface Alumno {
     nombre: string;
     apellido: string;
     dni: string | null;
+    domicilio: string | null;
     fecha_registro: string;
     fecha_ultimo_pago: string | null;
     fecha_nacimiento: string | null;
@@ -76,7 +77,7 @@ interface AlumnoFormModalProps {
     onSave: (data: {
         nombre: string; apellido: string;
         dni: string | null; fecha_nacimiento: string | null;
-        grupo_sanguineo: string | null;
+        grupo_sanguineo: string | null; domicilio: string | null;
     }) => void;
     initialData?: Alumno | null;
     fixedDisciplina: string;
@@ -88,6 +89,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
     const [dni, setDni] = useState('');
     const [fechaNac, setFechaNac] = useState('');
     const [grupoSanguineo, setGrupoSanguineo] = useState('');
+    const [domicilio, setDomicilio] = useState('');
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
     useEffect(() => {
@@ -98,6 +100,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
             setFechaNac(initialData?.fecha_nacimiento
                 ? new Date(initialData.fecha_nacimiento).toISOString().split('T')[0] : '');
             setGrupoSanguineo(initialData?.grupo_sanguineo || '');
+            setDomicilio(initialData?.domicilio || '');
             setErrors({ nombre: '', apellido: '' });
         }
     }, [isOpen, initialData]);
@@ -121,6 +124,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
             dni: dni.trim() || null,
             fecha_nacimiento: fechaNac || null,
             grupo_sanguineo: grupoSanguineo || null,
+            domicilio: domicilio.trim() || null,
         });
     };
 
@@ -163,6 +167,12 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
                     <div className="space-y-1.5">
                         <label className="text-sm font-bold text-gray-700">DNI <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
                         <input type="text" value={dni} onChange={e => setDni(e.target.value)} placeholder="Ej: 38123456" className={iClass()} />
+                    </div>
+
+                    {/* Domicilio */}
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-gray-700">Domicilio <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                        <input type="text" value={domicilio} onChange={e => setDomicilio(e.target.value)} placeholder="Ej: Av. Siempre Viva 123" className={iClass()} />
                     </div>
 
                     {/* Fecha Nac + Grupo Sanguíneo */}
@@ -256,6 +266,7 @@ export default function AlumnosPorDisciplina() {
                     nombre: c.nombre,
                     apellido: c.apellido,
                     dni: c.dni || null,
+                    domicilio: c.domicilio || null,
                     fecha_registro: c.fecha_registro || new Date().toISOString(),
                     fecha_ultimo_pago: c.fecha_ultimo_pago || null,
                     fecha_nacimiento: c.fecha_nacimiento || null,
@@ -299,7 +310,7 @@ export default function AlumnosPorDisciplina() {
     const handleSave = async (data: {
         nombre: string; apellido: string;
         dni: string | null; fecha_nacimiento: string | null;
-        grupo_sanguineo: string | null;
+        grupo_sanguineo: string | null; domicilio: string | null;
     }) => {
         try {
             const payload = {
@@ -309,6 +320,7 @@ export default function AlumnosPorDisciplina() {
                 dni: data.dni,
                 fecha_nacimiento: data.fecha_nacimiento,
                 grupo_sanguineo: data.grupo_sanguineo,
+                domicilio: data.domicilio,
             };
             if (editingAlumno) {
                 await api.put(`/clientes/${editingAlumno.id_cliente}`, payload);
@@ -421,6 +433,7 @@ export default function AlumnosPorDisciplina() {
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">DNI</th>
+                                <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Domicilio</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">F. Nacimiento</th>
                                 <th className="hidden sm:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">G. Sanguíneo</th>
                                 <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Inicio</th>
@@ -430,7 +443,7 @@ export default function AlumnosPorDisciplina() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={7} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
+                                <tr><td colSpan={8} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
                             ) : filteredAlumnos.length > 0 ? (
                                 pagedAlumnos.map(alumno => (
                                     <tr key={alumno.id_cliente} className="hover:bg-gray-50 transition-colors group">
@@ -446,6 +459,9 @@ export default function AlumnosPorDisciplina() {
                                         </td>
                                         <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
                                             {alumno.dni || '-'}
+                                        </td>
+                                        <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
+                                            {alumno.domicilio || '-'}
                                         </td>
                                         <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
                                             {alumno.fecha_nacimiento ? new Date(alumno.fecha_nacimiento).toLocaleDateString() : '-'}
@@ -498,7 +514,7 @@ export default function AlumnosPorDisciplina() {
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
+                                <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
                             )}
                         </tbody>
                     </table>

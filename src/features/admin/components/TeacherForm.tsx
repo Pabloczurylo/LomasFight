@@ -31,9 +31,9 @@ export function TeacherForm({ isOpen, formData, disciplines, onChange, onSave, o
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
                 {/* Header */}
-                <div className="px-8 py-6 pb-2">
+                <div className="px-8 py-6 pb-2 flex-shrink-0">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2 text-brand-red mb-1">
                             <div className="bg-red-100 p-1.5 rounded-full">
@@ -52,8 +52,8 @@ export function TeacherForm({ isOpen, formData, disciplines, onChange, onSave, o
                     </p>
                 </div>
 
-                {/* Body/Formulario */}
-                <div className="px-8 pb-8 pt-4">
+                {/* Body/Formulario — scrollable */}
+                <div className="px-8 pb-8 pt-4 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         {/* Campo Nombre */}
                         <div className="space-y-1.5">
