@@ -37,7 +37,7 @@ export function Footer() {
                     <div>
                         <h4 className="text-white font-heading font-bold uppercase tracking-wide mb-4">SÍGUENOS</h4>
                         <div className="flex gap-4 mb-6">
-                            <a href="https://www.instagram.com/lomasfight?igsh=MXVudm8zenk4b2NpNQ==" target="_blank" rel="noopener noreferrer" className="hover:text-brand-red transition-colors"><Instagram /></a>
+                            <a href="https://www.instagram.com/lomasfight/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-brand-red transition-colors"><Instagram /> <span className="text-sm font-semibold">lomasfight</span></a>
                         </div>
                         {/* Google Maps */}
                         <div className="w-full rounded-lg overflow-hidden border border-gray-800">
