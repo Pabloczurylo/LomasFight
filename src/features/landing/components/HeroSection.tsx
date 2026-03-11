@@ -11,7 +11,7 @@ export function HeroSection() {
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
                 <img
-                    src="https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80&w=2069&auto=format&fit=crop"
+                    src="https://i.imgur.com/QIrXU7o.png"
                     alt="Lomas Fight Gym"
                     className="w-full h-full object-cover opacity-60"
                 />
@@ -20,7 +20,7 @@ export function HeroSection() {
             <div className="relative z-20 container mx-auto px-4 text-center flex flex-col items-center">
                 <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-heading font-bold text-white uppercase leading-[0.9] mb-6">
                     BIENVENIDOS A <br />
-                    <span className="text-brand-red">LOMAS FIGHT</span>
+                    <span className="text-brand-red">CHUCA</span>
                 </h1>
 
                 <p className="max-w-xl text-gray-300 text-lg md:text-xl mb-8 font-body font-light">

@@ -152,7 +152,7 @@ export function ScheduleSection({
                                                             <span className="text-brand-red font-heading font-bold text-xl">{item.time}</span>
                                                             <span className="text-xs text-black font-bold uppercase mt-1">{item.class}</span>
                                                             {item.coach && (
-                                                                <span className="text-xs text-gray-500 mt-1">Coach: {item.coach}</span>
+                                                                <span className="text-xs text-gray-500 mt-1">Profe: {item.coach}</span>
                                                             )}
                                                         </>
                                                     ) : (

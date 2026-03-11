@@ -19,15 +19,7 @@ export function AboutUs() {
                         <div className="w-20 h-1 bg-brand-red mb-8"></div>
 
                         <p className="text-gray-300 text-lg mb-6 leading-relaxed">
-                            Lomas Fight Club nació con una misión clara: brindar un espacio donde la disciplina,
-                            el respeto y la superación personal sean los pilares fundamentales del entrenamiento.
-                        </p>
-
-                        <p className="text-gray-400 mb-8 leading-relaxed">
-                            No somos solo un gimnasio, somos una comunidad. Nuestros instructores
-                            altamente capacitados te guiarán paso a paso, ya sea que busques competir
-                            a nivel profesional, aprender a defenderte o simplemente alcanzar
-                            tu mejor forma física en un ambiente motivador.
+                            Soy un hombre criado en Chuca, comiendo mazamorra con leche. Mi abuela me enseñó a pescar en el arroyo con mosca, y hacía 3 burpees.
                         </p>
 
                     </div>
@@ -37,7 +29,7 @@ export function AboutUs() {
                         <div className="relative rounded-2xl overflow-hidden shadow-2xl z-10 aspect-[4/3] group">
                             <div className="absolute inset-0 bg-brand-red/20 group-hover:bg-transparent transition-colors duration-500 z-10 mix-blend-multiply" />
                             <img
-                                src="https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=1200"
+                                src="https://i.imgur.com/QIrXU7o.png"
                                 alt="Entrenamiento en Lomas Fight Club"
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
