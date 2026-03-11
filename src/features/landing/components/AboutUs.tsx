@@ -19,7 +19,7 @@ export function AboutUs() {
                         <div className="w-20 h-1 bg-brand-red mb-8"></div>
 
                         <p className="text-gray-300 text-lg mb-6 leading-relaxed">
-                            Soy un hombre criado en Chuca, comiendo mazamorra con leche. Mi abuela me enseñó a pescar en el arroyo con mosca, y hacía 3 burpees.
+                            Soy un hombre criado en Chucha, comiendo mazamorra con leche. Mi abuela me enseñó a pescar en el arroyo con mosca, y hacía 3 burpees.
                         </p>
 
                     </div>
