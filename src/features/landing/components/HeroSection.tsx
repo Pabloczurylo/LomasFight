@@ -11,20 +11,24 @@ export function HeroSection() {
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
                 <img
-                    src="https://i.imgur.com/SMMttMP.png"
+                    src="https://i.imgur.com/ln8SjHz.png"
                     alt="Lomas Fight Gym"
                     className="w-full h-full object-cover opacity-60"
                 />
             </div>
 
             <div className="relative z-20 container mx-auto px-4 text-center flex flex-col items-center">
-                <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-heading font-bold text-white uppercase leading-[0.9] mb-6">
+                <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-heading font-bold text-white uppercase leading-[0.9] mb-4">
                     BIENVENIDOS A <br />
-                    <span className="text-brand-red">CHUSCHA</span>
+                    <span className="text-brand-red">LOMAS FIGHT</span>
                 </h1>
 
+                <h2 className="text-lg sm:text-xl md:text-2xl font-heading font-semibold text-gray-400 uppercase tracking-widest mb-6">
+                    Kickboxing y Artes Marciales en Tucumán
+                </h2>
+
                 <p className="max-w-xl text-gray-300 text-lg md:text-xl mb-8 font-body font-light">
-                    Desata tu potencial con Kickboxing, Muay Thai y Boxeo. Únete a una comunidad basada en la disciplina, fuerza y respeto.
+                    Desata tu potencial con Kickboxing, Muay Thai, Boxeo y Pakua en Lomas de Tafí y Tafí Viejo. Únete a una comunidad basada en la disciplina, fuerza y respeto.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
