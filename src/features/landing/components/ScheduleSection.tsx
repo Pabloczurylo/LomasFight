@@ -123,6 +123,13 @@ export function ScheduleSection({
         return map;
     }, [scheduleData]);
 
+    // Format a time slot as a range: "17:00 a 18:00"
+    const formatTimeRange = (time: string) => {
+        const [hh, mm] = time.split(':').map(Number);
+        const endHh = (hh + 1) % 24;
+        return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} a ${String(endHh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    };
+
     return (
         <section id={id} className="py-20 bg-white">
             <div className="container mx-auto px-4">
@@ -146,53 +153,56 @@ export function ScheduleSection({
                             <p className="text-gray-400 font-heading font-bold uppercase tracking-widest">No hay horarios cargados todavía.</p>
                         </div>
                     ) : (
-                        <div className="min-w-[800px] overflow-hidden rounded-lg shadow-lg border border-gray-100">
-                            {/* Header Row: days as columns */}
+                        <div className="min-w-[700px] overflow-hidden rounded-lg shadow-lg border border-gray-100">
+                            {/* Header Row: "HORARIOS" label + time range columns */}
                             <div
                                 className="bg-black text-white font-heading font-bold text-sm md:text-base uppercase tracking-wider text-center"
-                                style={{ display: 'grid', gridTemplateColumns: `100px repeat(${WEEK_DAYS.length}, 1fr)` }}
+                                style={{ display: 'grid', gridTemplateColumns: `140px repeat(${timeSlots.length}, 1fr)` }}
                             >
-                                <div className="py-4 flex items-center justify-center border-r border-gray-700"></div>
-                                {WEEK_DAYS.map(day => (
-                                    <div key={day} className="py-4 flex items-center justify-center">{day}</div>
+                                <div className="py-4 flex items-center justify-center border-r border-gray-700">HORARIOS</div>
+                                {timeSlots.map(slot => (
+                                    <div key={slot} className="py-4 flex items-center justify-center">{formatTimeRange(slot)}</div>
                                 ))}
                             </div>
 
-                            {/* Body — one row per unique time slot */}
-                            {timeSlots.map(slot => (
-                                <div
-                                    key={slot}
-                                    className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
-                                    style={{ display: 'grid', gridTemplateColumns: `100px repeat(${WEEK_DAYS.length}, 1fr)` }}
-                                >
-                                    {/* Time label */}
-                                    <div className="py-4 px-3 flex items-center justify-center bg-gray-50 font-heading font-bold text-brand-red text-xl border-r border-gray-100">
-                                        {slot}
-                                    </div>
+                            {/* Body — one row per day */}
+                            {WEEK_DAYS.map(day => {
+                                const dayData = lookup[day] || {};
+                                return (
+                                    <div
+                                        key={day}
+                                        className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
+                                        style={{ display: 'grid', gridTemplateColumns: `140px repeat(${timeSlots.length}, 1fr)` }}
+                                    >
+                                        {/* Day name */}
+                                        <div className="py-4 px-3 flex items-center justify-center bg-gray-50 font-heading font-bold text-sm uppercase tracking-wider text-brand-black border-r border-gray-100">
+                                            {day}
+                                        </div>
 
-                                    {/* Day cells for this time slot */}
-                                    {WEEK_DAYS.map(day => {
-                                        const item = (lookup[day] || {})[slot];
-                                        return (
-                                            <div
-                                                key={day}
-                                                className="p-4 h-28 flex flex-col justify-center items-center text-center border-r border-gray-100 last:border-r-0"
-                                            >
-                                                {item ? (
-                                                    <>
-                                                        <span className="text-xs text-black font-bold uppercase">{item.class}</span>
-                                                        {item.coach && (
-                                                            <span className="text-xs text-gray-500 mt-1">Profe: {item.coach}</span>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <span className="text-gray-300 font-heading font-bold text-xl">—</span>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ))}
+                                        {/* Time slot cells */}
+                                        {timeSlots.map(slot => {
+                                            const item = dayData[slot];
+                                            return (
+                                                <div
+                                                    key={slot}
+                                                    className="p-3 min-h-[80px] flex flex-col justify-center items-center text-center border-r border-gray-100 last:border-r-0"
+                                                >
+                                                    {item ? (
+                                                        <>
+                                                            <span className="text-xs text-black font-bold uppercase">{item.class}</span>
+                                                            {item.coach && (
+                                                                <span className="text-xs text-gray-500 mt-1">Profe: {item.coach}</span>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-gray-300 font-heading font-bold text-lg">—</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

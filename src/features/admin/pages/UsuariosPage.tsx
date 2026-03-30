@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { ChevronRight, Shield, X } from 'lucide-react';
 import UserForm from '../components/UserForm';
 import UserList from '../components/UserList';
@@ -20,13 +21,15 @@ interface EditUserModalProps {
     user: Usuario | null;
     disciplines: Disciplina[];
     onClose: () => void;
-    onSave: (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string }) => Promise<void>;
+    onSave: (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string }) => Promise<void>;
 }
 
 function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProps) {
     const [nombre, setNombre] = useState('');
     const [email, setEmail] = useState('');
     const [rol, setRol] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -34,6 +37,7 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
             setNombre(user.nombre_usuario);
             setEmail(user.mail_usuario);
             setRol(user.rol);
+            setPassword('');
         }
     }, [user]);
 
@@ -44,7 +48,15 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
         if (!nombre || !email || !rol) return;
         setSaving(true);
         try {
-            await onSave(user.id_usuario, { nombre_usuario: nombre, mail_usuario: email, rol });
+            const data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string } = {
+                nombre_usuario: nombre,
+                mail_usuario: email,
+                rol
+            };
+            if (password.trim()) {
+                data.contrasena_usuario = password;
+            }
+            await onSave(user.id_usuario, data);
             onClose();
         } finally {
             setSaving(false);
@@ -111,6 +123,27 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
                             </div>
                         </div>
                         <p className="text-xs text-gray-400 italic">El rol determina el acceso del usuario al sistema.</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-gray-700">Nueva Contraseña</label>
+                        <div className="relative">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                placeholder="Dejar vacío para no cambiar"
+                                className="w-full px-4 py-2.5 pr-12 rounded-lg border border-gray-300 bg-white outline-none text-gray-900 focus:border-brand-red focus:ring-2 focus:ring-brand-red/20 transition-all"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-400 italic">Solo completar si desea cambiar la contraseña del usuario.</p>
                     </div>
 
                     <div className={cn(
@@ -197,7 +230,7 @@ export default function UsuariosPage() {
         setEditingUser(user);
     };
 
-    const handleSaveEdit = async (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string }) => {
+    const handleSaveEdit = async (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string }) => {
         await api.put(`/usuarios/${userId}`, data);
         await fetchUsuarios();
     };
