@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "../../../services/api";
 
@@ -41,7 +41,6 @@ export function ScheduleSection({
     disciplineId
 }: ScheduleSectionProps) {
     const [scheduleData, setScheduleData] = useState<ScheduleDay[]>([]);
-    const [maxSlots, setMaxSlots] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
@@ -88,11 +87,7 @@ export function ScheduleSection({
                     })
                 }));
 
-                // Compute total rows needed (max classes in any single day)
-                const max = Math.max(...formatted.map(d => d.classes.length), 1);
-
                 setScheduleData(formatted);
-                setMaxSlots(max);
                 setError(false);
             } catch (err) {
                 console.error("Error fetching schedule:", err);
@@ -104,6 +99,30 @@ export function ScheduleSection({
 
         fetchSchedule();
     }, [disciplineId]);
+
+    // Collect all unique time slots sorted chronologically
+    const timeSlots = useMemo(() => {
+        const set = new Set<string>();
+        scheduleData.forEach(day => day.classes.forEach(c => set.add(c.time)));
+        return [...set].sort((a, b) => {
+            const [ah, am] = a.split(':').map(Number);
+            const [bh, bm] = b.split(':').map(Number);
+            return ah * 60 + am - (bh * 60 + bm);
+        });
+    }, [scheduleData]);
+
+    // Build a lookup map: day -> time -> ScheduleItem
+    const lookup = useMemo(() => {
+        const map: Record<string, Record<string, ScheduleItem>> = {};
+        scheduleData.forEach(day => {
+            map[day.day] = {};
+            day.classes.forEach(c => {
+                map[day.day][c.time] = c;
+            });
+        });
+        return map;
+    }, [scheduleData]);
+
 
     return (
         <section id={id} className="py-20 bg-white">
@@ -128,42 +147,56 @@ export function ScheduleSection({
                             <p className="text-gray-400 font-heading font-bold uppercase tracking-widest">No hay horarios cargados todavía.</p>
                         </div>
                     ) : (
-                        <div className="min-w-[800px] overflow-hidden rounded-lg shadow-lg border border-gray-100">
-                            {/* Header Row */}
-                            <div className="grid grid-cols-6 bg-black text-white py-4 font-heading font-bold text-sm md:text-base uppercase tracking-wider text-center">
-                                {scheduleData.map((day, idx) => (
-                                    <div key={idx}>{day.day}</div>
+                        <div className="min-w-[700px] overflow-hidden rounded-lg shadow-lg border border-gray-100">
+                            {/* Header Row: "HORARIOS" label + time slot columns */}
+                            <div
+                                className="bg-black text-white font-heading font-bold text-sm md:text-base uppercase tracking-wider text-center"
+                                style={{ display: 'grid', gridTemplateColumns: `140px repeat(${timeSlots.length}, 1fr)` }}
+                            >
+                                <div className="py-4 flex items-center justify-center border-r border-gray-700">HORARIOS</div>
+                                {timeSlots.map(slot => (
+                                    <div key={slot} className="py-4 flex items-center justify-center">{slot}</div>
                                 ))}
                             </div>
 
-                            {/* Body — one row per time slot, dynamic count */}
-                            <div className="bg-white divide-x divide-gray-100 grid grid-cols-6">
-                                {scheduleData.map((day, colIdx) => (
-                                    <div key={colIdx} className="divide-y divide-gray-100">
-                                        {Array.from({ length: maxSlots }).map((_, rowIdx) => {
-                                            const item = day.classes[rowIdx];
+                            {/* Body — one row per day */}
+                            {WEEK_DAYS.map(day => {
+                                const dayData = lookup[day] || {};
+                                return (
+                                    <div
+                                        key={day}
+                                        className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
+                                        style={{ display: 'grid', gridTemplateColumns: `140px repeat(${timeSlots.length}, 1fr)` }}
+                                    >
+                                        {/* Day name */}
+                                        <div className="py-4 px-3 flex items-center justify-center bg-gray-50 font-heading font-bold text-sm uppercase tracking-wider text-brand-black border-r border-gray-100">
+                                            {day}
+                                        </div>
+
+                                        {/* Time slot cells */}
+                                        {timeSlots.map(slot => {
+                                            const item = dayData[slot];
                                             return (
                                                 <div
-                                                    key={rowIdx}
-                                                    className="p-4 h-32 flex flex-col justify-center items-center text-center hover:bg-gray-50 transition-colors"
+                                                    key={slot}
+                                                    className="p-3 min-h-[80px] flex flex-col justify-center items-center text-center border-r border-gray-100 last:border-r-0"
                                                 >
                                                     {item ? (
                                                         <>
-                                                            <span className="text-brand-red font-heading font-bold text-xl">{item.time}</span>
-                                                            <span className="text-xs text-black font-bold uppercase mt-1">{item.class}</span>
+                                                            <span className="text-xs text-black font-bold uppercase">{item.class}</span>
                                                             {item.coach && (
                                                                 <span className="text-xs text-gray-500 mt-1">Profe: {item.coach}</span>
                                                             )}
                                                         </>
                                                     ) : (
-                                                        <span className="text-gray-300 font-heading font-bold text-xl">--</span>
+                                                        <span className="text-gray-300 font-heading font-bold text-lg">—</span>
                                                     )}
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -171,3 +204,4 @@ export function ScheduleSection({
         </section>
     );
 }
+
