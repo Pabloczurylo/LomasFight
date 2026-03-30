@@ -191,7 +191,7 @@ export function ScheduleSection({
                                                         <>
                                                             <span className="text-xs text-black font-bold uppercase">{item.class}</span>
                                                             {item.coach && (
-                                                                <span className="text-xs text-gray-500 mt-1">Profe: {item.coach}</span>
+                                                                <span className="text-xs text-gray-500 mt-1">Sensei: {item.coach}</span>
                                                             )}
                                                         </>
                                                     ) : (
