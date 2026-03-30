@@ -28,7 +28,7 @@ export function HeroSection() {
                 </h2>
 
                 <p className="max-w-xl text-gray-300 text-lg md:text-xl mb-8 font-body font-light">
-                    Desata tu potencial con Kickboxing, Muay Thai, Boxeo y Pakua en Lomas de Tafí y Tafí Viejo. Únete a una comunidad basada en la disciplina, fuerza y respeto.
+                    Desata tu potencial con Kickboxing y Artes Marciales en Lomas de Tafí y Tafí Viejo. Únete a una comunidad basada en la disciplina, fuerza y respeto.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
