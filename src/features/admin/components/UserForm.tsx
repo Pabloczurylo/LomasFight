@@ -8,14 +8,23 @@ interface Disciplina {
     nombre_disciplina: string;
 }
 
-interface UserFormProps {
-    onSubmit: (userData: { nombre_usuario: string; mail_usuario: string; contrasena_usuario: string; rol: string }) => void;
-    onCancel: () => void;
-    disciplines?: Disciplina[];
+interface ProfesorOption {
+    id_profesor: number;
+    nombre: string;
+    apellido: string;
+    id_disciplina: number;
 }
 
-export default function UserForm({ onSubmit, onCancel, disciplines = [] }: UserFormProps) {
+interface UserFormProps {
+    onSubmit: (userData: { nombre_usuario: string; mail_usuario: string; contrasena_usuario: string; rol: string; id_profesor?: number | null }) => void;
+    onCancel: () => void;
+    disciplines?: Disciplina[];
+    profesores?: ProfesorOption[];
+}
+
+export default function UserForm({ onSubmit, onCancel, disciplines = [], profesores = [] }: UserFormProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const [idProfesor, setIdProfesor] = useState<number | null>(null);
     const [formData, setFormData] = useState({
         nombre: '',
         email: '',
@@ -26,16 +35,19 @@ export default function UserForm({ onSubmit, onCancel, disciplines = [] }: UserF
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.rol) {
-            const payload = {
+            const payload: any = {
                 nombre_usuario: formData.nombre,
                 mail_usuario: formData.email,
                 contrasena_usuario: formData.password,
-                rol: formData.rol // Send as string directly
+                rol: formData.rol,
             };
+            if (formData.rol !== 'admin' && idProfesor) {
+                payload.id_profesor = idProfesor;
+            }
             console.log('Enviando usuario:', payload);
             onSubmit(payload);
-            // Reset form
             setFormData({ nombre: '', email: '', password: '', rol: '' });
+            setIdProfesor(null);
         }
     };
 
@@ -132,6 +144,28 @@ export default function UserForm({ onSubmit, onCancel, disciplines = [] }: UserF
                         </div>
                     </div>
                 </div>
+
+                {/* Profesor Asociado (solo si no es admin) */}
+                {formData.rol && formData.rol !== 'admin' && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700 ml-1">
+                            Profesor Asociado
+                        </label>
+                        <select
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red appearance-none text-gray-900"
+                            value={idProfesor || ''}
+                            onChange={(e) => setIdProfesor(e.target.value ? Number(e.target.value) : null)}
+                        >
+                            <option value="">— Sin asignar —</option>
+                            {profesores.map(p => (
+                                <option key={p.id_profesor} value={p.id_profesor}>{p.nombre} {p.apellido}</option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-500 italic ml-1">
+                            Vincular con un profesor para que solo vea sus alumnos.
+                        </p>
+                    </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex justify-end items-center gap-4 pt-4 border-t border-gray-50">
