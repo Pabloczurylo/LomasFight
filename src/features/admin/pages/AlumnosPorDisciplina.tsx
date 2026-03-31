@@ -19,6 +19,13 @@ interface Disciplina {
     nombre_disciplina: string;
 }
 
+interface ProfesorOption {
+    id_profesor: number;
+    nombre: string;
+    apellido: string;
+    id_disciplina: number;
+}
+
 type EstadoAlumno = 'al día' | 'pendiente' | 'inactivo';
 
 interface Alumno {
@@ -48,7 +55,7 @@ function deriveEstado(inactivo: boolean, fecha_ultimo_pago: string | null): Esta
     const now = new Date();
     // Consider "al día" if paid within the last 35 days (roughly current month)
     const diffDays = (now.getTime() - pago.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 35 ? 'al día' : 'pendiente';
+    return diffDays <= 31 ? 'al día' : 'pendiente';
 }
 
 // Payload to send to backend based on selected estado
@@ -78,18 +85,22 @@ interface AlumnoFormModalProps {
         nombre: string; apellido: string;
         dni: string | null; fecha_nacimiento: string | null;
         grupo_sanguineo: string | null; domicilio: string | null;
+        id_profesor_que_cargo?: number | null;
     }) => void;
     initialData?: Alumno | null;
     fixedDisciplina: string;
+    profesores: ProfesorOption[];
+    isAdmin: boolean;
 }
 
-function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina }: AlumnoFormModalProps) {
+function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina, profesores, isAdmin }: AlumnoFormModalProps) {
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [dni, setDni] = useState('');
     const [fechaNac, setFechaNac] = useState('');
     const [grupoSanguineo, setGrupoSanguineo] = useState('');
     const [domicilio, setDomicilio] = useState('');
+    const [idProfesor, setIdProfesor] = useState<number | null>(null);
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
     useEffect(() => {
@@ -101,6 +112,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
                 ? new Date(initialData.fecha_nacimiento).toISOString().split('T')[0] : '');
             setGrupoSanguineo(initialData?.grupo_sanguineo || '');
             setDomicilio(initialData?.domicilio || '');
+            setIdProfesor(initialData?.id_profesor_que_cargo || null);
             setErrors({ nombre: '', apellido: '' });
         }
     }, [isOpen, initialData]);
@@ -125,6 +137,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
             fecha_nacimiento: fechaNac || null,
             grupo_sanguineo: grupoSanguineo || null,
             domicilio: domicilio.trim() || null,
+            ...(isAdmin && { id_profesor_que_cargo: idProfesor }),
         });
     };
 
@@ -190,6 +203,19 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
                         </div>
                     </div>
 
+                    {/* Profesor (solo admin) */}
+                    {isAdmin && (
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Profesor <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                            <select value={idProfesor || ''} onChange={e => setIdProfesor(e.target.value ? Number(e.target.value) : null)} className={iClass()}>
+                                <option value="">— Sin asignar —</option>
+                                {profesores.map(p => (
+                                    <option key={p.id_profesor} value={p.id_profesor}>{p.nombre} {p.apellido}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div className="flex gap-3 pt-4 border-t border-gray-50">
                         <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                             Cancelar
@@ -210,10 +236,13 @@ export default function AlumnosPorDisciplina() {
     const currentUser = JSON.parse(localStorage.getItem('usuario') || '{}');
     const isAdmin = currentUser.rol === 'admin';
     const teacherDisciplineName: string = isAdmin ? '' : (currentUser.rol || '');
+    const currentProfesorId: number | null = currentUser.id_profesor || null;
 
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+    const [profesores, setProfesores] = useState<ProfesorOption[]>([]);
     const [selectedDisciplina, setSelectedDisciplina] = useState<number | null>(null);
     const [selectedDisciplinaName, setSelectedDisciplinaName] = useState('');
+    const [selectedProfesor, setSelectedProfesor] = useState<number | null>(null);
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -226,19 +255,23 @@ export default function AlumnosPorDisciplina() {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [deletingAlumno, setDeletingAlumno] = useState<Alumno | null>(null);
 
-    // 1. Load disciplines
+    // 1. Load disciplines & professors
     useEffect(() => {
-        const fetchDisciplinas = async () => {
+        const fetchInitialData = async () => {
             try {
-                const response = await api.get<Disciplina[]>('/diciplinas');
-                setDisciplinas(response.data);
+                const [discRes, profRes] = await Promise.all([
+                    api.get<Disciplina[]>('/diciplinas'),
+                    api.get<ProfesorOption[]>('/profesores')
+                ]);
+                setDisciplinas(discRes.data);
+                setProfesores(profRes.data);
                 if (isAdmin) {
-                    if (response.data.length > 0) {
-                        setSelectedDisciplina(response.data[0].id_disciplina);
-                        setSelectedDisciplinaName(response.data[0].nombre_disciplina);
+                    if (discRes.data.length > 0) {
+                        setSelectedDisciplina(discRes.data[0].id_disciplina);
+                        setSelectedDisciplinaName(discRes.data[0].nombre_disciplina);
                     }
                 } else {
-                    const match = response.data.find(
+                    const match = discRes.data.find(
                         d => d.nombre_disciplina.toLowerCase() === teacherDisciplineName.toLowerCase()
                     );
                     if (match) {
@@ -247,10 +280,10 @@ export default function AlumnosPorDisciplina() {
                     }
                 }
             } catch (error) {
-                console.error('Error fetching disciplinas:', error);
+                console.error('Error fetching initial data:', error);
             }
         };
-        fetchDisciplinas();
+        fetchInitialData();
     }, []);
 
     // 2. Load students by discipline
@@ -258,26 +291,34 @@ export default function AlumnosPorDisciplina() {
         if (!selectedDisciplina) return;
         setLoading(true);
         try {
-            const response = await api.get('/clientes');
+            // Si es profesor, filtrar por su id_profesor
+            const params: Record<string, string> = {};
+            if (!isAdmin && currentProfesorId) {
+                params.id_profesor = String(currentProfesorId);
+            }
+            const response = await api.get('/clientes', { params });
             if (response.data) {
                 const filtered = (response.data as any[]).filter(c => c.id_disciplina === selectedDisciplina);
-                const mapped: Alumno[] = filtered.map(c => ({
-                    id_cliente: c.id_cliente || c.id,
-                    nombre: c.nombre,
-                    apellido: c.apellido,
-                    dni: c.dni || null,
-                    domicilio: c.domicilio || null,
-                    fecha_registro: c.fecha_registro || new Date().toISOString(),
-                    fecha_ultimo_pago: c.fecha_ultimo_pago || null,
-                    fecha_nacimiento: c.fecha_nacimiento || null,
-                    grupo_sanguineo: c.grupo_sanguineo || null,
-                    activo: c.activo !== false,
-                    inactivo: c.inactivo === true,
-                    id_disciplina: c.id_disciplina,
-                    id_profesor_que_cargo: c.id_profesor_que_cargo || null,
-                    profesorNombre: null,
-                    estado: deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
-                }));
+                const mapped: Alumno[] = filtered.map(c => {
+                    const prof = c.profesores;
+                    return {
+                        id_cliente: c.id_cliente || c.id,
+                        nombre: c.nombre,
+                        apellido: c.apellido,
+                        dni: c.dni || null,
+                        domicilio: c.domicilio || null,
+                        fecha_registro: c.fecha_registro || new Date().toISOString(),
+                        fecha_ultimo_pago: c.fecha_ultimo_pago || null,
+                        fecha_nacimiento: c.fecha_nacimiento || null,
+                        grupo_sanguineo: c.grupo_sanguineo || null,
+                        activo: c.activo !== false,
+                        inactivo: c.inactivo === true,
+                        id_disciplina: c.id_disciplina,
+                        id_profesor_que_cargo: c.id_profesor_que_cargo || null,
+                        profesorNombre: prof ? `${prof.nombre} ${prof.apellido}` : null,
+                        estado: deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
+                    };
+                });
                 setAlumnos(mapped);
             }
         } catch (error) {
@@ -311,9 +352,10 @@ export default function AlumnosPorDisciplina() {
         nombre: string; apellido: string;
         dni: string | null; fecha_nacimiento: string | null;
         grupo_sanguineo: string | null; domicilio: string | null;
+        id_profesor_que_cargo?: number | null;
     }) => {
         try {
-            const payload = {
+            const payload: any = {
                 nombre: data.nombre,
                 apellido: data.apellido,
                 id_disciplina: selectedDisciplina,
@@ -322,6 +364,11 @@ export default function AlumnosPorDisciplina() {
                 grupo_sanguineo: data.grupo_sanguineo,
                 domicilio: data.domicilio,
             };
+            if (isAdmin && data.id_profesor_que_cargo !== undefined) {
+                payload.id_profesor_que_cargo = data.id_profesor_que_cargo;
+            } else if (!isAdmin && currentProfesorId) {
+                payload.id_profesor_que_cargo = currentProfesorId;
+            }
             if (editingAlumno) {
                 await api.put(`/clientes/${editingAlumno.id_cliente}`, payload);
             } else {
@@ -351,18 +398,23 @@ export default function AlumnosPorDisciplina() {
 
     const STATUS_ORDER: Record<EstadoAlumno, number> = { 'al día': 0, 'pendiente': 1, 'inactivo': 2 };
 
+    // Professors filtered by selected discipline (for dropdown/filter)
+    const profesoresDeDisciplina = profesores.filter(p => p.id_disciplina === selectedDisciplina);
+
     const filteredAlumnos = alumnos
-        .filter(a =>
-            a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            a.apellido.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        .filter(a => {
+            const matchesSearch = a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                a.apellido.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesProfesor = !selectedProfesor || a.id_profesor_que_cargo === selectedProfesor;
+            return matchesSearch && matchesProfesor;
+        })
         .sort((a, b) => STATUS_ORDER[a.estado] - STATUS_ORDER[b.estado]);
 
     const totalPages = Math.ceil(filteredAlumnos.length / PAGE_SIZE);
     const pagedAlumnos = filteredAlumnos.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-    // Reset to page 1 when search or discipline changes
-    useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedDisciplina]);
+    // Reset to page 1 when search, discipline, or professor changes
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedDisciplina, selectedProfesor]);
 
     if (loading && disciplinas.length === 0) {
         return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-brand-red" /></div>;
@@ -389,21 +441,37 @@ export default function AlumnosPorDisciplina() {
             </div>
 
             {/* Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex-wrap">
                 {isAdmin ? (
-                    <div className="w-full sm:w-auto">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Disciplina</label>
-                        <select
-                            value={selectedDisciplina || ''}
-                            onChange={e => {
-                                const id = Number(e.target.value);
-                                setSelectedDisciplina(id);
-                                setSelectedDisciplinaName(disciplinas.find(d => d.id_disciplina === id)?.nombre_disciplina || '');
-                            }}
-                            className="w-full sm:w-64 rounded-lg border-gray-300 text-black focus:border-brand-red focus:ring-brand-red shadow-sm"
-                        >
-                            {disciplinas.map(d => <option key={d.id_disciplina} value={d.id_disciplina}>{d.nombre_disciplina}</option>)}
-                        </select>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="w-full sm:w-auto">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Disciplina</label>
+                            <select
+                                value={selectedDisciplina || ''}
+                                onChange={e => {
+                                    const id = Number(e.target.value);
+                                    setSelectedDisciplina(id);
+                                    setSelectedDisciplinaName(disciplinas.find(d => d.id_disciplina === id)?.nombre_disciplina || '');
+                                    setSelectedProfesor(null);
+                                }}
+                                className="w-full sm:w-56 rounded-lg border-gray-300 text-black focus:border-brand-red focus:ring-brand-red shadow-sm"
+                            >
+                                {disciplinas.map(d => <option key={d.id_disciplina} value={d.id_disciplina}>{d.nombre_disciplina}</option>)}
+                            </select>
+                        </div>
+                        <div className="w-full sm:w-auto">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Profesor</label>
+                            <select
+                                value={selectedProfesor || ''}
+                                onChange={e => setSelectedProfesor(e.target.value ? Number(e.target.value) : null)}
+                                className="w-full sm:w-56 rounded-lg border-gray-300 text-black focus:border-brand-red focus:ring-brand-red shadow-sm"
+                            >
+                                <option value="">Todos los profesores</option>
+                                {profesoresDeDisciplina.map(p => (
+                                    <option key={p.id_profesor} value={p.id_profesor}>{p.nombre} {p.apellido}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 ) : (
                     <div className="flex items-center gap-2">
@@ -432,6 +500,7 @@ export default function AlumnosPorDisciplina() {
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
+                                {isAdmin && <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Profesor</th>}
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">DNI</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Domicilio</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">F. Nacimiento</th>
@@ -443,7 +512,7 @@ export default function AlumnosPorDisciplina() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={8} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
+                                <tr><td colSpan={isAdmin ? 9 : 8} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
                             ) : filteredAlumnos.length > 0 ? (
                                 pagedAlumnos.map(alumno => (
                                     <tr key={alumno.id_cliente} className="hover:bg-gray-50 transition-colors group">
@@ -457,6 +526,11 @@ export default function AlumnosPorDisciplina() {
                                                 </span>
                                             </div>
                                         </td>
+                                        {isAdmin && (
+                                            <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm">
+                                                {alumno.profesorNombre || <span className="text-gray-300">—</span>}
+                                            </td>
+                                        )}
                                         <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
                                             {alumno.dni || '-'}
                                         </td>
@@ -514,7 +588,7 @@ export default function AlumnosPorDisciplina() {
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
+                                <tr><td colSpan={isAdmin ? 9 : 8} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -546,6 +620,8 @@ export default function AlumnosPorDisciplina() {
                 onSave={handleSave}
                 initialData={editingAlumno}
                 fixedDisciplina={selectedDisciplinaName}
+                profesores={profesoresDeDisciplina}
+                isAdmin={isAdmin}
             />
             <ConfirmModal
                 isOpen={isDeleteOpen}
