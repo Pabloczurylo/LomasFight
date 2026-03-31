@@ -37,7 +37,7 @@ function deriveEstado(inactivo: boolean, fecha_ultimo_pago: string | null): Esta
     if (inactivo) return 'inactivo';
     if (!fecha_ultimo_pago) return 'pendiente';
     const diffDays = (Date.now() - new Date(fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 30 ? 'al día' : 'pendiente';
+    return diffDays <= 31 ? 'al día' : 'pendiente';
 }
 
 const dash = (v: string | null | undefined) => v || '-';

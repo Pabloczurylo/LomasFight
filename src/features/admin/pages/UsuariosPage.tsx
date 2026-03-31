@@ -15,21 +15,30 @@ interface Disciplina {
     nombre_disciplina: string;
 }
 
+interface ProfesorOption {
+    id_profesor: number;
+    nombre: string;
+    apellido: string;
+    id_disciplina: number;
+}
+
 // ─── Edit User Modal ───────────────────────────────────────────────────────────
 
 interface EditUserModalProps {
     user: Usuario | null;
     disciplines: Disciplina[];
+    profesores: ProfesorOption[];
     onClose: () => void;
-    onSave: (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string }) => Promise<void>;
+    onSave: (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string; id_profesor?: number | null }) => Promise<void>;
 }
 
-function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProps) {
+function EditUserModal({ user, disciplines, profesores, onClose, onSave }: EditUserModalProps) {
     const [nombre, setNombre] = useState('');
     const [email, setEmail] = useState('');
     const [rol, setRol] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [idProfesor, setIdProfesor] = useState<number | null>(null);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -38,6 +47,7 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
             setEmail(user.mail_usuario);
             setRol(user.rol);
             setPassword('');
+            setIdProfesor(user.id_profesor || null);
         }
     }, [user]);
 
@@ -48,10 +58,11 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
         if (!nombre || !email || !rol) return;
         setSaving(true);
         try {
-            const data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string } = {
+            const data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string; id_profesor?: number | null } = {
                 nombre_usuario: nombre,
                 mail_usuario: email,
-                rol
+                rol,
+                id_profesor: rol !== 'admin' ? idProfesor : null
             };
             if (password.trim()) {
                 data.contrasena_usuario = password;
@@ -146,6 +157,25 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
                         <p className="text-xs text-gray-400 italic">Solo completar si desea cambiar la contraseña del usuario.</p>
                     </div>
 
+                    {rol !== 'admin' && (
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Profesor Asociado</label>
+                            <select
+                                value={idProfesor || ''}
+                                onChange={e => setIdProfesor(e.target.value ? Number(e.target.value) : null)}
+                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white outline-none appearance-none text-gray-900 focus:border-brand-red focus:ring-2 focus:ring-brand-red/20 transition-all cursor-pointer"
+                            >
+                                <option value="">— Sin asignar —</option>
+                                {profesores.map(p => (
+                                    <option key={p.id_profesor} value={p.id_profesor}>
+                                        {p.nombre} {p.apellido}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-gray-400 italic">Vincular este usuario con un profesor para que solo vea sus alumnos.</p>
+                        </div>
+                    )}
+
                     <div className={cn(
                         "text-xs p-3 rounded-lg",
                         rol === 'admin' ? "bg-red-50 text-red-700 border border-red-100" : "bg-blue-50 text-blue-700 border border-blue-100"
@@ -185,6 +215,7 @@ function EditUserModal({ user, disciplines, onClose, onSave }: EditUserModalProp
 export default function UsuariosPage() {
     const [users, setUsers] = useState<Usuario[]>([]);
     const [disciplines, setDisciplines] = useState<Disciplina[]>([]);
+    const [profesores, setProfesores] = useState<ProfesorOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState<Usuario | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; userId: number | null }>({ isOpen: false, userId: null });
@@ -192,12 +223,14 @@ export default function UsuariosPage() {
 
     const fetchUsuarios = async () => {
         try {
-            const [usersRes, discsRes] = await Promise.all([
+            const [usersRes, discsRes, profsRes] = await Promise.all([
                 api.get('/usuarios'),
-                api.get<Disciplina[]>('/diciplinas')
+                api.get<Disciplina[]>('/diciplinas'),
+                api.get<ProfesorOption[]>('/profesores')
             ]);
             setUsers(usersRes.data);
             setDisciplines(discsRes.data);
+            setProfesores(profsRes.data);
         } catch (error) {
             console.error('Error fetching data:', error);
             if (error instanceof AxiosError && error.response?.status === 401) {
@@ -230,7 +263,7 @@ export default function UsuariosPage() {
         setEditingUser(user);
     };
 
-    const handleSaveEdit = async (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string }) => {
+    const handleSaveEdit = async (userId: number, data: { nombre_usuario: string; mail_usuario: string; rol: string; contrasena_usuario?: string; id_profesor?: number | null }) => {
         await api.put(`/usuarios/${userId}`, data);
         await fetchUsuarios();
     };
@@ -307,6 +340,7 @@ export default function UsuariosPage() {
             <EditUserModal
                 user={editingUser}
                 disciplines={disciplines}
+                profesores={profesores}
                 onClose={() => setEditingUser(null)}
                 onSave={handleSaveEdit}
             />

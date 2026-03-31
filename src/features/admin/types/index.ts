@@ -50,6 +50,7 @@ export interface Usuario {
     mail_usuario: string;
     rol: string; // 'admin' or 'profesor'
     activo: boolean;
+    id_profesor: number | null;
 }
 
 export interface Profesor {
