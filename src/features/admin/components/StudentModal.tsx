@@ -13,9 +13,11 @@ export interface StudentFormData {
     fecha_nacimiento: string | null;
     grupo_sanguineo: string | null;
     domicilio: string | null;
+    id_profesor_que_cargo?: number | null;
 }
 
 interface DisciplinaOption { id_disciplina: number; nombre_disciplina: string; }
+interface ProfesorOption { id_profesor: number; nombre: string; apellido: string; id_disciplina: number; }
 
 interface StudentModalProps {
     isOpen: boolean;
@@ -24,10 +26,11 @@ interface StudentModalProps {
     initialData?: StudentFormData & { id?: string };
     onDelete?: () => void;
     disciplinas: DisciplinaOption[];
+    profesores?: ProfesorOption[];
 }
 
 export default function StudentModal({
-    isOpen, onClose, onSave, initialData, onDelete, disciplinas
+    isOpen, onClose, onSave, initialData, onDelete, disciplinas, profesores = []
 }: StudentModalProps) {
     const [nombre,             setNombre]            = useState('');
     const [apellido,           setApellido]          = useState('');
@@ -37,6 +40,7 @@ export default function StudentModal({
     const [fechaNacimiento,    setFechaNacimiento]   = useState('');
     const [grupoSanguineo,     setGrupoSanguineo]    = useState('');
     const [domicilio,          setDomicilio]         = useState('');
+    const [idProfesor,         setIdProfesor]        = useState<number | null>(null);
 
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
@@ -53,6 +57,7 @@ export default function StudentModal({
                 : '');
             setGrupoSanguineo(initialData.grupo_sanguineo || '');
             setDomicilio(initialData.domicilio || '');
+            setIdProfesor(initialData.id_profesor_que_cargo ?? null);
         } else {
             setNombre('');
             setApellido('');
@@ -62,6 +67,7 @@ export default function StudentModal({
             setFechaNacimiento('');
             setGrupoSanguineo('');
             setDomicilio('');
+            setIdProfesor(null);
         }
         setErrors({ nombre: '', apellido: '' });
     }, [isOpen, initialData, disciplinas]);
@@ -89,6 +95,7 @@ export default function StudentModal({
             fecha_nacimiento:      fechaNacimiento        || null,
             grupo_sanguineo:       grupoSanguineo         || null,
             domicilio:             domicilio.trim()       || null,
+            id_profesor_que_cargo: idProfesor,
         });
         onClose();
     };
@@ -158,6 +165,20 @@ export default function StudentModal({
                             ))}
                         </select>
                     </div>
+
+                    {/* Profesor */}
+                    {profesores.length > 0 && (
+                        <div className="space-y-1.5">
+                            <label className={labelClass}>Profesor <span className={optionalClass}>(opcional)</span></label>
+                            <select value={idProfesor || ''} onChange={e => setIdProfesor(e.target.value ? Number(e.target.value) : null)}
+                                className={inputClass()}>
+                                <option value="">— Sin asignar —</option>
+                                {profesores.filter(p => p.id_disciplina === idDisciplina).map(p => (
+                                    <option key={p.id_profesor} value={p.id_profesor}>{p.nombre} {p.apellido}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Estado de Pago */}
                     {isEditing && (

@@ -320,6 +320,7 @@ export default function UsuariosPage() {
                 onSubmit={handleCreateUser}
                 onCancel={() => console.log("Cancel clicked")}
                 disciplines={disciplines}
+                profesores={profesores}
             />
 
             {/* List Section */}

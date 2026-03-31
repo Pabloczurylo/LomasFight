@@ -14,6 +14,7 @@ const PAGE_SIZE = 10;
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
 interface DisciplinaOption { id_disciplina: number; nombre_disciplina: string; }
+interface ProfesorOption { id_profesor: number; nombre: string; apellido: string; id_disciplina: number; }
 
 type EstadoPago = 'al día' | 'pendiente' | 'inactivo';
 
@@ -29,6 +30,8 @@ interface AlumnoRow {
     fechaUltimoPago: string | null;
     fechaNacimiento: string | null;
     grupoSanguineo: string | null;
+    id_profesor_que_cargo: number | null;
+    profesorNombre: string | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -59,8 +62,10 @@ const STATUS_ORDER: Record<EstadoPago, number> = { 'al día': 0, 'pendiente': 1,
 export default function AlumnosPage() {
     const [alumnos,              setAlumnos]           = useState<AlumnoRow[]>([]);
     const [disciplinas,          setDisciplinas]       = useState<DisciplinaOption[]>([]);
+    const [profesores,           setProfesores]        = useState<ProfesorOption[]>([]);
     const [searchTerm,           setSearchTerm]        = useState('');
     const [selectedDisciplina,   setSelectedDisciplina] = useState<string>('Todas');
+    const [selectedProfesor,     setSelectedProfesor]   = useState<string>('Todos');
     const [isLoading,            setIsLoading]         = useState(true);
     const [error,                setError]             = useState<string | null>(null);
     const [currentPage,          setCurrentPage]       = useState(1);
@@ -82,9 +87,10 @@ export default function AlumnosPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const [clientesRes, discRes] = await Promise.allSettled([
+            const [clientesRes, discRes, profRes] = await Promise.allSettled([
                 api.get<ClienteBackend[]>('/clientes'),
                 api.get('/diciplinas'),
+                api.get<ProfesorOption[]>('/profesores'),
             ]);
 
             if (clientesRes.status === 'rejected') {
@@ -97,22 +103,29 @@ export default function AlumnosPage() {
             }
 
             const discData: DisciplinaOption[] = discRes.status === 'fulfilled' ? discRes.value.data : [];
+            const profData: ProfesorOption[] = profRes.status === 'fulfilled' ? profRes.value.data : [];
 
             setDisciplinas(discData);
+            setProfesores(profData);
 
-            const rows: AlumnoRow[] = clientesRes.value.data.map(c => ({
-                id:              String(c.id_cliente),
-                nombre:          c.nombre,
-                apellido:        c.apellido,
-                dni:             c.dni || null,
-                domicilio:       c.domicilio || null,
-                disciplinaNombre:c.disciplinas?.nombre_disciplina || '-',
-                id_disciplina:   c.id_disciplina,
-                estadoPago:      deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
-                fechaUltimoPago: c.fecha_ultimo_pago || null,
-                fechaNacimiento: c.fecha_nacimiento  || null,
-                grupoSanguineo:  c.grupo_sanguineo   || null,
-            }));
+            const rows: AlumnoRow[] = clientesRes.value.data.map(c => {
+                const prof = (c as any).profesores;
+                return {
+                    id:              String(c.id_cliente),
+                    nombre:          c.nombre,
+                    apellido:        c.apellido,
+                    dni:             c.dni || null,
+                    domicilio:       c.domicilio || null,
+                    disciplinaNombre:c.disciplinas?.nombre_disciplina || '-',
+                    id_disciplina:   c.id_disciplina,
+                    estadoPago:      deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
+                    fechaUltimoPago: c.fecha_ultimo_pago || null,
+                    fechaNacimiento: c.fecha_nacimiento  || null,
+                    grupoSanguineo:  c.grupo_sanguineo   || null,
+                    id_profesor_que_cargo: c.id_profesor_que_cargo || null,
+                    profesorNombre:  prof ? `${prof.nombre} ${prof.apellido}` : null,
+                };
+            });
 
             setAlumnos(rows);
         } catch (err) {
@@ -135,7 +148,10 @@ export default function AlumnosPage() {
                 (a.dni || '').includes(searchTerm);
             const matchesDisciplina =
                 selectedDisciplina === 'Todas' || a.disciplinaNombre === selectedDisciplina;
-            return matchesSearch && matchesDisciplina;
+            const matchesProfesor =
+                selectedProfesor === 'Todos' ||
+                (selectedProfesor === 'sin_asignar' ? !a.id_profesor_que_cargo : a.profesorNombre === selectedProfesor);
+            return matchesSearch && matchesDisciplina && matchesProfesor;
         })
         .sort((a, b) => (STATUS_ORDER[a.estadoPago] ?? 3) - (STATUS_ORDER[b.estadoPago] ?? 3));
 
@@ -160,6 +176,7 @@ export default function AlumnosPage() {
         fecha_nacimiento:      editingAlumno.fechaNacimiento,
         grupo_sanguineo:       editingAlumno.grupoSanguineo,
         domicilio:             editingAlumno.domicilio,
+        id_profesor_que_cargo: editingAlumno.id_profesor_que_cargo,
     } : undefined;
 
     const handleSave = (data: StudentFormData) => {
@@ -168,7 +185,7 @@ export default function AlumnosPage() {
             setIsSaveConfirmOpen(true);
         } else {
             // Create immediately
-            const payload = {
+            const payload: any = {
                 nombre:           data.nombre,
                 apellido:         data.apellido,
                 id_disciplina:    data.id_disciplina,
@@ -176,6 +193,7 @@ export default function AlumnosPage() {
                 fecha_nacimiento: data.fecha_nacimiento,
                 grupo_sanguineo:  data.grupo_sanguineo,
                 domicilio:        data.domicilio,
+                id_profesor_que_cargo: data.id_profesor_que_cargo ?? null,
             };
             api.post('/clientes', payload)
                 .then(() => { fetchAll(); setIsModalOpen(false); })
@@ -201,6 +219,7 @@ export default function AlumnosPage() {
                 fecha_nacimiento: pendingData.fecha_nacimiento,
                 grupo_sanguineo:  pendingData.grupo_sanguineo,
                 domicilio:        pendingData.domicilio,
+                id_profesor_que_cargo: pendingData.id_profesor_que_cargo ?? null,
             });
             await fetchAll();
             setIsSaveConfirmOpen(false);
@@ -275,6 +294,21 @@ export default function AlumnosPage() {
                         ))}
                     </select>
 
+                    {/* Professor filter */}
+                    <select
+                        className="rounded-lg border border-gray-300 focus:border-brand-red focus:ring-1 focus:ring-brand-red py-2 px-3 text-gray-900 bg-white"
+                        value={selectedProfesor}
+                        onChange={e => { setSelectedProfesor(e.target.value); setCurrentPage(1); }}
+                    >
+                        <option value="Todos">Todos los profesores</option>
+                        <option value="sin_asignar">Sin profesor asignado</option>
+                        {profesores.map(p => (
+                            <option key={p.id_profesor} value={`${p.nombre} ${p.apellido}`}>
+                                {p.nombre} {p.apellido}
+                            </option>
+                        ))}
+                    </select>
+
                     {/* Pending badge */}
                     {pendientesCount > 0 && (
                         <div className="flex items-center gap-1 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm font-semibold whitespace-nowrap">
@@ -289,6 +323,7 @@ export default function AlumnosPage() {
                         <thead>
                             <tr className="border-b border-gray-100 bg-gray-50/50">
                                 <th className="pb-3 pt-3 pl-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Nombre</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Profesor</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">DNI</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Domicilio</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Disciplina</th>
@@ -304,6 +339,7 @@ export default function AlumnosPage() {
                                     <td className="py-4 pl-4 font-medium text-gray-900 group-hover:text-brand-red transition-colors">
                                         {a.nombre} {a.apellido}
                                     </td>
+                                    <td className="py-4 text-gray-500 text-sm">{a.profesorNombre || <span className="text-gray-300">—</span>}</td>
                                     <td className="py-4 text-gray-500 text-sm">{dash(a.dni)}</td>
                                     <td className="py-4 text-gray-500 text-sm">{dash(a.domicilio)}</td>
                                     <td className="py-4 text-gray-600 text-sm">{a.disciplinaNombre}</td>
@@ -334,7 +370,7 @@ export default function AlumnosPage() {
                                 </tr>
                             ))}
                             {filtered.length === 0 && (
-                                <tr><td colSpan={8} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
+                                <tr><td colSpan={9} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -353,6 +389,7 @@ export default function AlumnosPage() {
                 initialData={modalInitialData}
                 onDelete={editingAlumno ? () => { handleDeleteClick(editingAlumno); setIsModalOpen(false); } : undefined}
                 disciplinas={disciplinas}
+                profesores={profesores}
             />
 
             <ConfirmModal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)}
