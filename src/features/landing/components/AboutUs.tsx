@@ -29,7 +29,7 @@ export function AboutUs() {
                         <div className="relative rounded-2xl overflow-hidden shadow-2xl z-10 aspect-[4/3] group">
                             <div className="absolute inset-0 bg-brand-red/20 group-hover:bg-transparent transition-colors duration-500 z-10 mix-blend-multiply" />
                             <img
-                                src="https://i.imgur.com/ln8SjHz.png"
+                                src="https://i.imgur.com/9siOKit.png"
                                 alt="Entrenamiento en Lomas Fight Club"
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
