@@ -212,15 +212,18 @@ export default function DashboardHome() {
                 disciplinaNombre: a.disciplinas?.nombre_disciplina
             }));
 
-            const normalizedGastos: UnifiedPago[] = gastosData.map(g => ({
-                id: `gasto-${g.id_gasto}`,
-                tipo: 'GASTO',
-                fecha: g.fecha_gasto,
-                concepto: g.concepto,
-                monto: Number(g.monto),
-                estado: 'Pagado',
-                originalId: g.id_gasto
-            }));
+            const normalizedGastos: UnifiedPago[] = gastosData.map(g => {
+                const isEntrada = g.concepto.startsWith('[ENTRADA] ');
+                return {
+                    id: isEntrada ? `entrada-${g.id_gasto}` : `gasto-${g.id_gasto}`,
+                    tipo: isEntrada ? 'ENTRADA' : 'GASTO',
+                    fecha: g.fecha_gasto,
+                    concepto: isEntrada ? g.concepto.replace('[ENTRADA] ', '') : g.concepto,
+                    monto: Number(g.monto),
+                    estado: 'Pagado',
+                    originalId: g.id_gasto
+                };
+            });
 
             const allPagos = [...normalizedCuotas, ...normalizedAlquileres, ...normalizedGastos];
             allPagos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
@@ -249,7 +252,7 @@ export default function DashboardHome() {
             if (pMonth === targetMonth) {
                 if (p.tipo === 'GASTO') {
                     totalGastosMes += p.monto;
-                } else if (p.estado === 'Pagado') {
+                } else if ((p.tipo === 'CUOTA' || p.tipo === 'ALQUILER' || p.tipo === 'ENTRADA') && p.estado === 'Pagado') {
                     totalIngresosMes += p.monto;
                 }
             }
@@ -285,7 +288,7 @@ export default function DashboardHome() {
                     const d = new Date(p.fecha);
                     return d.getFullYear() === selectedYear && d.getMonth() === i;
                 })
-                .reduce((sum, p) => sum + p.monto, 0),
+                .reduce((sum, p) => p.tipo === 'GASTO' ? sum - p.monto : sum + p.monto, 0),
         })),
         [pagos, selectedYear]
     );
