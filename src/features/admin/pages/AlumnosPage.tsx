@@ -28,6 +28,7 @@ interface AlumnoRow {
     id_disciplina: number;
     estadoPago: EstadoPago;
     fechaUltimoPago: string | null;
+    fechaVencimiento: string | null;
     fechaNacimiento: string | null;
     grupoSanguineo: string | null;
     id_profesor_que_cargo: number | null;
@@ -36,11 +37,13 @@ interface AlumnoRow {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
-function deriveEstado(inactivo: boolean, fecha_ultimo_pago: string | null): EstadoPago {
+function deriveEstado(inactivo: boolean, fecha_vencimiento: string | null): EstadoPago {
     if (inactivo) return 'inactivo';
-    if (!fecha_ultimo_pago) return 'pendiente';
-    const diffDays = (Date.now() - new Date(fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 31 ? 'al día' : 'pendiente';
+    if (!fecha_vencimiento) return 'pendiente';
+    const vencimiento = new Date(fecha_vencimiento);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return vencimiento >= hoy ? 'al día' : 'pendiente';
 }
 
 const dash = (v: string | null | undefined) => v || '-';
@@ -118,8 +121,9 @@ export default function AlumnosPage() {
                     domicilio:       c.domicilio || null,
                     disciplinaNombre:c.disciplinas?.nombre_disciplina || '-',
                     id_disciplina:   c.id_disciplina,
-                    estadoPago:      deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
+                    estadoPago:      deriveEstado(c.inactivo === true, c.fecha_vencimiento || null),
                     fechaUltimoPago: c.fecha_ultimo_pago || null,
+                    fechaVencimiento: c.fecha_vencimiento || null,
                     fechaNacimiento: c.fecha_nacimiento  || null,
                     grupoSanguineo:  c.grupo_sanguineo   || null,
                     id_profesor_que_cargo: c.id_profesor_que_cargo || null,
@@ -205,8 +209,31 @@ export default function AlumnosPage() {
         if (!pendingData || !editingAlumno) return;
         try {
             const inactivo = pendingData.estadoPago === 'inactivo';
-            const fecha_ultimo_pago = pendingData.estadoPago === 'al día'
-                ? new Date().toISOString() : null;
+            const ahora = new Date();
+
+            // Calcular fecha_vencimiento según la lógica inteligente
+            let fecha_ultimo_pago: string | null = null;
+            let fecha_vencimiento: string | null = null;
+
+            if (pendingData.estadoPago === 'al día') {
+                fecha_ultimo_pago = ahora.toISOString();
+                // Si estaba inactivo: resetear desde hoy + 31 días
+                if (editingAlumno.estadoPago === 'inactivo') {
+                    const fv = new Date(ahora);
+                    fv.setDate(fv.getDate() + 31);
+                    fecha_vencimiento = fv.toISOString();
+                } else if (editingAlumno.fechaVencimiento) {
+                    // Si tenía vencimiento previo: sumar 31 días desde ahí
+                    const fv = new Date(editingAlumno.fechaVencimiento);
+                    fv.setDate(fv.getDate() + 31);
+                    fecha_vencimiento = fv.toISOString();
+                } else {
+                    // Sin vencimiento previo: hoy + 31
+                    const fv = new Date(ahora);
+                    fv.setDate(fv.getDate() + 31);
+                    fecha_vencimiento = fv.toISOString();
+                }
+            }
 
             await api.put(`/clientes/${editingAlumno.id}`, {
                 nombre:           pendingData.nombre,
@@ -215,6 +242,7 @@ export default function AlumnosPage() {
                 activo:           true,
                 inactivo,
                 fecha_ultimo_pago,
+                fecha_vencimiento,
                 dni:              pendingData.dni,
                 fecha_nacimiento: pendingData.fecha_nacimiento,
                 grupo_sanguineo:  pendingData.grupo_sanguineo,
@@ -330,6 +358,7 @@ export default function AlumnosPage() {
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Fecha Nac.</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Grupo</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Estado</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Vencimiento</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider text-right pr-4"></th>
                             </tr>
                         </thead>
@@ -355,6 +384,18 @@ export default function AlumnosPage() {
                                             {STATUS_LABEL[a.estadoPago]}
                                         </span>
                                     </td>
+                                    <td className="py-4 text-sm">
+                                        {a.fechaVencimiento ? (
+                                            <span className={cn(
+                                                'font-medium',
+                                                new Date(a.fechaVencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
+                                            )}>
+                                                {new Date(a.fechaVencimiento).toLocaleDateString('es-AR')}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-300">—</span>
+                                        )}
+                                    </td>
                                     <td className="py-4 pr-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <button onClick={() => handleEdit(a)}
@@ -370,7 +411,7 @@ export default function AlumnosPage() {
                                 </tr>
                             ))}
                             {filtered.length === 0 && (
-                                <tr><td colSpan={9} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
+                                <tr><td colSpan={10} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
                             )}
                         </tbody>
                     </table>

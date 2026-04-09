@@ -18,6 +18,7 @@ export interface ClienteBackend {
     id_disciplina: number;
     id_profesor_que_cargo: number | null;
     fecha_ultimo_pago: string | null;
+    fecha_vencimiento: string | null;
     activo: boolean | null;
     inactivo: boolean | null;
     disciplinas?: {
@@ -81,11 +82,11 @@ export interface PagoDisciplinaBackend {
 
 export interface UnifiedPago {
     id: string; // normalizado a string para id de react
-    tipo: 'CUOTA' | 'ALQUILER';
+    tipo: 'CUOTA' | 'ALQUILER' | 'GASTO';
     fecha: string;
-    concepto: string; // Nombre del alumno o "Alquiler - Nombre Disciplina"
+    concepto: string; // Nombre del alumno o "Alquiler - Nombre Disciplina" o concepto del gasto
     monto: number;
-    estado: 'Pagado' | 'Pendiente' | 'Vencido'; // El endpoint suele asumir todo lo que retorna está pagado, pero en el futuro podría cambiar. Pongo Pagado por defecto.
+    estado: 'Pagado' | 'Pendiente' | 'Vencido';
     // Propiedades originales para debug/internos
     originalId?: number;
     disciplinaNombre?: string;
@@ -115,4 +116,12 @@ export interface Teacher {
     presentacion: string;
     imagen?: string;
     estado: 'Activo' | 'Inactivo';
+}
+
+export interface GastoBackend {
+    id_gasto: number;
+    concepto: string;
+    monto: number;
+    fecha_gasto: string;
+    activo: boolean;
 }

@@ -36,6 +36,7 @@ interface Alumno {
     domicilio: string | null;
     fecha_registro: string;
     fecha_ultimo_pago: string | null;
+    fecha_vencimiento: string | null;
     fecha_nacimiento: string | null;
     grupo_sanguineo: string | null;
     activo: boolean;
@@ -47,26 +48,47 @@ interface Alumno {
     estado: EstadoAlumno;
 }
 
-// Derive 3-state status from raw data
-function deriveEstado(inactivo: boolean, fecha_ultimo_pago: string | null): EstadoAlumno {
+// Derive 3-state status from raw data — basado en fecha_vencimiento
+function deriveEstado(inactivo: boolean, fecha_vencimiento: string | null): EstadoAlumno {
     if (inactivo) return 'inactivo';
-    if (!fecha_ultimo_pago) return 'pendiente';
-    const pago = new Date(fecha_ultimo_pago);
-    const now = new Date();
-    // Consider "al día" if paid within the last 35 days (roughly current month)
-    const diffDays = (now.getTime() - pago.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 31 ? 'al día' : 'pendiente';
+    if (!fecha_vencimiento) return 'pendiente';
+    const vencimiento = new Date(fecha_vencimiento);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return vencimiento >= hoy ? 'al día' : 'pendiente';
 }
 
 // Payload to send to backend based on selected estado
-function estadoToPayload(estado: EstadoAlumno): object {
+// Calcula fecha_vencimiento inteligente: desde vencimiento previo si activo, desde hoy si inactivo
+function estadoToPayload(estado: EstadoAlumno, alumno?: Alumno): object {
+    const ahora = new Date();
     switch (estado) {
-        case 'al día':
-            return { activo: true, inactivo: false, fecha_ultimo_pago: new Date().toISOString() };
+        case 'al día': {
+            let nuevaFechaVencimiento: Date;
+            if (alumno?.inactivo) {
+                // Estaba inactivo: resetear desde hoy + 31 días
+                nuevaFechaVencimiento = new Date(ahora);
+                nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 31);
+            } else if (alumno?.fecha_vencimiento) {
+                // Tenía vencimiento previo: sumar 31 desde ahí
+                nuevaFechaVencimiento = new Date(alumno.fecha_vencimiento);
+                nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 31);
+            } else {
+                // Sin vencimiento previo: hoy + 31
+                nuevaFechaVencimiento = new Date(ahora);
+                nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 31);
+            }
+            return {
+                activo: true,
+                inactivo: false,
+                fecha_ultimo_pago: ahora.toISOString(),
+                fecha_vencimiento: nuevaFechaVencimiento.toISOString()
+            };
+        }
         case 'pendiente':
             return { activo: true, inactivo: false, fecha_ultimo_pago: null };
         case 'inactivo':
-            return { activo: true, inactivo: true }; // activo=true, solo marcamos inactivo=true
+            return { activo: true, inactivo: true };
     }
 }
 
@@ -309,6 +331,7 @@ export default function AlumnosPorDisciplina() {
                         domicilio: c.domicilio || null,
                         fecha_registro: c.fecha_registro || new Date().toISOString(),
                         fecha_ultimo_pago: c.fecha_ultimo_pago || null,
+                        fecha_vencimiento: c.fecha_vencimiento || null,
                         fecha_nacimiento: c.fecha_nacimiento || null,
                         grupo_sanguineo: c.grupo_sanguineo || null,
                         activo: c.activo !== false,
@@ -316,7 +339,7 @@ export default function AlumnosPorDisciplina() {
                         id_disciplina: c.id_disciplina,
                         id_profesor_que_cargo: c.id_profesor_que_cargo || null,
                         profesorNombre: prof ? `${prof.nombre} ${prof.apellido}` : null,
-                        estado: deriveEstado(c.inactivo === true, c.fecha_ultimo_pago || null),
+                        estado: deriveEstado(c.inactivo === true, c.fecha_vencimiento || null),
                     };
                 });
                 setAlumnos(mapped);
@@ -337,7 +360,7 @@ export default function AlumnosPorDisciplina() {
         // Optimistic
         setAlumnos(prev2 => prev2.map(a => a.id_cliente === id ? { ...a, estado: nuevoEstado } : a));
         try {
-            await api.put(`/clientes/${id}`, estadoToPayload(nuevoEstado));
+            await api.put(`/clientes/${id}`, estadoToPayload(nuevoEstado, prev));
         } catch {
             // Rollback
             if (prev) setAlumnos(p => p.map(a => a.id_cliente === id ? { ...a, estado: prev.estado } : a));
@@ -507,6 +530,7 @@ export default function AlumnosPorDisciplina() {
                                 <th className="hidden sm:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">G. Sanguíneo</th>
                                 <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Inicio</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Estado</th>
+                                <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Vencimiento</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -566,6 +590,18 @@ export default function AlumnosPorDisciplina() {
                                                 <option value="pendiente">Pendiente</option>
                                                 <option value="inactivo">Inactivo</option>
                                             </select>
+                                        </td>
+                                        <td className="hidden md:table-cell px-6 py-4 text-sm">
+                                            {alumno.fecha_vencimiento ? (
+                                                <span className={cn(
+                                                    'font-medium',
+                                                    new Date(alumno.fecha_vencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
+                                                )}>
+                                                    {new Date(alumno.fecha_vencimiento).toLocaleDateString('es-AR')}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-300">—</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2 text-gray-400">

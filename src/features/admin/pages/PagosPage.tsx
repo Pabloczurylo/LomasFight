@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, DollarSign, AlertCircle, Calendar, Dumbbell, Edit2, Trash2 } from 'lucide-react';
-import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, UnifiedPago } from '../types';
+import { Plus, Search, DollarSign, AlertCircle, Calendar, Dumbbell, Edit2, Trash2, TrendingDown, ArrowDownUp } from 'lucide-react';
+import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
-import RegistroPagoModal, { CuotaPayload, AlquilerPayload } from '../components/RegistroPagoModal';
+import RegistroPagoModal, { CuotaPayload, AlquilerPayload, GastoPayload } from '../components/RegistroPagoModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
 
@@ -19,6 +19,7 @@ export default function PagosPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
+    const [filterTipo, setFilterTipo] = useState<'TODOS' | 'CUOTA' | 'ALQUILER' | 'GASTO'>('TODOS');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPago, setEditingPago] = useState<UnifiedPago | null>(null);
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; pago: UnifiedPago | null }>({ isOpen: false, pago: null });
@@ -41,17 +42,20 @@ export default function PagosPage() {
             if (clientesRes.status === 'rejected') console.error("Error fetching clientes:", clientesRes.reason);
             if (disciplinasRes.status === 'rejected') console.error("Error fetching disciplinas:", disciplinasRes.reason);
 
-            // Fetch payments with individual error handling
-            const [pagosRes, pagosDisciplinaRes] = await Promise.allSettled([
+            // Fetch payments and gastos with individual error handling
+            const [pagosRes, pagosDisciplinaRes, gastosRes] = await Promise.allSettled([
                 api.get('/pagos'),
-                api.get('/pago-disciplina')
+                api.get('/pago-disciplina'),
+                api.get('/gastos')
             ]);
 
             const cuotas: PagoBackend[] = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
             const alquileres: PagoDisciplinaBackend[] = pagosDisciplinaRes.status === 'fulfilled' ? pagosDisciplinaRes.value.data : [];
+            const gastos: GastoBackend[] = gastosRes.status === 'fulfilled' ? gastosRes.value.data : [];
 
             if (pagosRes.status === 'rejected') console.error("Error fetching pagos:", pagosRes.reason);
             if (pagosDisciplinaRes.status === 'rejected') console.error("Error fetching pagos-disciplina:", pagosDisciplinaRes.reason);
+            if (gastosRes.status === 'rejected') console.error("Error fetching gastos:", gastosRes.reason);
 
             // Normalize
             const normalizedCuotas: UnifiedPago[] = cuotas.map(c => ({
@@ -70,7 +74,6 @@ export default function PagosPage() {
                 id: `alquiler-${a.id_pago_disciplina}`,
                 tipo: 'ALQUILER',
                 fecha: a.fecha_pago,
-                // Si tienes nombre_disciplina en endpoint, usarlo. Sino fallback.
                 concepto: a.disciplinas ? `Alquiler - ${a.disciplinas.nombre_disciplina}` : `Alquiler - Disciplina ID: ${a.id_disciplina}`,
                 monto: Number(a.monto_cuota),
                 estado: 'Pagado',
@@ -78,7 +81,17 @@ export default function PagosPage() {
                 disciplinaNombre: a.disciplinas?.nombre_disciplina
             }));
 
-            const allPagos = [...normalizedCuotas, ...normalizedAlquileres];
+            const normalizedGastos: UnifiedPago[] = gastos.map(g => ({
+                id: `gasto-${g.id_gasto}`,
+                tipo: 'GASTO',
+                fecha: g.fecha_gasto,
+                concepto: g.concepto,
+                monto: Number(g.monto),
+                estado: 'Pagado',
+                originalId: g.id_gasto
+            }));
+
+            const allPagos = [...normalizedCuotas, ...normalizedAlquileres, ...normalizedGastos];
 
             // Sort by Date DESC
             allPagos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
@@ -86,7 +99,6 @@ export default function PagosPage() {
             setPagos(allPagos);
         } catch (error) {
             console.error("Error inesperado cargando datos de pagos:", error);
-            // Mostrar error (idealmente con toast), pero no bloquear UI completamente
         } finally {
             setIsLoading(false);
         }
@@ -98,46 +110,41 @@ export default function PagosPage() {
 
     // Métricas
     const metrics = useMemo(() => {
-        const currentMonthIndex = new Date().getMonth() + 1; // 1 to 12. MESES[1] = Enero
+        const currentMonthIndex = new Date().getMonth() + 1;
         const targetMonth = MESES[currentMonthIndex];
 
-        let totalMensual = 0;
+        let totalIngresos = 0;
+        let totalGastos = 0;
         let pendientes = 0;
         let totalAlquileres = 0;
 
         pagos.forEach(p => {
             const pDate = new Date(p.fecha);
             const pMonth = MESES[pDate.getMonth() + 1];
+            const isCurrentMonth = targetMonth === 'Todos' || pMonth === targetMonth;
 
-            if (p.estado === 'Pagado') {
-                if (targetMonth === 'Todos' || pMonth === targetMonth) {
-                    totalMensual += p.monto;
-                }
+            if (p.tipo === 'GASTO' && isCurrentMonth) {
+                totalGastos += p.monto;
+            } else if (p.estado === 'Pagado' && isCurrentMonth) {
+                totalIngresos += p.monto;
             }
 
-            if (p.tipo === 'ALQUILER' && p.estado === 'Pagado') {
-                if (targetMonth === 'Todos' || pMonth === targetMonth) {
-                    totalAlquileres += p.monto;
-                }
+            if (p.tipo === 'ALQUILER' && p.estado === 'Pagado' && isCurrentMonth) {
+                totalAlquileres += p.monto;
             }
         });
 
-        // Deudores: mismo criterio que deriveEstado en AlumnosPage
-        // Pendiente = inactivo=false Y (sin pago o último pago hace >35 días)
+        // Deudores: basado en fecha_vencimiento
         const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
-
         activeStudents.forEach(student => {
-            const isKickboxing = student.disciplinas?.nombre_disciplina?.toUpperCase() === 'KICKBOXING';
-            if (!isKickboxing) return;
-
-            const lastPago = student.fecha_ultimo_pago;
-            const isPendiente = !lastPago ||
-                (Date.now() - new Date(lastPago).getTime()) / (1000 * 60 * 60 * 24) > 30;
-
+            const fv = student.fecha_vencimiento;
+            const isPendiente = !fv || new Date(fv) < new Date();
             if (isPendiente) pendientes++;
         });
 
-        return { totalMensual, pendientes, totalAlquileres };
+        const balance = totalIngresos - totalGastos;
+
+        return { totalIngresos, totalGastos, balance, pendientes, totalAlquileres };
     }, [pagos, clientes]);
 
     const filteredPagos = pagos.filter(pago => {
@@ -146,12 +153,13 @@ export default function PagosPage() {
         let matchesMonth = true;
         if (selectedMonth !== 'Todos' && pago.fecha) {
             const date = new Date(pago.fecha);
-            // MESES[1] is Enero, date.getMonth() is 0 for Enero
             const pMonth = MESES[date.getMonth() + 1];
             matchesMonth = pMonth === selectedMonth;
         }
 
-        return matchesSearch && matchesMonth;
+        const matchesTipo = filterTipo === 'TODOS' || pago.tipo === filterTipo;
+
+        return matchesSearch && matchesMonth && matchesTipo;
     });
 
     const handleSaveCuota = async (payload: CuotaPayload) => {
@@ -179,10 +187,26 @@ export default function PagosPage() {
             }
             setIsModalOpen(false);
             setEditingPago(null);
-            fetchData(); // reload
+            fetchData();
         } catch (error) {
             console.error("Error guarding alquiler:", error);
             alert("Error al guardar el alquiler.");
+        }
+    };
+
+    const handleSaveGasto = async (payload: GastoPayload) => {
+        try {
+            if (editingPago && editingPago.tipo === 'GASTO') {
+                await api.put(`/gastos/${editingPago.originalId}`, payload);
+            } else {
+                await api.post('/gastos', payload);
+            }
+            setIsModalOpen(false);
+            setEditingPago(null);
+            fetchData();
+        } catch (error) {
+            console.error("Error guarding gasto:", error);
+            alert("Error al guardar el gasto.");
         }
     };
 
@@ -197,13 +221,15 @@ export default function PagosPage() {
         try {
             if (pago.tipo === 'CUOTA') {
                 await api.delete(`/pagos/${pago.originalId}`);
-            } else {
+            } else if (pago.tipo === 'ALQUILER') {
                 await api.delete(`/pago-disciplina/${pago.originalId}`);
+            } else if (pago.tipo === 'GASTO') {
+                await api.delete(`/gastos/${pago.originalId}`);
             }
             fetchData();
         } catch (error) {
             console.error("Error al eliminar el pago:", error);
-            alert("Error al eliminar el pago.");
+            alert("Error al eliminar el registro.");
         } finally {
             setDeleteModal({ isOpen: false, pago: null });
         }
@@ -233,8 +259,8 @@ export default function PagosPage() {
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Ingresos</h2>
-                    <p className="text-gray-600">Control de cuotas y alquiler de salón</p>
+                    <h2 className="text-3xl font-heading font-bold text-gray-900">Gestión de Caja</h2>
+                    <p className="text-gray-600">Control de ingresos (cuotas, alquileres) y gastos</p>
                 </div>
                 <button
                     onClick={() => {
@@ -244,29 +270,48 @@ export default function PagosPage() {
                     className="flex items-center gap-2 px-4 py-3 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md"
                 >
                     <Plus className="w-5 h-5" />
-                    REGISTRAR INGRESO
+                    REGISTRAR MOVIMIENTO
                 </button>
             </div>
 
             {/* Metrics Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="p-3 bg-green-100 text-green-600 rounded-lg">
                         <DollarSign className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-gray-500">Ingresos Totales (Mes)</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalMensual)}</h3>
+                        <p className="text-sm font-medium text-gray-500">Ingresos (Mes)</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalIngresos)}</h3>
                     </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
-                        <Dumbbell className="w-8 h-8" />
+                    <div className="p-3 bg-orange-100 text-orange-600 rounded-lg">
+                        <TrendingDown className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-gray-500">Ingresos por Profesores (Mes)</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalAlquileres)}</h3>
+                        <p className="text-sm font-medium text-gray-500">Gastos (Mes)</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalGastos)}</h3>
+                    </div>
+                </div>
+
+                <div className={cn(
+                    "bg-white p-6 rounded-xl shadow-sm border flex items-center gap-4",
+                    metrics.balance >= 0 ? "border-gray-100" : "border-red-200 bg-red-50"
+                )}>
+                    <div className={cn(
+                        "p-3 rounded-lg",
+                        metrics.balance >= 0 ? "bg-blue-100 text-blue-600" : "bg-red-100 text-red-600"
+                    )}>
+                        <ArrowDownUp className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-gray-500">Balance (Mes)</p>
+                        <h3 className={cn(
+                            "text-2xl font-bold",
+                            metrics.balance >= 0 ? "text-gray-900" : "text-red-600"
+                        )}>{formatCurrency(metrics.balance)}</h3>
                     </div>
                 </div>
 
@@ -275,7 +320,7 @@ export default function PagosPage() {
                         <AlertCircle className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium text-gray-500">Pagos Pendientes / Atrasados</p>
+                        <p className="text-sm font-medium text-gray-500">Pagos Pendientes</p>
                         <h3 className="text-2xl font-bold text-gray-900">{metrics.pendientes}</h3>
                     </div>
                 </div>
@@ -288,23 +333,35 @@ export default function PagosPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                             type="text"
-                            placeholder="Buscar por alumno o disciplina..."
+                            placeholder="Buscar por concepto..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Calendar className="text-gray-400 w-5 h-5" />
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <Calendar className="text-gray-400 w-5 h-5" />
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
+                            >
+                                {MESES.map(mes => (
+                                    <option key={mes} value={mes}>{mes}</option>
+                                ))}
+                            </select>
+                        </div>
                         <select
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            value={filterTipo}
+                            onChange={(e) => setFilterTipo(e.target.value as typeof filterTipo)}
                             className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
                         >
-                            {MESES.map(mes => (
-                                <option key={mes} value={mes}>{mes}</option>
-                            ))}
+                            <option value="TODOS">Todos los tipos</option>
+                            <option value="CUOTA">Cuotas</option>
+                            <option value="ALQUILER">Alquileres</option>
+                            <option value="GASTO">Gastos</option>
                         </select>
                     </div>
                 </div>
@@ -313,17 +370,16 @@ export default function PagosPage() {
                     {isLoading ? (
                         <div className="py-8 text-center text-gray-500">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-4"></div>
-                            Cargando ingresos...
+                            Cargando movimientos...
                         </div>
                     ) : (
                         <table className="w-full text-left min-w-[800px]">
                             <thead>
                                 <tr className="border-b border-gray-100">
-                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider pl-4">Fecha Pago</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider pl-4">Fecha</th>
                                     <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Concepto</th>
-                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Clasificación</th>
+                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Tipo</th>
                                     <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Monto</th>
-                                    <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider">Estado</th>
                                     <th className="pb-4 font-bold text-gray-500 text-sm uppercase tracking-wider text-right pr-4">Acciones</th>
                                 </tr>
                             </thead>
@@ -340,21 +396,18 @@ export default function PagosPage() {
                                         <td className="py-5">
                                             <span className={cn(
                                                 "px-2 py-1 rounded text-xs font-bold uppercase tracking-wide",
-                                                pago.tipo === 'CUOTA' ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                                pago.tipo === 'CUOTA' && "bg-purple-100 text-purple-700",
+                                                pago.tipo === 'ALQUILER' && "bg-blue-100 text-blue-700",
+                                                pago.tipo === 'GASTO' && "bg-orange-100 text-orange-700"
                                             )}>
                                                 {pago.tipo}
                                             </span>
                                         </td>
-                                        <td className="py-5 font-bold text-gray-900">{formatCurrency(pago.monto)}</td>
-                                        <td className="py-5">
-                                            <span className={cn(
-                                                "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
-                                                pago.estado === 'Pagado' && "bg-green-100 text-green-700",
-                                                pago.estado === 'Pendiente' && "bg-yellow-100 text-yellow-700",
-                                                pago.estado === 'Vencido' && "bg-red-100 text-red-700"
-                                            )}>
-                                                {pago.estado}
-                                            </span>
+                                        <td className={cn(
+                                            "py-5 font-bold",
+                                            pago.tipo === 'GASTO' ? "text-red-600" : "text-gray-900"
+                                        )}>
+                                            {pago.tipo === 'GASTO' ? `- ${formatCurrency(pago.monto)}` : formatCurrency(pago.monto)}
                                         </td>
                                         <td className="py-5 pr-4 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -378,8 +431,8 @@ export default function PagosPage() {
                                 ))}
                                 {filteredPagos.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="py-8 text-center text-gray-500">
-                                            No se encontraron registros de ingreso.
+                                        <td colSpan={5} className="py-8 text-center text-gray-500">
+                                            No se encontraron registros.
                                         </td>
                                     </tr>
                                 )}
@@ -397,6 +450,7 @@ export default function PagosPage() {
                 }}
                 onSaveCuota={handleSaveCuota}
                 onSaveAlquiler={handleSaveAlquiler}
+                onSaveGasto={handleSaveGasto}
                 clientes={clientes}
                 disciplinas={disciplinas}
                 initialData={editingPago}
@@ -406,8 +460,8 @@ export default function PagosPage() {
                 isOpen={deleteModal.isOpen}
                 onClose={() => setDeleteModal({ isOpen: false, pago: null })}
                 onConfirm={handleConfirmDelete}
-                title="Eliminar Ingreso"
-                message={`¿Estás seguro que deseas eliminar el registro de pago de ${deleteModal.pago?.concepto}? Esta acción no se puede deshacer y ajustará los balances contables.`}
+                title="Eliminar Registro"
+                message={`¿Estás seguro que deseas eliminar "${deleteModal.pago?.concepto}"? Esta acción no se puede deshacer.`}
                 type="danger"
             />
         </div>
