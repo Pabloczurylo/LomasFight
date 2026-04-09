@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity } from 'lucide-react';
 import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
-import RegistroPagoModal, { CuotaPayload, AlquilerPayload, GastoPayload } from '../components/RegistroPagoModal';
+import RegistroPagoModal, { CuotaPayload, GastoPayload } from '../components/RegistroPagoModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
 
@@ -19,7 +19,7 @@ export default function PagosPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
-    const [filterTipo, setFilterTipo] = useState<'TODOS' | 'CUOTA' | 'ALQUILER' | 'GASTO'>('TODOS');
+    const [filterTipo, setFilterTipo] = useState<'TODOS' | 'CUOTA' | 'ALQUILER' | 'ENTRADA' | 'GASTO'>('TODOS');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPago, setEditingPago] = useState<UnifiedPago | null>(null);
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; pago: UnifiedPago | null }>({ isOpen: false, pago: null });
@@ -81,15 +81,18 @@ export default function PagosPage() {
                 disciplinaNombre: a.disciplinas?.nombre_disciplina
             }));
 
-            const normalizedGastos: UnifiedPago[] = gastos.map(g => ({
-                id: `gasto-${g.id_gasto}`,
-                tipo: 'GASTO',
-                fecha: g.fecha_gasto,
-                concepto: g.concepto,
-                monto: Number(g.monto),
-                estado: 'Pagado',
-                originalId: g.id_gasto
-            }));
+            const normalizedGastos: UnifiedPago[] = gastos.map(g => {
+                const isEntrada = g.concepto.startsWith('[ENTRADA] ');
+                return {
+                    id: isEntrada ? `entrada-${g.id_gasto}` : `gasto-${g.id_gasto}`,
+                    tipo: isEntrada ? 'ENTRADA' : 'GASTO',
+                    fecha: g.fecha_gasto,
+                    concepto: isEntrada ? g.concepto.replace('[ENTRADA] ', '') : g.concepto,
+                    monto: Number(g.monto),
+                    estado: 'Pagado',
+                    originalId: g.id_gasto
+                };
+            });
 
             const allPagos = [...normalizedCuotas, ...normalizedAlquileres, ...normalizedGastos];
 
@@ -125,12 +128,13 @@ export default function PagosPage() {
 
             if (p.tipo === 'GASTO' && isCurrentMonth) {
                 totalGastos += p.monto;
-            } else if (p.estado === 'Pagado' && isCurrentMonth) {
+            } else if ((p.tipo === 'CUOTA' || p.tipo === 'ENTRADA') && p.estado === 'Pagado' && isCurrentMonth) {
                 totalIngresos += p.monto;
             }
 
             if (p.tipo === 'ALQUILER' && p.estado === 'Pagado' && isCurrentMonth) {
                 totalAlquileres += p.monto;
+                totalIngresos += p.monto; // Old alquileres should also count to ingresos
             }
         });
 
@@ -178,22 +182,6 @@ export default function PagosPage() {
         }
     };
 
-    const handleSaveAlquiler = async (payload: AlquilerPayload) => {
-        try {
-            if (editingPago && editingPago.tipo === 'ALQUILER') {
-                await api.put(`/pago-disciplina/${editingPago.originalId}`, payload);
-            } else {
-                await api.post('/pago-disciplina', payload);
-            }
-            setIsModalOpen(false);
-            setEditingPago(null);
-            fetchData();
-        } catch (error) {
-            console.error("Error guarding alquiler:", error);
-            alert("Error al guardar el alquiler.");
-        }
-    };
-
     const handleSaveGasto = async (payload: GastoPayload) => {
         try {
             if (editingPago && editingPago.tipo === 'GASTO') {
@@ -223,7 +211,7 @@ export default function PagosPage() {
                 await api.delete(`/pagos/${pago.originalId}`);
             } else if (pago.tipo === 'ALQUILER') {
                 await api.delete(`/pago-disciplina/${pago.originalId}`);
-            } else if (pago.tipo === 'GASTO') {
+            } else if (pago.tipo === 'GASTO' || pago.tipo === 'ENTRADA') {
                 await api.delete(`/gastos/${pago.originalId}`);
             }
             fetchData();
@@ -361,6 +349,7 @@ export default function PagosPage() {
                             <option value="TODOS">Todos los tipos</option>
                             <option value="CUOTA">Cuotas</option>
                             <option value="ALQUILER">Alquileres</option>
+                            <option value="ENTRADA">Entradas (Ingresos extras)</option>
                             <option value="GASTO">Gastos</option>
                         </select>
                     </div>
@@ -398,6 +387,7 @@ export default function PagosPage() {
                                                 "px-2 py-1 rounded text-xs font-bold uppercase tracking-wide",
                                                 pago.tipo === 'CUOTA' && "bg-purple-100 text-purple-700",
                                                 pago.tipo === 'ALQUILER' && "bg-blue-100 text-blue-700",
+                                                pago.tipo === 'ENTRADA' && "bg-green-100 text-green-700",
                                                 pago.tipo === 'GASTO' && "bg-orange-100 text-orange-700"
                                             )}>
                                                 {pago.tipo}
@@ -449,7 +439,6 @@ export default function PagosPage() {
                     setEditingPago(null);
                 }}
                 onSaveCuota={handleSaveCuota}
-                onSaveAlquiler={handleSaveAlquiler}
                 onSaveGasto={handleSaveGasto}
                 clientes={clientes}
                 disciplinas={disciplinas}

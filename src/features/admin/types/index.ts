@@ -82,7 +82,7 @@ export interface PagoDisciplinaBackend {
 
 export interface UnifiedPago {
     id: string; // normalizado a string para id de react
-    tipo: 'CUOTA' | 'ALQUILER' | 'GASTO';
+    tipo: 'CUOTA' | 'ALQUILER' | 'GASTO' | 'ENTRADA';
     fecha: string;
     concepto: string; // Nombre del alumno o "Alquiler - Nombre Disciplina" o concepto del gasto
     monto: number;
