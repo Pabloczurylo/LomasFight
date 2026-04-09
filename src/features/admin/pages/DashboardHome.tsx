@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { DollarSign, Dumbbell, AlertCircle, Users, TrendingUp, TrendingDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, Dumbbell, AlertCircle, Users, TrendingUp, ArrowDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../../services/api';
 import { ClienteBackend, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../../admin/types';
 import { cn } from '../../../lib/utils';
@@ -328,7 +328,7 @@ export default function DashboardHome() {
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-orange-100 text-orange-600 rounded-lg"><TrendingDown className="w-8 h-8" /></div>
+                    <div className="p-3 bg-orange-100 text-orange-600 rounded-lg"><ArrowDown className="w-8 h-8" /></div>
                     <div>
                         <h3 className="text-sm font-bold text-gray-500 mb-1">Gastos (Mes)</h3>
                         <p className="text-2xl font-heading font-bold text-brand-black">{formatCurrency(metrics.totalGastosMes)}</p>
