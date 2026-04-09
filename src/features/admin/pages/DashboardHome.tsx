@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { DollarSign, Dumbbell, AlertCircle, Users, TrendingUp, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, Dumbbell, AlertCircle, Users, TrendingUp, TrendingDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../../services/api';
-import { ClienteBackend, PagoBackend, PagoDisciplinaBackend, UnifiedPago } from '../../admin/types';
+import { ClienteBackend, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../../admin/types';
 import { cn } from '../../../lib/utils';
 
 const MESES = [
@@ -168,17 +168,19 @@ export default function DashboardHome() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [clientesRes, pagosRes, pagosDisciplinaRes, horariosRes] = await Promise.allSettled([
+            const [clientesRes, pagosRes, pagosDisciplinaRes, horariosRes, gastosRes] = await Promise.allSettled([
                 api.get('/clientes'),
                 api.get('/pagos'),
                 api.get('/pago-disciplina'),
-                api.get('/horarios')
+                api.get('/horarios'),
+                api.get('/gastos')
             ]);
 
             const clientesData = clientesRes.status === 'fulfilled' ? clientesRes.value.data : [];
             const cuotasData: PagoBackend[] = pagosRes.status === 'fulfilled' ? pagosRes.value.data : [];
             const alquileresData: PagoDisciplinaBackend[] = pagosDisciplinaRes.status === 'fulfilled' ? pagosDisciplinaRes.value.data : [];
             const horariosData: { dia_y_hora: string }[] = horariosRes.status === 'fulfilled' ? horariosRes.value.data : [];
+            const gastosData: GastoBackend[] = gastosRes.status === 'fulfilled' ? gastosRes.value.data : [];
 
             setClientes(clientesData);
 
@@ -210,7 +212,17 @@ export default function DashboardHome() {
                 disciplinaNombre: a.disciplinas?.nombre_disciplina
             }));
 
-            const allPagos = [...normalizedCuotas, ...normalizedAlquileres];
+            const normalizedGastos: UnifiedPago[] = gastosData.map(g => ({
+                id: `gasto-${g.id_gasto}`,
+                tipo: 'GASTO',
+                fecha: g.fecha_gasto,
+                concepto: g.concepto,
+                monto: Number(g.monto),
+                estado: 'Pagado',
+                originalId: g.id_gasto
+            }));
+
+            const allPagos = [...normalizedCuotas, ...normalizedAlquileres, ...normalizedGastos];
             allPagos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
             setPagos(allPagos);
 
@@ -228,24 +240,32 @@ export default function DashboardHome() {
     const metrics = useMemo(() => {
         const currentMonthIndex = new Date().getMonth() + 1;
         const targetMonth = MESES[currentMonthIndex];
-        let totalRecaudadoMes = 0;
-        let pendientesKickboxing = 0;
+        let totalIngresosMes = 0;
+        let totalGastosMes = 0;
+        let pendientes = 0;
 
         pagos.forEach(p => {
             const pMonth = MESES[new Date(p.fecha).getMonth() + 1];
-            if (p.estado === 'Pagado' && pMonth === targetMonth) totalRecaudadoMes += p.monto;
+            if (pMonth === targetMonth) {
+                if (p.tipo === 'GASTO') {
+                    totalGastosMes += p.monto;
+                } else if (p.estado === 'Pagado') {
+                    totalIngresosMes += p.monto;
+                }
+            }
         });
 
+        // Pendientes: basado en fecha_vencimiento (todos los alumnos, no solo kickboxing)
         const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
         activeStudents.forEach(student => {
-            if (student.disciplinas?.nombre_disciplina?.toUpperCase() !== 'KICKBOXING') return;
-            const lastPago = student.fecha_ultimo_pago;
-            const isPendiente = !lastPago ||
-                (Date.now() - new Date(lastPago).getTime()) / (1000 * 60 * 60 * 24) > 30;
-            if (isPendiente) pendientesKickboxing++;
+            const fv = student.fecha_vencimiento;
+            const isPendiente = !fv || new Date(fv) < new Date();
+            if (isPendiente) pendientes++;
         });
 
-        return { activeStudents: activeStudents.length, totalRecaudadoMes, pendientesKickboxing };
+        const balanceMes = totalIngresosMes - totalGastosMes;
+
+        return { activeStudents: activeStudents.length, totalIngresosMes, totalGastosMes, balanceMes, pendientes };
     }, [pagos, clientes]);
 
     // ── Monthly chart data ────────────────────────────────────────────────────
@@ -292,7 +312,7 @@ export default function DashboardHome() {
             <h2 className="text-3xl font-heading font-bold text-gray-900">Bienvenido al Panel</h2>
 
             {/* ── Metric cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="p-3 bg-brand-red/10 text-brand-red rounded-lg"><Users className="w-8 h-8" /></div>
                     <div>
@@ -303,26 +323,33 @@ export default function DashboardHome() {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="p-3 bg-green-100 text-green-600 rounded-lg"><DollarSign className="w-8 h-8" /></div>
                     <div>
-                        <h3 className="text-sm font-bold text-gray-500 mb-1">Recaudación (Mes)</h3>
-                        <p className="text-2xl font-heading font-bold text-brand-black">{formatCurrency(metrics.totalRecaudadoMes)}</p>
+                        <h3 className="text-sm font-bold text-gray-500 mb-1">Ingresos (Mes)</h3>
+                        <p className="text-2xl font-heading font-bold text-brand-black">{formatCurrency(metrics.totalIngresosMes)}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="p-3 bg-orange-100 text-orange-600 rounded-lg"><TrendingDown className="w-8 h-8" /></div>
+                    <div>
+                        <h3 className="text-sm font-bold text-gray-500 mb-1">Gastos (Mes)</h3>
+                        <p className="text-2xl font-heading font-bold text-brand-black">{formatCurrency(metrics.totalGastosMes)}</p>
                     </div>
                 </div>
                 <div className={cn(
                     "bg-white p-6 rounded-xl shadow-sm border flex items-center gap-4 transition-colors",
-                    metrics.pendientesKickboxing > 0 ? "border-red-500 bg-red-50" : "border-gray-100"
+                    metrics.pendientes > 0 ? "border-red-500 bg-red-50" : "border-gray-100"
                 )}>
                     <div className={cn("p-3 rounded-lg flex-shrink-0",
-                        metrics.pendientesKickboxing > 0 ? "bg-red-500 text-white" : "bg-yellow-100 text-yellow-600"
+                        metrics.pendientes > 0 ? "bg-red-500 text-white" : "bg-yellow-100 text-yellow-600"
                     )}>
                         <AlertCircle className="w-8 h-8" />
                     </div>
                     <div>
                         <h3 className={cn("text-sm font-bold mb-1",
-                            metrics.pendientesKickboxing > 0 ? "text-red-700" : "text-gray-500"
+                            metrics.pendientes > 0 ? "text-red-700" : "text-gray-500"
                         )}>Pagos Pendientes</h3>
                         <p className={cn("text-2xl font-heading font-bold",
-                            metrics.pendientesKickboxing > 0 ? "text-red-600" : "text-brand-black"
-                        )}>{metrics.pendientesKickboxing}</p>
+                            metrics.pendientes > 0 ? "text-red-600" : "text-brand-black"
+                        )}>{metrics.pendientes}</p>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">

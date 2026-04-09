@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, DollarSign, Calendar, Users, Dumbbell, Edit3 } from 'lucide-react';
+import { X, DollarSign, Calendar, Users, Dumbbell, Edit3, FileText } from 'lucide-react';
 import { ClienteBackend, Disciplina, UnifiedPago } from '../types';
 
 export type CuotaPayload = {
@@ -14,12 +14,18 @@ export type AlquilerPayload = {
     periodo_pagado: string; // ISO String for Date
 };
 
+export type GastoPayload = {
+    concepto: string;
+    monto: number;
+};
+
 interface RegistroPagoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSaveCuota: (data: CuotaPayload) => Promise<void>;
     onSaveAlquiler: (data: AlquilerPayload) => Promise<void>;
-    clientes: ClienteBackend[]; // Usamos el tipo backend real
+    onSaveGasto: (data: GastoPayload) => Promise<void>;
+    clientes: ClienteBackend[];
     disciplinas: Disciplina[];
     initialData?: UnifiedPago | null;
 }
@@ -29,11 +35,12 @@ export default function RegistroPagoModal({
     onClose,
     onSaveCuota,
     onSaveAlquiler,
+    onSaveGasto,
     clientes,
     disciplinas,
     initialData
 }: RegistroPagoModalProps) {
-    const [tipoPago, setTipoPago] = useState<'CUOTA' | 'ALQUILER'>('CUOTA');
+    const [tipoPago, setTipoPago] = useState<'CUOTA' | 'ALQUILER' | 'GASTO'>('CUOTA');
     const [isLoading, setIsLoading] = useState(false);
 
     // Form fields Cuota
@@ -51,6 +58,10 @@ export default function RegistroPagoModal({
     const [alquilerMonto, setAlquilerMonto] = useState('');
     const [alquilerPeriodo, setAlquilerPeriodo] = useState(new Date().toISOString().split('T')[0]);
 
+    // Form fields Gasto
+    const [gastoConcepto, setGastoConcepto] = useState('');
+    const [gastoMonto, setGastoMonto] = useState('');
+
     useEffect(() => {
         if (isOpen) {
             setIsLoading(false);
@@ -61,7 +72,6 @@ export default function RegistroPagoModal({
                     const clienteFound = clientes.find(c => c.id_cliente === initialData.idCliente);
                     setClienteSearch(clienteFound ? `${clienteFound.nombre} ${clienteFound.apellido}` : '');
 
-                    // Search for discipline via the client if needed, or if disciplineNombre matches
                     let matchingDiscipline = disciplinas.find(d => d.nombre_disciplina === initialData.disciplinaNombre);
                     if (!matchingDiscipline && initialData.idCliente) {
                         const cliente = clientes.find(c => c.id_cliente === initialData.idCliente);
@@ -72,13 +82,14 @@ export default function RegistroPagoModal({
 
                     setCuotaDisciplinaId(matchingDiscipline?.id_disciplina?.toString() || '');
                     setCuotaMonto(initialData.monto.toString());
-                } else {
+                } else if (initialData.tipo === 'ALQUILER') {
                     const matchingDiscipline = disciplinas.find(d => d.nombre_disciplina === initialData.disciplinaNombre);
                     setAlquilerDisciplinaId(matchingDiscipline?.id_disciplina?.toString() || '');
-
                     setAlquilerMonto(initialData.monto.toString());
-                    // Extract Date part for YYYY-MM-DD format
                     setAlquilerPeriodo(new Date(initialData.fecha).toISOString().split('T')[0]);
+                } else if (initialData.tipo === 'GASTO') {
+                    setGastoConcepto(initialData.concepto);
+                    setGastoMonto(initialData.monto.toString());
                 }
             } else {
                 setTipoPago('CUOTA');
@@ -90,6 +101,9 @@ export default function RegistroPagoModal({
                 setAlquilerDisciplinaId('');
                 setAlquilerMonto('');
                 setAlquilerPeriodo(new Date().toISOString().split('T')[0]);
+
+                setGastoConcepto('');
+                setGastoMonto('');
             }
         }
     }, [isOpen, initialData, clientes, disciplinas]);
@@ -107,7 +121,7 @@ export default function RegistroPagoModal({
         });
     }, [clienteSearch, clientesActivos]);
 
-    // Auto-completar disciplina si el cliente solo tiene una (o pre-seleccionada en backend)
+    // Auto-completar disciplina si el cliente solo tiene una
     useEffect(() => {
         if (tipoPago === 'CUOTA' && cuotaClienteId) {
             const cliente = clientesActivos.find(c => c.id_cliente.toString() === cuotaClienteId);
@@ -149,21 +163,23 @@ export default function RegistroPagoModal({
                     id_disciplina: parseInt(cuotaDisciplinaId),
                     monto: parseFloat(cuotaMonto)
                 });
-            } else {
+            } else if (tipoPago === 'ALQUILER') {
                 if (!alquilerDisciplinaId || !alquilerMonto || !alquilerPeriodo) return;
-                // Nos aseguramos de enviar un ISO string real basado en la fecha seleccionada
                 const dateObj = new Date(alquilerPeriodo);
-                // Ajustar zona horaria si fuera necesario o mandar directo a ISO y que backend parse
-
                 await onSaveAlquiler({
                     id_disciplina: parseInt(alquilerDisciplinaId),
                     monto_cuota: parseFloat(alquilerMonto),
                     periodo_pagado: dateObj.toISOString()
                 });
+            } else if (tipoPago === 'GASTO') {
+                if (!gastoConcepto.trim() || !gastoMonto) return;
+                await onSaveGasto({
+                    concepto: gastoConcepto.trim(),
+                    monto: parseFloat(gastoMonto)
+                });
             }
         } catch (error) {
-            console.error("Error al guardar el pago:", error);
-            // Mostrar error (idealmente con toast)
+            console.error("Error al guardar:", error);
         } finally {
             setIsLoading(false);
         }
@@ -184,7 +200,7 @@ export default function RegistroPagoModal({
 
                 <h3 className="text-xl font-heading font-bold text-gray-900 mb-6 flex items-center gap-2">
                     {initialData ? <Edit3 className="w-6 h-6 text-brand-red" /> : <DollarSign className="w-6 h-6 text-brand-red" />}
-                    {initialData ? 'Editar Ingreso' : 'Registrar Nuevo Ingreso'}
+                    {initialData ? 'Editar Movimiento' : 'Registrar Movimiento'}
                 </h3>
 
                 {/* Tabs / Toggle */}
@@ -196,7 +212,7 @@ export default function RegistroPagoModal({
                         className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${tipoPago === 'CUOTA' ? 'bg-white shadow-sm text-brand-red' : 'text-gray-500 hover:text-gray-700'
                             } ${!!initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        Cobro de Cuota
+                        Cuota
                     </button>
                     <button
                         type="button"
@@ -205,7 +221,16 @@ export default function RegistroPagoModal({
                         className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${tipoPago === 'ALQUILER' ? 'bg-white shadow-sm text-brand-red' : 'text-gray-500 hover:text-gray-700'
                             } ${!!initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        Pago de Alquiler
+                        Alquiler
+                    </button>
+                    <button
+                        type="button"
+                        disabled={!!initialData}
+                        onClick={() => setTipoPago('GASTO')}
+                        className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${tipoPago === 'GASTO' ? 'bg-white shadow-sm text-orange-600' : 'text-gray-500 hover:text-gray-700'
+                            } ${!!initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        Gasto
                     </button>
                 </div>
 
@@ -376,6 +401,51 @@ export default function RegistroPagoModal({
                         </>
                     )}
 
+                    {tipoPago === 'GASTO' && (
+                        <>
+                            {/* Formulario Gasto */}
+                            <div className="space-y-4">
+                                <div className="p-3 bg-orange-50 border border-orange-100 rounded-lg text-sm text-orange-800 mb-4">
+                                    Registrá un gasto o egreso del negocio. Este monto se restará del balance mensual.
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-gray-400" />
+                                        Concepto del Gasto
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={gastoConcepto}
+                                        onChange={(e) => setGastoConcepto(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                                        placeholder="Ej: Compra de guantes, Luz, Agua..."
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                        <DollarSign className="w-4 h-4 text-gray-400" />
+                                        Monto del Gasto ($)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={gastoMonto}
+                                        onChange={(e) => setGastoMonto(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                                        placeholder="0.00"
+                                        min="0"
+                                        step="0.01"
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     <div className="flex gap-3 pt-6">
                         <button
                             type="button"
@@ -387,10 +457,14 @@ export default function RegistroPagoModal({
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2 bg-brand-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md disabled:bg-red-400 flex items-center justify-center gap-2"
+                            className={`flex-1 px-4 py-2 text-white font-bold rounded-lg transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2 ${
+                                tipoPago === 'GASTO' 
+                                    ? 'bg-orange-600 hover:bg-orange-700' 
+                                    : 'bg-brand-red hover:bg-red-700'
+                            }`}
                             disabled={isLoading}
                         >
-                            {isLoading ? 'Guardando...' : initialData ? 'Guardar Cambios' : 'Registrar Ingreso'}
+                            {isLoading ? 'Guardando...' : initialData ? 'Guardar Cambios' : tipoPago === 'GASTO' ? 'Registrar Gasto' : 'Registrar Ingreso'}
                         </button>
                     </div>
                 </form>
