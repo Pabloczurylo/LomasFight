@@ -9,7 +9,7 @@ interface DisciplineCardProps {
   image: string;
 }
 
-export function DisciplineCard({ title, slug, description, image }: DisciplineCardProps) {
+export function DisciplineCard({ title, slug, image }: DisciplineCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -37,10 +37,7 @@ export function DisciplineCard({ title, slug, description, image }: DisciplineCa
       {/* Content */}
       <div className="absolute bottom-0 left-0 w-full p-6 flex flex-col justify-end h-full">
         <div className="translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
-          <h3 className="text-3xl font-heading font-bold text-white uppercase mb-2">{title}</h3>
-          <p className="text-gray-300 text-sm font-light mb-4 line-clamp-2 md:line-clamp-none">
-            {description}
-          </p>
+          <h3 className="text-3xl font-heading font-bold text-white uppercase mb-4">{title}</h3>
 
           <div className="space-y-4">
             <Button variant="outline" size="sm" className="w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
