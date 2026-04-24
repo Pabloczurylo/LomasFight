@@ -75,7 +75,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen w-full relative">
+        <div className="flex min-h-screen w-full relative bg-gray-50">
             {/* Back button — top left */}
             <Link
                 to="/"
@@ -85,34 +85,9 @@ export default function LoginPage() {
                 VOLVER
             </Link>
 
-            {/* Left Side - Image & Branding */}
-            <div className="hidden lg:flex w-1/2 relative bg-black items-end p-12 overflow-hidden">
-                {/* Background Image */}
-                <div className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                    <img
-                        src="https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80&w=2069&auto=format&fit=crop"
-                        alt="Lomas Fight Athlete"
-                        className="w-full h-full object-cover opacity-50 grayscale"
-                    />
-                </div>
-
-                {/* Content Overlay */}
-                <div className="relative z-20 text-white max-w-xl">
-                    <h1 className="text-6xl font-heading font-bold uppercase leading-none mb-4">
-                        FORJADO <br />
-                        <span className="text-brand-red">CAMPEONES</span>
-                    </h1>
-                    <div className="h-16 w-1 bg-brand-red absolute -left-6 top-2 hidden xl:block"></div>
-                    <p className="border-l-4 border-brand-red pl-6 text-gray-300 text-lg font-light leading-relaxed">
-                        Sistema centralizado para la gestión de alto rendimiento y administración deportiva.
-                    </p>
-                </div>
-            </div>
-
-            {/* Right Side - Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
-                <div className="w-full max-w-md space-y-8">
+            {/* Login Form Container */}
+            <div className="w-full flex items-center justify-center p-8">
+                <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
                     {/* Logo & Header */}
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 text-brand-red mb-6">
