@@ -42,7 +42,7 @@ export function Footer() {
                         {/* Google Maps */}
                         <div className="w-full rounded-lg overflow-hidden border border-gray-800">
                             <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d445.22889402833033!2d-65.2268808871464!3d-26.78165166535376!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sJorge%20Luis%20Borges%201200%2C%20lomas!5e0!3m2!1ses-419!2sar!4v1772400193379!5m2!1ses-419!2sar"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3561.8349665943647!2d-65.22641829999999!3d-26.781530099999994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94225d5c2f6a62a7%3A0x8ea213bb90b7c60a!2sLOMAS%20FIGHT!5e0!3m2!1ses-419!2sar!4v1778300631560!5m2!1ses-419!2sar"
                                 width="100%"
                                 height="180"
                                 style={{ border: 0 }}
