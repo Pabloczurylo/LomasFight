@@ -6,6 +6,7 @@ export type CuotaPayload = {
     id_cliente: number;
     id_disciplina: number;
     monto: number;
+    fecha_pago?: string; // ISO string de la fecha elegida
 };
 
 export type AlquilerPayload = {
@@ -46,6 +47,7 @@ export default function RegistroPagoModal({
     const [cuotaClienteId, setCuotaClienteId] = useState('');
     const [cuotaDisciplinaId, setCuotaDisciplinaId] = useState('');
     const [cuotaMonto, setCuotaMonto] = useState('');
+    const [cuotaFecha, setCuotaFecha] = useState(new Date().toISOString().split('T')[0]);
 
     // Combobox búsqueda de alumnos
     const [clienteSearch, setClienteSearch] = useState('');
@@ -102,6 +104,7 @@ export default function RegistroPagoModal({
                 setClienteSearch('');
                 setCuotaDisciplinaId('');
                 setCuotaMonto('');
+                setCuotaFecha(new Date().toISOString().split('T')[0]);
 
                 setEntradaConcepto('');
                 setEntradaMonto('');
@@ -152,10 +155,14 @@ export default function RegistroPagoModal({
         try {
             if (tipoPago === 'CUOTA') {
                 if (!cuotaClienteId || !cuotaDisciplinaId || !cuotaMonto) return;
+                // Ajustar hora para evitar desfase de timezone
+                const d = new Date(cuotaFecha);
+                d.setHours(d.getHours() + 12);
                 await onSaveCuota({
                     id_cliente: parseInt(cuotaClienteId),
                     id_disciplina: parseInt(cuotaDisciplinaId),
-                    monto: parseFloat(cuotaMonto)
+                    monto: parseFloat(cuotaMonto),
+                    fecha_pago: d.toISOString()
                 });
             } else if (tipoPago === 'ENTRADA') {
                 if (!entradaConcepto.trim() || !entradaMonto || !entradaPeriodo) return;
@@ -326,6 +333,21 @@ export default function RegistroPagoModal({
                                         placeholder="0.00"
                                         min="0"
                                         step="0.01"
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-gray-400" />
+                                        Fecha del Pago
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={cuotaFecha}
+                                        onChange={(e) => setCuotaFecha(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
                                         required
                                         disabled={isLoading}
                                     />
