@@ -257,7 +257,6 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
 export default function AlumnosPorDisciplina() {
     const currentUser = JSON.parse(localStorage.getItem('usuario') || '{}');
     const isAdmin = currentUser.rol === 'admin';
-    const teacherDisciplineName: string = isAdmin ? '' : (currentUser.rol || '');
     const currentProfesorId: number | null = currentUser.id_profesor || null;
 
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
@@ -293,12 +292,18 @@ export default function AlumnosPorDisciplina() {
                         setSelectedDisciplinaName(discRes.data[0].nombre_disciplina);
                     }
                 } else {
-                    const match = discRes.data.find(
-                        d => d.nombre_disciplina.toLowerCase() === teacherDisciplineName.toLowerCase()
-                    );
-                    if (match) {
-                        setSelectedDisciplina(match.id_disciplina);
-                        setSelectedDisciplinaName(match.nombre_disciplina);
+                    // Para profesores: buscar la disciplina basándose en su id_profesor
+                    const miProfesor = profRes.data.find(p => p.id_profesor === currentProfesorId);
+                    if (miProfesor) {
+                        const discProfe = discRes.data.find(d => d.id_disciplina === miProfesor.id_disciplina);
+                        if (discProfe) {
+                            setSelectedDisciplina(discProfe.id_disciplina);
+                            setSelectedDisciplinaName(discProfe.nombre_disciplina);
+                        }
+                    } else if (discRes.data.length > 0) {
+                        // Fallback: primera disciplina si no se encuentra al profesor
+                        setSelectedDisciplina(discRes.data[0].id_disciplina);
+                        setSelectedDisciplinaName(discRes.data[0].nombre_disciplina);
                     }
                 }
             } catch (error) {
