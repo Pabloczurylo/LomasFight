@@ -31,7 +31,9 @@ export default function FechaPagoModal({
 
     // Calcular fecha de vencimiento preview (fecha + 31 días)
     const fechaVencimientoPreview = (() => {
-        const d = new Date(fechaPago);
+        if (!fechaPago) return '';
+        const [year, month, day] = fechaPago.split('-').map(Number);
+        const d = new Date(year, month - 1, day);
         d.setDate(d.getDate() + 31);
         return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     })();

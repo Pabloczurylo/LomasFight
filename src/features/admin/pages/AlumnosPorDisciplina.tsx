@@ -99,6 +99,22 @@ const ESTADO_CONFIG: Record<EstadoAlumno, { label: string; classes: string }> = 
     'inactivo': { label: 'Inactivo', classes: 'bg-gray-100 text-gray-500 border-gray-200' },
 };
 
+function formatFechaLocal(fechaStr: string | null): string {
+    if (!fechaStr) return '-';
+    // Si viene un ISO string completo con T
+    if (fechaStr.includes('T')) {
+        const d = new Date(fechaStr);
+        return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    // Si viene solo YYYY-MM-DD (ej: fecha de nacimiento)
+    const parts = fechaStr.split('-');
+    if (parts.length === 3) {
+        const [year, month, day] = parts;
+        return `${day.substring(0, 2)}/${month}/${year}`;
+    }
+    return new Date(fechaStr).toLocaleDateString('es-AR');
+}
+
 // ─── Inline form modal ──────────────────────────────────────────────────────────
 
 interface AlumnoFormModalProps {
@@ -613,7 +629,7 @@ export default function AlumnosPorDisciplina() {
                                             {alumno.domicilio || '-'}
                                         </td>
                                         <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {alumno.fecha_nacimiento ? new Date(alumno.fecha_nacimiento).toLocaleDateString() : '-'}
+                                            {formatFechaLocal(alumno.fecha_nacimiento)}
                                         </td>
                                         <td className="hidden sm:table-cell px-6 py-4 text-gray-500 text-sm font-medium">
                                             {alumno.grupo_sanguineo ? (
@@ -623,7 +639,7 @@ export default function AlumnosPorDisciplina() {
                                             ) : '-'}
                                         </td>
                                         <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {new Date(alumno.fecha_registro).toLocaleDateString()}
+                                            {formatFechaLocal(alumno.fecha_registro)}
                                         </td>
                                         <td className="px-6 py-4">
                                             {/* 3-state dropdown */}
@@ -648,7 +664,7 @@ export default function AlumnosPorDisciplina() {
                                                     'font-medium',
                                                     new Date(alumno.fecha_vencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
                                                 )}>
-                                                    {new Date(alumno.fecha_vencimiento).toLocaleDateString('es-AR')}
+                                                    {formatFechaLocal(alumno.fecha_vencimiento)}
                                                 </span>
                                             ) : (
                                                 <span className="text-gray-300">—</span>
