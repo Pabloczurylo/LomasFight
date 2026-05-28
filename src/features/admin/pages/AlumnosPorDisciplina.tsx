@@ -5,6 +5,7 @@ import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
+import FechaPagoModal from '../components/FechaPagoModal';
 import { Pagination } from '../../../components/ui/Pagination';
 
 const GRUPOS_SANGUINEOS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -276,6 +277,13 @@ export default function AlumnosPorDisciplina() {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [deletingAlumno, setDeletingAlumno] = useState<Alumno | null>(null);
 
+    // Modal de fecha de pago para profesores
+    const [fechaPagoModal, setFechaPagoModal] = useState<{
+        isOpen: boolean;
+        alumno: Alumno | null;
+    }>({ isOpen: false, alumno: null });
+    const [fechaPagoLoading, setFechaPagoLoading] = useState(false);
+
     // 1. Load disciplines & professors
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -360,6 +368,15 @@ export default function AlumnosPorDisciplina() {
 
     // Change estado (Al día / Pendiente / Inactivo)
     const handleEstadoChange = async (id: number, nuevoEstado: EstadoAlumno) => {
+        // Para profesores: al poner "al día", abrir modal para elegir fecha
+        if (!isAdmin && nuevoEstado === 'al día') {
+            const alumno = alumnos.find(a => a.id_cliente === id);
+            if (alumno) {
+                setFechaPagoModal({ isOpen: true, alumno });
+            }
+            return;
+        }
+
         setUpdatingId(id);
         const prev = alumnos.find(a => a.id_cliente === id);
         // Optimistic
@@ -372,6 +389,35 @@ export default function AlumnosPorDisciplina() {
             alert('Error al actualizar el estado.');
         } finally {
             setUpdatingId(null);
+        }
+    };
+
+    // Confirmar pago desde el modal del profesor con fecha elegida
+    const handleConfirmFechaPago = async (fechaPago: string) => {
+        const alumno = fechaPagoModal.alumno;
+        if (!alumno) return;
+
+        setFechaPagoLoading(true);
+
+        // Calcular fecha de vencimiento: fecha elegida + 31 días
+        const fechaBase = new Date(fechaPago);
+        fechaBase.setHours(12, 0, 0, 0); // Evitar desfase de timezone
+        const nuevaFechaVencimiento = new Date(fechaBase);
+        nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 31);
+
+        try {
+            await api.put(`/clientes/${alumno.id_cliente}`, {
+                activo: true,
+                inactivo: false,
+                fecha_ultimo_pago: fechaBase.toISOString(),
+                fecha_vencimiento: nuevaFechaVencimiento.toISOString(),
+            });
+            await fetchAlumnos();
+            setFechaPagoModal({ isOpen: false, alumno: null });
+        } catch {
+            alert('Error al registrar el pago.');
+        } finally {
+            setFechaPagoLoading(false);
         }
     };
 
@@ -671,6 +717,14 @@ export default function AlumnosPorDisciplina() {
                 title="Eliminar Alumno"
                 message={`¿Estás seguro de que deseas eliminar a ${deletingAlumno?.nombre} ${deletingAlumno?.apellido}?`}
                 type="danger"
+            />
+            <FechaPagoModal
+                isOpen={fechaPagoModal.isOpen}
+                onClose={() => setFechaPagoModal({ isOpen: false, alumno: null })}
+                onConfirm={handleConfirmFechaPago}
+                alumnoNombre={fechaPagoModal.alumno ? `${fechaPagoModal.alumno.nombre} ${fechaPagoModal.alumno.apellido}` : ''}
+                disciplinaNombre={selectedDisciplinaName}
+                isLoading={fechaPagoLoading}
             />
         </div>
     );
