@@ -69,6 +69,7 @@ export default function AlumnosPage() {
     const [searchTerm,           setSearchTerm]        = useState('');
     const [selectedDisciplina,   setSelectedDisciplina] = useState<string>('Todas');
     const [selectedProfesor,     setSelectedProfesor]   = useState<string>('Todos');
+    const [mostrarPendientes,    setMostrarPendientes]  = useState(false);
     const [isLoading,            setIsLoading]         = useState(true);
     const [error,                setError]             = useState<string | null>(null);
     const [currentPage,          setCurrentPage]       = useState(1);
@@ -155,7 +156,8 @@ export default function AlumnosPage() {
             const matchesProfesor =
                 selectedProfesor === 'Todos' ||
                 (selectedProfesor === 'sin_asignar' ? !a.id_profesor_que_cargo : a.profesorNombre === selectedProfesor);
-            return matchesSearch && matchesDisciplina && matchesProfesor;
+            const matchesPendientes = !mostrarPendientes || a.estadoPago === 'pendiente';
+            return matchesSearch && matchesDisciplina && matchesProfesor && matchesPendientes;
         })
         .sort((a, b) => (STATUS_ORDER[a.estadoPago] ?? 3) - (STATUS_ORDER[b.estadoPago] ?? 3));
 
@@ -336,6 +338,17 @@ export default function AlumnosPage() {
                             </option>
                         ))}
                     </select>
+
+                    {/* Show pending checkbox */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-700 hover:text-brand-red transition-colors bg-gray-50 hover:bg-gray-100/80 px-3 py-2 rounded-lg border border-gray-200 whitespace-nowrap">
+                        <input
+                            type="checkbox"
+                            checked={mostrarPendientes}
+                            onChange={e => { setMostrarPendientes(e.target.checked); setCurrentPage(1); }}
+                            className="rounded border-gray-300 text-brand-red focus:ring-brand-red h-4 w-4 cursor-pointer transition-all"
+                        />
+                        <span>Mostrar pendientes</span>
+                    </label>
 
                     {/* Pending badge */}
                     {pendientesCount > 0 && (

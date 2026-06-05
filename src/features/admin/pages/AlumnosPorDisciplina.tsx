@@ -285,6 +285,7 @@ export default function AlumnosPorDisciplina() {
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [mostrarPendientes, setMostrarPendientes] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const navigate = useNavigate();
 
@@ -496,15 +497,16 @@ export default function AlumnosPorDisciplina() {
             const matchesSearch = a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 a.apellido.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesProfesor = !selectedProfesor || a.id_profesor_que_cargo === selectedProfesor;
-            return matchesSearch && matchesProfesor;
+            const matchesPendientes = !mostrarPendientes || a.estado === 'pendiente';
+            return matchesSearch && matchesProfesor && matchesPendientes;
         })
         .sort((a, b) => STATUS_ORDER[a.estado] - STATUS_ORDER[b.estado]);
 
     const totalPages = Math.ceil(filteredAlumnos.length / PAGE_SIZE);
     const pagedAlumnos = filteredAlumnos.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-    // Reset to page 1 when search, discipline, or professor changes
-    useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedDisciplina, selectedProfesor]);
+    // Reset to page 1 when search, discipline, professor, or pending status changes
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedDisciplina, selectedProfesor, mostrarPendientes]);
 
     if (loading && disciplinas.length === 0) {
         return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-brand-red" /></div>;
@@ -569,24 +571,35 @@ export default function AlumnosPorDisciplina() {
                         <span className="px-3 py-1 bg-brand-red/10 text-brand-red font-bold rounded-full text-sm uppercase tracking-wide">{selectedDisciplinaName}</span>
                     </div>
                 )}
-                <div className="w-full sm:w-auto relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-gray-400" />
+                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none text-sm font-semibold text-gray-700 hover:text-brand-red transition-colors bg-gray-50 hover:bg-gray-100/85 px-3 py-2 rounded-lg border border-gray-200 justify-center">
+                        <input
+                            type="checkbox"
+                            checked={mostrarPendientes}
+                            onChange={e => setMostrarPendientes(e.target.checked)}
+                            className="rounded border-gray-300 text-brand-red focus:ring-brand-red h-4 w-4 cursor-pointer transition-all"
+                        />
+                        <span>Mostrar pendientes</span>
+                    </label>
+                    <div className="relative w-full sm:w-auto">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Buscar alumno..."
+                            className="pl-10 w-full sm:w-64 rounded-lg border-gray-300 text-black focus:border-brand-red focus:ring-brand-red shadow-sm"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Buscar alumno..."
-                        className="pl-10 w-full sm:w-64 rounded-lg border-gray-300 text-black focus:border-brand-red focus:ring-brand-red shadow-sm"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                    />
                 </div>
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[580px]">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full max-w-full">
+                <div className="w-full overflow-x-auto">
+                    <table className="w-full text-left min-w-full sm:min-w-[580px]">
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
@@ -595,7 +608,7 @@ export default function AlumnosPorDisciplina() {
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Domicilio</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">F. Nacimiento</th>
                                 <th className="hidden sm:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">G. Sanguíneo</th>
-                                <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Inicio</th>
+                                <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Fecha Pago</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Estado</th>
                                 <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Vencimiento</th>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider text-right">Acciones</th>
@@ -639,7 +652,7 @@ export default function AlumnosPorDisciplina() {
                                             ) : '-'}
                                         </td>
                                         <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {formatFechaLocal(alumno.fecha_registro)}
+                                            {formatFechaLocal(alumno.fecha_ultimo_pago)}
                                         </td>
                                         <td className="px-6 py-4">
                                             {/* 3-state dropdown */}
