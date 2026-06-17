@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity } from 'lucide-react';
+import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
 import RegistroPagoModal, { CuotaPayload, GastoPayload } from '../components/RegistroPagoModal';
@@ -11,6 +11,8 @@ const MESES = [
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
+const ITEMS_PER_PAGE = 20;
+
 export default function PagosPage() {
     const [pagos, setPagos] = useState<UnifiedPago[]>([]);
     const [clientes, setClientes] = useState<ClienteBackend[]>([]);
@@ -20,6 +22,7 @@ export default function PagosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
     const [filterTipo, setFilterTipo] = useState<'TODOS' | 'CUOTA' | 'ALQUILER' | 'ENTRADA' | 'GASTO'>('TODOS');
+    const [currentPage, setCurrentPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPago, setEditingPago] = useState<UnifiedPago | null>(null);
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; pago: UnifiedPago | null }>({ isOpen: false, pago: null });
@@ -151,7 +154,7 @@ export default function PagosPage() {
         return { totalIngresos, totalGastos, balance, pendientes, totalAlquileres };
     }, [pagos, clientes]);
 
-    const filteredPagos = pagos.filter(pago => {
+    const filteredPagos = useMemo(() => pagos.filter(pago => {
         const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());
 
         let matchesMonth = true;
@@ -164,7 +167,18 @@ export default function PagosPage() {
         const matchesTipo = filterTipo === 'TODOS' || pago.tipo === filterTipo;
 
         return matchesSearch && matchesMonth && matchesTipo;
-    });
+    }), [pagos, searchTerm, selectedMonth, filterTipo]);
+
+    // Reset to page 1 whenever filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedMonth, filterTipo]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredPagos.length / ITEMS_PER_PAGE));
+    const paginatedPagos = filteredPagos.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     const handleSaveCuota = async (payload: CuotaPayload) => {
         try {
@@ -323,7 +337,7 @@ export default function PagosPage() {
                             type="text"
                             placeholder="Buscar por concepto..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red"
                         />
                     </div>
@@ -373,7 +387,7 @@ export default function PagosPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {filteredPagos.map((pago) => (
+                                {paginatedPagos.map((pago) => (
                                     <tr key={pago.id} className="group hover:bg-gray-50 transition-colors">
                                         <td className="py-5 pl-4 text-gray-600">{formatDate(pago.fecha)}</td>
                                         <td className="py-5 font-bold text-gray-900">
@@ -430,6 +444,42 @@ export default function PagosPage() {
                         </table>
                     )}
                 </div>
+
+                {/* Pagination */}
+                {!isLoading && filteredPagos.length > 0 && (
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <p className="text-sm text-gray-500">
+                            Mostrando{' '}
+                            <span className="font-semibold text-gray-700">
+                                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredPagos.length)}
+                            </span>{' '}
+                            de{' '}
+                            <span className="font-semibold text-gray-700">{filteredPagos.length}</span>{' '}
+                            registros
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                Anterior
+                            </button>
+                            <span className="px-3 py-2 text-sm font-bold text-gray-700 bg-gray-100 rounded-lg">
+                                {currentPage} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Siguiente
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <RegistroPagoModal
