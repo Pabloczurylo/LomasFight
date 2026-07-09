@@ -84,7 +84,8 @@ export default function PagosPage() {
                 originalId: c.id_pago,
                 disciplinaNombre: c.disciplinas?.nombre_disciplina,
                 idCliente: c.id_cliente,
-                idDisciplina: c.id_disciplina
+                idDisciplina: c.id_disciplina,
+                idProfesorQueCargo: c.clientes?.id_profesor_que_cargo ?? null
             }));
 
             const normalizedAlquileres: UnifiedPago[] = alquileres.map(a => ({
@@ -168,13 +169,6 @@ export default function PagosPage() {
         return { totalIngresos, totalGastos, balance, pendientes, totalAlquileres };
     }, [pagos, clientes]);
 
-    // Build a set of disciplina IDs that belong to the selected professor
-    const profesorDisciplinaIds = useMemo(() => {
-        if (filterProfesor === 'TODOS') return null;
-        const prof = profesores.find(p => p.id_profesor === filterProfesor);
-        return prof ? new Set([prof.id_disciplina]) : null;
-    }, [filterProfesor, profesores]);
-
     const filteredPagos = useMemo(() => pagos.filter(pago => {
         const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -189,12 +183,12 @@ export default function PagosPage() {
 
         // Filter by professor only when type is CUOTA and a professor is selected
         let matchesProfesor = true;
-        if (filterTipo === 'CUOTA' && profesorDisciplinaIds && pago.tipo === 'CUOTA') {
-            matchesProfesor = pago.idDisciplina !== undefined && profesorDisciplinaIds.has(pago.idDisciplina);
+        if (filterTipo === 'CUOTA' && filterProfesor !== 'TODOS' && pago.tipo === 'CUOTA') {
+            matchesProfesor = pago.idProfesorQueCargo === filterProfesor;
         }
 
         return matchesSearch && matchesMonth && matchesTipo && matchesProfesor;
-    }), [pagos, searchTerm, selectedMonth, filterTipo, profesorDisciplinaIds]);
+    }), [pagos, searchTerm, selectedMonth, filterTipo, filterProfesor]);
 
     // Reset to page 1 whenever filters change
     useEffect(() => {
