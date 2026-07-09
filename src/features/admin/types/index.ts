@@ -67,7 +67,7 @@ export interface PagoBackend {
     id_disciplina: number;
     monto: number;
     fecha_pago: string;
-    clientes?: { nombre: string; apellido: string };
+    clientes?: { nombre: string; apellido: string; id_profesor_que_cargo?: number | null };
     disciplinas?: { nombre_disciplina: string };
 }
 
@@ -92,6 +92,7 @@ export interface UnifiedPago {
     disciplinaNombre?: string;
     idCliente?: number;
     idDisciplina?: number;
+    idProfesorQueCargo?: number | null;
 }
 
 export interface Pago {
