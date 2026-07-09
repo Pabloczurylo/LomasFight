@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
 import RegistroPagoModal, { CuotaPayload, GastoPayload } from '../components/RegistroPagoModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
+
+interface ProfesorOption {
+    id_profesor: number;
+    nombre: string;
+    apellido: string;
+    id_disciplina: number;
+}
 
 const MESES = [
     'Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -17,11 +24,13 @@ export default function PagosPage() {
     const [pagos, setPagos] = useState<UnifiedPago[]>([]);
     const [clientes, setClientes] = useState<ClienteBackend[]>([]);
     const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+    const [profesores, setProfesores] = useState<ProfesorOption[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
     const [filterTipo, setFilterTipo] = useState<'TODOS' | 'CUOTA' | 'ALQUILER' | 'ENTRADA' | 'GASTO'>('TODOS');
+    const [filterProfesor, setFilterProfesor] = useState<number | 'TODOS'>('TODOS');
     const [currentPage, setCurrentPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPago, setEditingPago] = useState<UnifiedPago | null>(null);
@@ -31,19 +40,23 @@ export default function PagosPage() {
         setIsLoading(true);
         try {
             // Fetch dependencies with individual error handling
-            const [clientesRes, disciplinasRes] = await Promise.allSettled([
+            const [clientesRes, disciplinasRes, profesoresRes] = await Promise.allSettled([
                 api.get('/clientes'),
-                api.get('/diciplinas')
+                api.get('/diciplinas'),
+                api.get<ProfesorOption[]>('/profesores')
             ]);
 
             const clientesData = clientesRes.status === 'fulfilled' ? clientesRes.value.data : [];
             const disciplinasData = disciplinasRes.status === 'fulfilled' ? disciplinasRes.value.data : [];
+            const profesoresData = profesoresRes.status === 'fulfilled' ? profesoresRes.value.data : [];
 
             setClientes(clientesData);
             setDisciplinas(disciplinasData);
+            setProfesores(profesoresData);
 
             if (clientesRes.status === 'rejected') console.error("Error fetching clientes:", clientesRes.reason);
             if (disciplinasRes.status === 'rejected') console.error("Error fetching disciplinas:", disciplinasRes.reason);
+            if (profesoresRes.status === 'rejected') console.error("Error fetching profesores:", profesoresRes.reason);
 
             // Fetch payments and gastos with individual error handling
             const [pagosRes, pagosDisciplinaRes, gastosRes] = await Promise.allSettled([
@@ -70,7 +83,8 @@ export default function PagosPage() {
                 estado: 'Pagado',
                 originalId: c.id_pago,
                 disciplinaNombre: c.disciplinas?.nombre_disciplina,
-                idCliente: c.id_cliente
+                idCliente: c.id_cliente,
+                idDisciplina: c.id_disciplina
             }));
 
             const normalizedAlquileres: UnifiedPago[] = alquileres.map(a => ({
@@ -154,6 +168,13 @@ export default function PagosPage() {
         return { totalIngresos, totalGastos, balance, pendientes, totalAlquileres };
     }, [pagos, clientes]);
 
+    // Build a set of disciplina IDs that belong to the selected professor
+    const profesorDisciplinaIds = useMemo(() => {
+        if (filterProfesor === 'TODOS') return null;
+        const prof = profesores.find(p => p.id_profesor === filterProfesor);
+        return prof ? new Set([prof.id_disciplina]) : null;
+    }, [filterProfesor, profesores]);
+
     const filteredPagos = useMemo(() => pagos.filter(pago => {
         const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -166,13 +187,19 @@ export default function PagosPage() {
 
         const matchesTipo = filterTipo === 'TODOS' || pago.tipo === filterTipo;
 
-        return matchesSearch && matchesMonth && matchesTipo;
-    }), [pagos, searchTerm, selectedMonth, filterTipo]);
+        // Filter by professor only when type is CUOTA and a professor is selected
+        let matchesProfesor = true;
+        if (filterTipo === 'CUOTA' && profesorDisciplinaIds && pago.tipo === 'CUOTA') {
+            matchesProfesor = pago.idDisciplina !== undefined && profesorDisciplinaIds.has(pago.idDisciplina);
+        }
+
+        return matchesSearch && matchesMonth && matchesTipo && matchesProfesor;
+    }), [pagos, searchTerm, selectedMonth, filterTipo, profesorDisciplinaIds]);
 
     // Reset to page 1 whenever filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedMonth, filterTipo]);
+    }, [searchTerm, selectedMonth, filterTipo, filterProfesor]);
 
     const totalPages = Math.max(1, Math.ceil(filteredPagos.length / ITEMS_PER_PAGE));
     const paginatedPagos = filteredPagos.slice(
@@ -357,7 +384,10 @@ export default function PagosPage() {
                         </div>
                         <select
                             value={filterTipo}
-                            onChange={(e) => setFilterTipo(e.target.value as typeof filterTipo)}
+                            onChange={(e) => {
+                                setFilterTipo(e.target.value as typeof filterTipo);
+                                setFilterProfesor('TODOS');
+                            }}
                             className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
                         >
                             <option value="TODOS">Todos los tipos</option>
@@ -366,6 +396,26 @@ export default function PagosPage() {
                             <option value="ENTRADA">Entradas (Ingresos extras)</option>
                             <option value="GASTO">Gastos</option>
                         </select>
+                        {filterTipo === 'CUOTA' && (
+                            <div className="flex items-center gap-2">
+                                <User className="text-gray-400 w-5 h-5" />
+                                <select
+                                    value={filterProfesor === 'TODOS' ? 'TODOS' : filterProfesor}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFilterProfesor(val === 'TODOS' ? 'TODOS' : Number(val));
+                                    }}
+                                    className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
+                                >
+                                    <option value="TODOS">Todos los profesores</option>
+                                    {profesores.map(p => (
+                                        <option key={p.id_profesor} value={p.id_profesor}>
+                                            {p.nombre} {p.apellido}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 </div>
 

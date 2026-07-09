@@ -91,6 +91,7 @@ export interface UnifiedPago {
     originalId?: number;
     disciplinaNombre?: string;
     idCliente?: number;
+    idDisciplina?: number;
 }
 
 export interface Pago {
