@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Plus, Search, DollarSign, AlertCircle, Calendar, Edit2, Trash2, ArrowDown, Activity, ChevronLeft, ChevronRight, User, X, Users } from 'lucide-react';
 import { ClienteBackend, Disciplina, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../types';
 import { cn } from '../../../lib/utils';
 import RegistroPagoModal, { CuotaPayload, GastoPayload } from '../components/RegistroPagoModal';
@@ -35,6 +35,7 @@ export default function PagosPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPago, setEditingPago] = useState<UnifiedPago | null>(null);
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; pago: UnifiedPago | null }>({ isOpen: false, pago: null });
+    const [showIngresosProfesorModal, setShowIngresosProfesorModal] = useState(false);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -169,6 +170,40 @@ export default function PagosPage() {
         return { totalIngresos, totalGastos, balance, pendientes, totalAlquileres };
     }, [pagos, clientes]);
 
+    // Ingresos por profesor del mes actual
+    const ingresosPorProfesorMes = useMemo(() => {
+        const currentMonthIndex = new Date().getMonth() + 1;
+        const targetMonth = MESES[currentMonthIndex];
+        const map: Record<number, { nombre: string; total: number; cantidad: number }> = {};
+        let sinProfesor = 0;
+        let cantSinProfesor = 0;
+
+        pagos.forEach(p => {
+            if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return;
+            const pMonth = MESES[new Date(p.fecha).getMonth() + 1];
+            if (pMonth !== targetMonth) return;
+
+            if (p.idProfesorQueCargo != null) {
+                const prof = profesores.find(pr => pr.id_profesor === p.idProfesorQueCargo);
+                const nombre = prof ? `${prof.nombre} ${prof.apellido}` : `Profesor ID ${p.idProfesorQueCargo}`;
+                if (!map[p.idProfesorQueCargo]) {
+                    map[p.idProfesorQueCargo] = { nombre, total: 0, cantidad: 0 };
+                }
+                map[p.idProfesorQueCargo].total += p.monto;
+                map[p.idProfesorQueCargo].cantidad += 1;
+            } else {
+                sinProfesor += p.monto;
+                cantSinProfesor += 1;
+            }
+        });
+
+        const lista = Object.values(map).sort((a, b) => b.total - a.total);
+        if (sinProfesor > 0) {
+            lista.push({ nombre: 'Sin asignar', total: sinProfesor, cantidad: cantSinProfesor });
+        }
+        return lista;
+    }, [pagos, profesores]);
+
     const filteredPagos = useMemo(() => pagos.filter(pago => {
         const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -299,14 +334,21 @@ export default function PagosPage() {
 
             {/* Metrics Dashboard */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 relative group/card">
                     <div className="p-3 bg-green-100 text-green-600 rounded-lg">
                         <DollarSign className="w-8 h-8" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                         <p className="text-sm font-medium text-gray-500">Ingresos (Mes)</p>
                         <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalIngresos)}</h3>
                     </div>
+                    <button
+                        onClick={() => setShowIngresosProfesorModal(true)}
+                        title="Ver ingresos por profesor"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-all duration-200"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
@@ -547,6 +589,65 @@ export default function PagosPage() {
                 message={`¿Estás seguro que deseas eliminar "${deleteModal.pago?.concepto}"? Esta acción no se puede deshacer.`}
                 type="danger"
             />
+
+            {/* Modal Ingresos por Profesor */}
+            {showIngresosProfesorModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <div>
+                                <h3 className="text-xl font-heading font-bold text-gray-900">Ingresos por Profesor</h3>
+                                <p className="text-sm text-gray-500 mt-0.5">
+                                    {MESES[new Date().getMonth() + 1]} {new Date().getFullYear()} · Solo cuotas
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowIngresosProfesorModal(false)}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 p-4">
+                            {ingresosPorProfesorMes.length === 0 ? (
+                                <div className="py-10 text-center text-gray-400">
+                                    <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                                    <p>No hay cuotas registradas este mes.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {ingresosPorProfesorMes.map((p, idx) => {
+                                        const totalMes = ingresosPorProfesorMes.reduce((s, x) => s + x.total, 0);
+                                        const pct = totalMes > 0 ? ((p.total / totalMes) * 100).toFixed(1) : '0.0';
+                                        return (
+                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                                                <div className="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                                    {p.nombre.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-gray-800 text-sm truncate">{p.nombre}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                        <span className="text-xs text-gray-400 w-9 text-right">{pct}%</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400 mt-0.5">{p.cantidad} cuota{p.cantidad !== 1 ? 's' : ''}</p>
+                                                </div>
+                                                <p className="font-bold text-gray-900 text-sm flex-shrink-0">{formatCurrency(p.total)}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                            <span className="text-sm text-gray-500">Total cuotas del mes</span>
+                            <span className="font-bold text-gray-900">{formatCurrency(ingresosPorProfesorMes.reduce((s, p) => s + p.total, 0))}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

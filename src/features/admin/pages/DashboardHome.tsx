@@ -4,6 +4,12 @@ import { api } from '../../../services/api';
 import { ClienteBackend, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../../admin/types';
 import { cn } from '../../../lib/utils';
 
+interface ProfesorOption {
+    id_profesor: number;
+    nombre: string;
+    apellido: string;
+}
+
 const MESES = [
     'Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -86,11 +92,118 @@ function MonthlyChart({ data, maxVal }: { data: MonthlyData[]; maxVal: number })
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 
+interface ProfesorIngresoItem { nombre: string; total: number; cantidad: number; }
+
+function ProfesorIngresosModal({
+    isOpen, onClose, items, titulo, subtitulo
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    items: ProfesorIngresoItem[];
+    titulo: string;
+    subtitulo: string;
+}) {
+    if (!isOpen) return null;
+    const totalGeneral = items.reduce((s, p) => s + p.total, 0);
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                    <div>
+                        <h3 className="text-xl font-heading font-bold text-gray-900">{titulo}</h3>
+                        <p className="text-sm text-gray-500 mt-0.5">{subtitulo}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="overflow-y-auto flex-1 p-4">
+                    {items.length === 0 ? (
+                        <div className="py-10 text-center text-gray-400">
+                            <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                            <p>No hay cuotas registradas.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {items.map((p, idx) => {
+                                const pct = totalGeneral > 0 ? ((p.total / totalGeneral) * 100).toFixed(1) : '0.0';
+                                return (
+                                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                                        <div className="w-9 h-9 rounded-full bg-brand-red/10 text-brand-red flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                            {p.nombre.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-gray-800 text-sm truncate">{p.nombre}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-brand-red rounded-full" style={{ width: `${pct}%` }} />
+                                                </div>
+                                                <span className="text-xs text-gray-400 w-9 text-right">{pct}%</span>
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-0.5">{p.cantidad} cuota{p.cantidad !== 1 ? 's' : ''}</p>
+                                        </div>
+                                        <p className="font-bold text-gray-900 text-sm flex-shrink-0">{formatCurrency(p.total)}</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+                <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Total cuotas</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(totalGeneral)}</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Detail Modal Mensual ──────────────────────────────────────────────────────
+
 function IngresosMensualesModal({
-    isOpen, onClose, data, year
-}: { isOpen: boolean; onClose: () => void; data: MonthlyData[]; year: number }) {
+    isOpen, onClose, data, year, pagos, profesores
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    data: MonthlyData[];
+    year: number;
+    pagos: UnifiedPago[];
+    profesores: ProfesorOption[];
+}) {
+    const [profModalMonth, setProfModalMonth] = useState<number | null>(null);
+
     if (!isOpen) return null;
     const total = data.reduce((s, d) => s + d.total, 0);
+
+    const getProfesorItemsForMonth = (monthNum: number): ProfesorIngresoItem[] => {
+        const map: Record<number, ProfesorIngresoItem> = {};
+        let sinProfesor = 0;
+        let cantSinProfesor = 0;
+
+        pagos.forEach(p => {
+            if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return;
+            const d = new Date(p.fecha);
+            if (d.getFullYear() !== year || d.getMonth() + 1 !== monthNum) return;
+
+            if (p.idProfesorQueCargo != null) {
+                const prof = profesores.find(pr => pr.id_profesor === p.idProfesorQueCargo);
+                const nombre = prof ? `${prof.nombre} ${prof.apellido}` : `Profesor ID ${p.idProfesorQueCargo}`;
+                if (!map[p.idProfesorQueCargo]) {
+                    map[p.idProfesorQueCargo] = { nombre, total: 0, cantidad: 0 };
+                }
+                map[p.idProfesorQueCargo].total += p.monto;
+                map[p.idProfesorQueCargo].cantidad += 1;
+            } else {
+                sinProfesor += p.monto;
+                cantSinProfesor += 1;
+            }
+        });
+
+        const lista = Object.values(map).sort((a, b) => b.total - a.total);
+        if (sinProfesor > 0) lista.push({ nombre: 'Sin asignar', total: sinProfesor, cantidad: cantSinProfesor });
+        return lista;
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
@@ -112,6 +225,7 @@ function IngresosMensualesModal({
                                 <th className="py-3 px-4 text-left">Mes</th>
                                 <th className="py-3 px-4 text-right">Total</th>
                                 <th className="py-3 px-4 text-right">% del año</th>
+                                <th className="py-3 px-2 text-center w-10"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -144,6 +258,17 @@ function IngresosMensualesModal({
                                                 </div>
                                             ) : <span className="text-gray-400 text-xs">—</span>}
                                         </td>
+                                        <td className="py-3 px-2 text-center">
+                                            {d.total > 0 && (
+                                                <button
+                                                    onClick={() => setProfModalMonth(d.month)}
+                                                    title="Ver por profesor"
+                                                    className="p-1 rounded-lg text-gray-300 hover:text-brand-red hover:bg-red-50 transition-colors"
+                                                >
+                                                    <ChevronRight size={16} />
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -151,6 +276,17 @@ function IngresosMensualesModal({
                     </table>
                 </div>
             </div>
+
+            {/* Sub-modal: ingresos por profesor del mes */}
+            {profModalMonth !== null && (
+                <ProfesorIngresosModal
+                    isOpen={true}
+                    onClose={() => setProfModalMonth(null)}
+                    items={getProfesorItemsForMonth(profModalMonth)}
+                    titulo="Ingresos por Profesor"
+                    subtitulo={`${MESES[profModalMonth]} ${year} · Solo cuotas`}
+                />
+            )}
         </div>
     );
 }
@@ -160,20 +296,23 @@ function IngresosMensualesModal({
 export default function DashboardHome() {
     const [clientes, setClientes] = useState<ClienteBackend[]>([]);
     const [pagos, setPagos] = useState<UnifiedPago[]>([]);
+    const [profesores, setProfesores] = useState<ProfesorOption[]>([]);
     const [classesToday, setClassesToday] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [showModal, setShowModal] = useState(false);
+    const [showIngresosProfesorModal, setShowIngresosProfesorModal] = useState(false);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [clientesRes, pagosRes, pagosDisciplinaRes, horariosRes, gastosRes] = await Promise.allSettled([
+            const [clientesRes, pagosRes, pagosDisciplinaRes, horariosRes, gastosRes, profesoresRes] = await Promise.allSettled([
                 api.get('/clientes'),
                 api.get('/pagos'),
                 api.get('/pago-disciplina'),
                 api.get('/horarios'),
-                api.get('/gastos')
+                api.get('/gastos'),
+                api.get<ProfesorOption[]>('/profesores')
             ]);
 
             const clientesData = clientesRes.status === 'fulfilled' ? clientesRes.value.data : [];
@@ -181,8 +320,10 @@ export default function DashboardHome() {
             const alquileresData: PagoDisciplinaBackend[] = pagosDisciplinaRes.status === 'fulfilled' ? pagosDisciplinaRes.value.data : [];
             const horariosData: { dia_y_hora: string }[] = horariosRes.status === 'fulfilled' ? horariosRes.value.data : [];
             const gastosData: GastoBackend[] = gastosRes.status === 'fulfilled' ? gastosRes.value.data : [];
+            const profesoresData: ProfesorOption[] = profesoresRes.status === 'fulfilled' ? profesoresRes.value.data : [];
 
             setClientes(clientesData);
+            setProfesores(profesoresData);
 
             const daysMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
             const todayName = daysMap[new Date().getDay()];
@@ -198,7 +339,8 @@ export default function DashboardHome() {
                 estado: 'Pagado',
                 originalId: c.id_pago,
                 disciplinaNombre: c.disciplinas?.nombre_disciplina,
-                idCliente: c.id_cliente
+                idCliente: c.id_cliente,
+                idProfesorQueCargo: c.clientes?.id_profesor_que_cargo ?? null
             }));
 
             const normalizedAlquileres: UnifiedPago[] = alquileresData.map(a => ({
@@ -271,6 +413,38 @@ export default function DashboardHome() {
         return { activeStudents: activeStudents.length, totalIngresosMes, totalGastosMes, balanceMes, pendientes };
     }, [pagos, clientes]);
 
+    // ── Ingresos por profesor del mes actual ─────────────────────────────────
+    const ingresosPorProfesorMesActual = useMemo((): ProfesorIngresoItem[] => {
+        const currentMonthIndex = new Date().getMonth() + 1;
+        const targetMonth = MESES[currentMonthIndex];
+        const map: Record<number, ProfesorIngresoItem> = {};
+        let sinProfesor = 0;
+        let cantSinProfesor = 0;
+
+        pagos.forEach(p => {
+            if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return;
+            const pMonth = MESES[new Date(p.fecha).getMonth() + 1];
+            if (pMonth !== targetMonth) return;
+
+            if (p.idProfesorQueCargo != null) {
+                const prof = profesores.find(pr => pr.id_profesor === p.idProfesorQueCargo);
+                const nombre = prof ? `${prof.nombre} ${prof.apellido}` : `Profesor ID ${p.idProfesorQueCargo}`;
+                if (!map[p.idProfesorQueCargo]) {
+                    map[p.idProfesorQueCargo] = { nombre, total: 0, cantidad: 0 };
+                }
+                map[p.idProfesorQueCargo].total += p.monto;
+                map[p.idProfesorQueCargo].cantidad += 1;
+            } else {
+                sinProfesor += p.monto;
+                cantSinProfesor += 1;
+            }
+        });
+
+        const lista = Object.values(map).sort((a, b) => b.total - a.total);
+        if (sinProfesor > 0) lista.push({ nombre: 'Sin asignar', total: sinProfesor, cantidad: cantSinProfesor });
+        return lista;
+    }, [pagos, profesores]);
+
     // ── Monthly chart data ────────────────────────────────────────────────────
 
     const availableYears = useMemo(() => {
@@ -325,10 +499,17 @@ export default function DashboardHome() {
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="p-3 bg-green-100 text-green-600 rounded-lg"><DollarSign className="w-8 h-8" /></div>
-                    <div>
+                    <div className="flex-1">
                         <h3 className="text-sm font-bold text-gray-500 mb-1">Ingresos (Mes)</h3>
                         <p className="text-2xl font-heading font-bold text-brand-black">{formatCurrency(metrics.totalIngresosMes)}</p>
                     </div>
+                    <button
+                        onClick={() => setShowIngresosProfesorModal(true)}
+                        title="Ver ingresos por profesor"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-all duration-200"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="p-3 bg-orange-100 text-orange-600 rounded-lg"><ArrowDown className="w-8 h-8" /></div>
@@ -477,6 +658,17 @@ export default function DashboardHome() {
                 onClose={() => setShowModal(false)}
                 data={monthlyData}
                 year={selectedYear}
+                pagos={pagos}
+                profesores={profesores}
+            />
+
+            {/* ── Modal ingresos por profesor mes actual ── */}
+            <ProfesorIngresosModal
+                isOpen={showIngresosProfesorModal}
+                onClose={() => setShowIngresosProfesorModal(false)}
+                items={ingresosPorProfesorMesActual}
+                titulo="Ingresos por Profesor"
+                subtitulo={`${MESES[new Date().getMonth() + 1]} ${new Date().getFullYear()} · Solo cuotas`}
             />
         </div>
     );
