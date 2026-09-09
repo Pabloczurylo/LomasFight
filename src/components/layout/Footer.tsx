@@ -1,4 +1,5 @@
 import { MapPin, Phone, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
     return (
@@ -55,8 +56,14 @@ export function Footer() {
                     </div>
                 </div>
 
-                <div className="border-t border-gray-900 pt-8 text-center text-xs">
+                <div className="border-t border-gray-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
                     <p>© {new Date().getFullYear()} Lomas Fight Gym. Todos los derechos reservados.</p>
+                    <Link
+                        to="/politica-de-privacidad"
+                        className="text-gray-600 hover:text-brand-red transition-colors tracking-widest uppercase text-[10px] font-bold"
+                    >
+                        Política de Privacidad
+                    </Link>
                 </div>
             </div>
         </footer>

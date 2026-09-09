@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+﻿import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./features/landing/LandingPage";
 import DisciplineDetailPage from "./features/landing/pages/DisciplineDetailPage";
+import PrivacyPolicyPage from "./features/landing/pages/PrivacyPolicyPage";
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { AdminRoutes } from "./features/admin/routes/AdminRoutes";
 import LoginPage from "./features/auth/pages/LoginPage";
@@ -22,6 +23,7 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/disciplina/:id" element={<DisciplineDetailPage />} />
+          <Route path="/politica-de-privacidad" element={<PrivacyPolicyPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
@@ -29,3 +31,4 @@ function App() {
 }
 
 export default App;
+

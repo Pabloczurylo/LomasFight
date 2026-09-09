@@ -159,8 +159,20 @@ export default function LoginPage() {
                     </form>
 
                     {/* Footer */}
-                    <div className="pt-8 border-t border-gray-100 text-xs text-gray-400 text-center">
-                        <p>© 2026 Lomas Fight Gym Management.</p>
+                    <div className="pt-6 border-t border-gray-100 space-y-3">
+                        <div className="border-l-2 border-brand-red pl-3">
+                            <p className="text-[11px] text-gray-500 leading-relaxed font-mono">
+                                ACCESO RESTRINGIDO — uso exclusivo del personal autorizado de Lomas Fight.
+                                Los datos gestionados en este panel son confidenciales y están protegidos
+                                por la <span className="text-gray-700 font-semibold">Ley 25.326</span> de Protección de Datos Personales.
+                            </p>
+                        </div>
+                        <p className="text-[10px] text-gray-400 text-center">
+                            © {new Date().getFullYear()} Lomas Fight Gym Management.{" "}
+                            <Link to="/politica-de-privacidad" className="underline underline-offset-2 hover:text-brand-red transition-colors">
+                                Política de Privacidad
+                            </Link>
+                        </p>
                     </div>
                 </div>
             </div>
