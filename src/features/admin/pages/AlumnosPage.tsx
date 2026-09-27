@@ -33,6 +33,10 @@ interface AlumnoRow {
     grupoSanguineo: string | null;
     id_profesor_que_cargo: number | null;
     profesorNombre: string | null;
+    numeroCelular: string | null;
+    numeroCelularEmergencia: string | null;
+    alergiaMedicamento: string | null;
+    tiempoEntrenamiento: string | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -115,20 +119,24 @@ export default function AlumnosPage() {
             const rows: AlumnoRow[] = clientesRes.value.data.map(c => {
                 const prof = (c as any).profesores;
                 return {
-                    id:              String(c.id_cliente),
-                    nombre:          c.nombre,
-                    apellido:        c.apellido,
-                    dni:             c.dni || null,
-                    domicilio:       c.domicilio || null,
-                    disciplinaNombre:c.disciplinas?.nombre_disciplina || '-',
-                    id_disciplina:   c.id_disciplina,
-                    estadoPago:      deriveEstado(c.inactivo === true, c.fecha_vencimiento || null),
-                    fechaUltimoPago: c.fecha_ultimo_pago || null,
-                    fechaVencimiento: c.fecha_vencimiento || null,
-                    fechaNacimiento: c.fecha_nacimiento  || null,
-                    grupoSanguineo:  c.grupo_sanguineo   || null,
-                    id_profesor_que_cargo: c.id_profesor_que_cargo || null,
-                    profesorNombre:  prof ? `${prof.nombre} ${prof.apellido}` : null,
+                    id:                      String(c.id_cliente),
+                    nombre:                  c.nombre,
+                    apellido:                c.apellido,
+                    dni:                     c.dni || null,
+                    domicilio:               c.domicilio || null,
+                    disciplinaNombre:        c.disciplinas?.nombre_disciplina || '-',
+                    id_disciplina:           c.id_disciplina,
+                    estadoPago:              deriveEstado(c.inactivo === true, c.fecha_vencimiento || null),
+                    fechaUltimoPago:         c.fecha_ultimo_pago || null,
+                    fechaVencimiento:        c.fecha_vencimiento || null,
+                    fechaNacimiento:         c.fecha_nacimiento  || null,
+                    grupoSanguineo:          c.grupo_sanguineo   || null,
+                    id_profesor_que_cargo:   c.id_profesor_que_cargo || null,
+                    profesorNombre:          prof ? `${prof.nombre} ${prof.apellido}` : null,
+                    numeroCelular:           c.numero_celular || null,
+                    numeroCelularEmergencia: c.numero_celular_emergencia || null,
+                    alergiaMedicamento:      c.alergia_medicamento || null,
+                    tiempoEntrenamiento:     c.tiempo_entrenamiento || null,
                 };
             });
 
@@ -150,6 +158,7 @@ export default function AlumnosPage() {
             const matchesSearch =
                 a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 a.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (a.numeroCelular || '').includes(searchTerm) ||
                 (a.dni || '').includes(searchTerm);
             const matchesDisciplina =
                 selectedDisciplina === 'Todas' || a.disciplinaNombre === selectedDisciplina;
@@ -173,16 +182,20 @@ export default function AlumnosPage() {
 
     // Build initialData for the modal from an AlumnoRow
     const modalInitialData = editingAlumno ? {
-        id:                    editingAlumno.id,
-        nombre:                editingAlumno.nombre,
-        apellido:              editingAlumno.apellido,
-        id_disciplina:         editingAlumno.id_disciplina,
-        estadoPago:            editingAlumno.estadoPago,
-        dni:                   editingAlumno.dni,
-        fecha_nacimiento:      editingAlumno.fechaNacimiento,
-        grupo_sanguineo:       editingAlumno.grupoSanguineo,
-        domicilio:             editingAlumno.domicilio,
-        id_profesor_que_cargo: editingAlumno.id_profesor_que_cargo,
+        id:                          editingAlumno.id,
+        nombre:                      editingAlumno.nombre,
+        apellido:                    editingAlumno.apellido,
+        id_disciplina:               editingAlumno.id_disciplina,
+        estadoPago:                  editingAlumno.estadoPago,
+        dni:                         editingAlumno.dni,
+        fecha_nacimiento:            editingAlumno.fechaNacimiento,
+        grupo_sanguineo:             editingAlumno.grupoSanguineo,
+        domicilio:                   editingAlumno.domicilio,
+        id_profesor_que_cargo:       editingAlumno.id_profesor_que_cargo,
+        numero_celular:              editingAlumno.numeroCelular,
+        numero_celular_emergencia:   editingAlumno.numeroCelularEmergencia,
+        alergia_medicamento:         editingAlumno.alergiaMedicamento,
+        tiempo_entrenamiento:        editingAlumno.tiempoEntrenamiento,
     } : undefined;
 
     const handleSave = (data: StudentFormData) => {
@@ -192,14 +205,18 @@ export default function AlumnosPage() {
         } else {
             // Create immediately
             const payload: any = {
-                nombre:           data.nombre,
-                apellido:         data.apellido,
-                id_disciplina:    data.id_disciplina,
-                dni:              data.dni,
-                fecha_nacimiento: data.fecha_nacimiento,
-                grupo_sanguineo:  data.grupo_sanguineo,
-                domicilio:        data.domicilio,
-                id_profesor_que_cargo: data.id_profesor_que_cargo ?? null,
+                nombre:                    data.nombre,
+                apellido:                  data.apellido,
+                id_disciplina:             data.id_disciplina,
+                dni:                       data.dni,
+                fecha_nacimiento:          data.fecha_nacimiento,
+                grupo_sanguineo:           data.grupo_sanguineo,
+                domicilio:                 data.domicilio,
+                id_profesor_que_cargo:     data.id_profesor_que_cargo ?? null,
+                numero_celular:            data.numero_celular,
+                numero_celular_emergencia: data.numero_celular_emergencia,
+                alergia_medicamento:       data.alergia_medicamento,
+                tiempo_entrenamiento:      data.tiempo_entrenamiento,
             };
             api.post('/clientes', payload)
                 .then(() => { fetchAll(); setIsModalOpen(false); })
@@ -238,18 +255,22 @@ export default function AlumnosPage() {
             }
 
             await api.put(`/clientes/${editingAlumno.id}`, {
-                nombre:           pendingData.nombre,
-                apellido:         pendingData.apellido,
-                id_disciplina:    pendingData.id_disciplina,
-                activo:           true,
+                nombre:                    pendingData.nombre,
+                apellido:                  pendingData.apellido,
+                id_disciplina:             pendingData.id_disciplina,
+                activo:                    true,
                 inactivo,
                 fecha_ultimo_pago,
                 fecha_vencimiento,
-                dni:              pendingData.dni,
-                fecha_nacimiento: pendingData.fecha_nacimiento,
-                grupo_sanguineo:  pendingData.grupo_sanguineo,
-                domicilio:        pendingData.domicilio,
-                id_profesor_que_cargo: pendingData.id_profesor_que_cargo ?? null,
+                dni:                       pendingData.dni,
+                fecha_nacimiento:          pendingData.fecha_nacimiento,
+                grupo_sanguineo:           pendingData.grupo_sanguineo,
+                domicilio:                 pendingData.domicilio,
+                id_profesor_que_cargo:     pendingData.id_profesor_que_cargo ?? null,
+                numero_celular:            pendingData.numero_celular,
+                numero_celular_emergencia: pendingData.numero_celular_emergencia,
+                alergia_medicamento:       pendingData.alergia_medicamento,
+                tiempo_entrenamiento:      pendingData.tiempo_entrenamiento,
             });
             await fetchAll();
             setIsSaveConfirmOpen(false);
@@ -365,7 +386,7 @@ export default function AlumnosPage() {
                             <tr className="border-b border-gray-100 bg-gray-50/50">
                                 <th className="pb-3 pt-3 pl-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Nombre</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Profesor</th>
-                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">DNI</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Celular</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Domicilio</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Disciplina</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Fecha Nac.</th>
@@ -382,7 +403,7 @@ export default function AlumnosPage() {
                                         {a.nombre} {a.apellido}
                                     </td>
                                     <td className="py-4 text-gray-500 text-sm">{a.profesorNombre || <span className="text-gray-300">—</span>}</td>
-                                    <td className="py-4 text-gray-500 text-sm">{dash(a.dni)}</td>
+                                    <td className="py-4 text-gray-500 text-sm">{dash(a.numeroCelular)}</td>
                                     <td className="py-4 text-gray-500 text-sm">{dash(a.domicilio)}</td>
                                     <td className="py-4 text-gray-600 text-sm">{a.disciplinaNombre}</td>
                                     <td className="py-4 text-gray-500 text-sm">
