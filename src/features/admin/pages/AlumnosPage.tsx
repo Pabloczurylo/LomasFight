@@ -50,7 +50,10 @@ function deriveEstado(inactivo: boolean, fecha_vencimiento: string | null): Esta
     return vencimiento >= hoy ? 'al día' : 'pendiente';
 }
 
+import { formatFechaLocal, calcularTiempoEntrenamiento } from '../../../lib/dateUtils';
+
 const dash = (v: string | null | undefined) => v || '-';
+
 
 const STATUS_BADGE: Record<EstadoPago, string> = {
     'al día':   'bg-green-100 text-green-700',
@@ -427,7 +430,9 @@ export default function AlumnosPage() {
                                         <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{dash(a.numeroCelular)}</td>
                                         <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{dash(a.numeroCelularEmergencia)}</td>
                                         <td className="py-4 text-gray-500 text-sm max-w-[160px] truncate" title={a.alergiaMedicamento || undefined}>{dash(a.alergiaMedicamento)}</td>
-                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{dash(a.tiempoEntrenamiento)}</td>
+                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap" title={formatFechaLocal(a.tiempoEntrenamiento) !== a.tiempoEntrenamiento && a.tiempoEntrenamiento ? `Desde: ${formatFechaLocal(a.tiempoEntrenamiento)}` : undefined}>
+                                            {calcularTiempoEntrenamiento(a.tiempoEntrenamiento)}
+                                        </td>
                                         <td className="py-4 text-gray-500 text-sm max-w-[150px] truncate" title={a.domicilio || undefined}>{dash(a.domicilio)}</td>
                                         <td className="py-4 text-gray-600 text-sm whitespace-nowrap">{a.disciplinaNombre}</td>
                                         <td className="py-4 text-gray-500 text-sm whitespace-nowrap">
@@ -507,7 +512,16 @@ export default function AlumnosPage() {
                                                         <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🥋 Entrenamiento</span>
                                                         <div className="text-gray-900 font-medium">
                                                             <span className="text-gray-500 font-normal">Tiempo de Entr.: </span>
-                                                            {a.tiempoEntrenamiento || 'No especificado'}
+                                                            {calcularTiempoEntrenamiento(a.tiempoEntrenamiento) !== '-' ? (
+                                                                <>
+                                                                    {calcularTiempoEntrenamiento(a.tiempoEntrenamiento)}
+                                                                    {formatFechaLocal(a.tiempoEntrenamiento) !== a.tiempoEntrenamiento && a.tiempoEntrenamiento && (
+                                                                        <span className="text-gray-400 font-normal ml-1">
+                                                                            (desde {formatFechaLocal(a.tiempoEntrenamiento)})
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            ) : 'No especificado'}
                                                         </div>
                                                         <div className="text-gray-700">
                                                             <span className="text-gray-500">Disciplina: </span>

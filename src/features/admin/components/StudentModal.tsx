@@ -66,8 +66,11 @@ export default function StudentModal({
             setIdProfesor(initialData.id_profesor_que_cargo ?? null);
             setNumeroCelular(initialData.numero_celular || '');
             setNumeroCelularEmergencia(initialData.numero_celular_emergencia || '');
-            setAlergiaMedicamento(initialData.alergia_medicamento || '');
-            setTiempoEntrenamiento(initialData.tiempo_entrenamiento || '');
+            setTiempoEntrenamiento(
+                initialData.tiempo_entrenamiento
+                    ? (initialData.tiempo_entrenamiento.includes('T') ? initialData.tiempo_entrenamiento.split('T')[0] : initialData.tiempo_entrenamiento)
+                    : ''
+            );
         } else {
             setNombre('');
             setApellido('');
@@ -189,11 +192,11 @@ export default function StudentModal({
                             className={`${inputClass()} resize-none`} />
                     </div>
 
-                    {/* Tiempo de entrenamiento */}
+                    {/* Entrena desde */}
                     <div className="space-y-1.5">
-                        <label className={labelClass}>Tiempo de Entrenamiento <span className={optionalClass}>(opcional)</span></label>
-                        <input type="text" value={tiempoEntrenamiento} onChange={e => setTiempoEntrenamiento(e.target.value)}
-                            placeholder="Ej: Desde marzo 2023" className={inputClass()} />
+                        <label className={labelClass}>Entrena Desde <span className={optionalClass}>(opcional)</span></label>
+                        <input type="date" value={tiempoEntrenamiento} onChange={e => setTiempoEntrenamiento(e.target.value)}
+                            className={inputClass()} />
                     </div>
 
                     {/* Disciplina */}

@@ -103,21 +103,8 @@ const ESTADO_CONFIG: Record<EstadoAlumno, { label: string; classes: string }> = 
     'inactivo': { label: 'Inactivo', classes: 'bg-gray-100 text-gray-500 border-gray-200' },
 };
 
-function formatFechaLocal(fechaStr: string | null): string {
-    if (!fechaStr) return '-';
-    // Si viene un ISO string completo con T
-    if (fechaStr.includes('T')) {
-        const d = new Date(fechaStr);
-        return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
-    // Si viene solo YYYY-MM-DD (ej: fecha de nacimiento)
-    const parts = fechaStr.split('-');
-    if (parts.length === 3) {
-        const [year, month, day] = parts;
-        return `${day.substring(0, 2)}/${month}/${year}`;
-    }
-    return new Date(fechaStr).toLocaleDateString('es-AR');
-}
+import { formatFechaLocal, calcularTiempoEntrenamiento } from '../../../lib/dateUtils';
+
 
 // ─── Inline form modal ──────────────────────────────────────────────────────────
 
@@ -164,8 +151,11 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
             setIdProfesor(initialData?.id_profesor_que_cargo || null);
             setNumeroCelular(initialData?.numero_celular || '');
             setNumeroCelularEmergencia(initialData?.numero_celular_emergencia || '');
-            setAlergiaMedicamento(initialData?.alergia_medicamento || '');
-            setTiempoEntrenamiento(initialData?.tiempo_entrenamiento || '');
+            setTiempoEntrenamiento(
+                initialData?.tiempo_entrenamiento
+                    ? (initialData.tiempo_entrenamiento.includes('T') ? initialData.tiempo_entrenamiento.split('T')[0] : initialData.tiempo_entrenamiento)
+                    : ''
+            );
             setErrors({ nombre: '', apellido: '' });
         }
     }, [isOpen, initialData]);
@@ -260,10 +250,10 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
                             className={`${iClass()} resize-none`} />
                     </div>
 
-                    {/* Tiempo de entrenamiento */}
+                    {/* Entrena desde */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-gray-700">Tiempo de Entrenamiento <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
-                        <input type="text" value={tiempoEntrenamiento} onChange={e => setTiempoEntrenamiento(e.target.value)} placeholder="Ej: Desde marzo 2023" className={iClass()} />
+                        <label className="text-sm font-bold text-gray-700">Entrena Desde <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                        <input type="date" value={tiempoEntrenamiento} onChange={e => setTiempoEntrenamiento(e.target.value)} className={iClass()} />
                     </div>
 
                     {/* Fecha Nac + Grupo Sanguíneo */}
@@ -717,8 +707,8 @@ export default function AlumnosPorDisciplina() {
                                             <td className="px-6 py-4 text-gray-500 text-sm max-w-[160px] truncate" title={alumno.alergia_medicamento || undefined}>
                                                 {alumno.alergia_medicamento || '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
-                                                {alumno.tiempo_entrenamiento || '-'}
+                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap" title={formatFechaLocal(alumno.tiempo_entrenamiento) !== alumno.tiempo_entrenamiento && alumno.tiempo_entrenamiento ? `Desde: ${formatFechaLocal(alumno.tiempo_entrenamiento)}` : undefined}>
+                                                {calcularTiempoEntrenamiento(alumno.tiempo_entrenamiento)}
                                             </td>
                                             <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm max-w-[150px] truncate" title={alumno.domicilio || undefined}>
                                                 {alumno.domicilio || '-'}
@@ -824,7 +814,16 @@ export default function AlumnosPorDisciplina() {
                                                             <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🥋 Entrenamiento</span>
                                                             <div className="text-gray-900 font-medium">
                                                                 <span className="text-gray-500 font-normal">Tiempo de Entr.: </span>
-                                                                {alumno.tiempo_entrenamiento || 'No especificado'}
+                                                                {calcularTiempoEntrenamiento(alumno.tiempo_entrenamiento) !== '-' ? (
+                                                                    <>
+                                                                        {calcularTiempoEntrenamiento(alumno.tiempo_entrenamiento)}
+                                                                        {formatFechaLocal(alumno.tiempo_entrenamiento) !== alumno.tiempo_entrenamiento && alumno.tiempo_entrenamiento && (
+                                                                            <span className="text-gray-400 font-normal ml-1">
+                                                                                (desde {formatFechaLocal(alumno.tiempo_entrenamiento)})
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                ) : 'No especificado'}
                                                             </div>
                                                             <div className="text-gray-700">
                                                                 <span className="text-gray-500">Disciplina: </span>
