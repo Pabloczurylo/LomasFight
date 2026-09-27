@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { api } from '../../../services/api';
-import { Loader2, Search, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Search, Plus, Pencil, Trash2, PhoneCall, AlertCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
@@ -332,6 +332,7 @@ export default function AlumnosPorDisciplina() {
     const [editingAlumno, setEditingAlumno] = useState<Alumno | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [deletingAlumno, setDeletingAlumno] = useState<Alumno | null>(null);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
 
     // Modal de fecha de pago para profesores
     const [fechaPagoModal, setFechaPagoModal] = useState<{
@@ -547,7 +548,10 @@ export default function AlumnosPorDisciplina() {
         .filter(a => {
             const matchesSearch = a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 a.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (a.numero_celular || '').includes(searchTerm);
+                (a.numero_celular || '').includes(searchTerm) ||
+                (a.numero_celular_emergencia || '').includes(searchTerm) ||
+                (a.alergia_medicamento || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (a.tiempo_entrenamiento || '').toLowerCase().includes(searchTerm.toLowerCase());
             const matchesProfesor = !selectedProfesor || a.id_profesor_que_cargo === selectedProfesor;
             const matchesPendientes = !mostrarPendientes || a.estado === 'pendiente';
             return matchesSearch && matchesProfesor && matchesPendientes;
@@ -651,12 +655,15 @@ export default function AlumnosPorDisciplina() {
             {/* Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full max-w-full">
                 <div className="w-full overflow-x-auto">
-                    <table className="w-full text-left min-w-full sm:min-w-[580px]">
+                    <table className="w-full text-left min-w-full sm:min-w-[1100px]">
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
                                 {isAdmin && <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Profesor</th>}
-                                <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Celular</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Celular</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Cel. Emergencia</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alergias</th>
+                                <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Tiempo Entr.</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Domicilio</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">F. Nacimiento</th>
                                 <th className="hidden sm:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">G. Sanguíneo</th>
@@ -668,95 +675,198 @@ export default function AlumnosPorDisciplina() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={isAdmin ? 9 : 8} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
+                                <tr><td colSpan={isAdmin ? 13 : 12} className="px-6 py-12 text-center"><Loader2 className="w-6 h-6 animate-spin text-brand-red mx-auto" /></td></tr>
                             ) : filteredAlumnos.length > 0 ? (
                                 pagedAlumnos.map(alumno => (
-                                    <tr key={alumno.id_cliente} className="hover:bg-gray-50 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs flex-shrink-0">
-                                                    {alumno.nombre.charAt(0)}{alumno.apellido.charAt(0)}
+                                    <Fragment key={alumno.id_cliente}>
+                                        <tr className={cn(
+                                            "hover:bg-gray-50 transition-colors group",
+                                            expandedId === alumno.id_cliente && "bg-red-50/20"
+                                        )}>
+                                            <td className="px-6 py-4 cursor-pointer"
+                                                onClick={() => setExpandedId(expandedId === alumno.id_cliente ? null : alumno.id_cliente)}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs flex-shrink-0">
+                                                        {alumno.nombre.charAt(0)}{alumno.apellido.charAt(0)}
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-medium text-gray-900 group-hover:text-brand-red transition-colors whitespace-nowrap">
+                                                            {alumno.nombre} {alumno.apellido}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            className="text-gray-400 hover:text-brand-red transition-colors"
+                                                            title={expandedId === alumno.id_cliente ? "Cerrar ficha" : "Ver ficha"}
+                                                        >
+                                                            {expandedId === alumno.id_cliente ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <span className="font-medium text-gray-900 group-hover:text-brand-red transition-colors">
-                                                    {alumno.nombre} {alumno.apellido}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        {isAdmin && (
-                                            <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm">
-                                                {alumno.profesorNombre || <span className="text-gray-300">—</span>}
                                             </td>
-                                        )}
-                                        <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {alumno.numero_celular || '-'}
-                                        </td>
-                                        <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {alumno.domicilio || '-'}
-                                        </td>
-                                        <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {formatFechaLocal(alumno.fecha_nacimiento)}
-                                        </td>
-                                        <td className="hidden sm:table-cell px-6 py-4 text-gray-500 text-sm font-medium">
-                                            {alumno.grupo_sanguineo ? (
-                                                <span className="px-2 py-1 bg-red-50 text-brand-red rounded-md border border-red-100 uppercase text-xs">
-                                                    {alumno.grupo_sanguineo}
-                                                </span>
-                                            ) : '-'}
-                                        </td>
-                                        <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {formatFechaLocal(alumno.fecha_ultimo_pago)}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {/* 3-state dropdown */}
-                                            <select
-                                                value={alumno.estado}
-                                                disabled={updatingId === alumno.id_cliente}
-                                                onChange={e => handleEstadoChange(alumno.id_cliente, e.target.value as EstadoAlumno)}
-                                                className={cn(
-                                                    "px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border cursor-pointer appearance-none text-center focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-colors",
-                                                    ESTADO_CONFIG[alumno.estado].classes,
-                                                    updatingId === alumno.id_cliente && "opacity-50 cursor-wait"
-                                                )}
-                                            >
-                                                <option value="al día">Al día</option>
-                                                <option value="pendiente">Pendiente</option>
-                                                <option value="inactivo">Inactivo</option>
-                                            </select>
-                                        </td>
-                                        <td className="hidden md:table-cell px-6 py-4 text-sm">
-                                            {alumno.fecha_vencimiento ? (
-                                                <span className={cn(
-                                                    'font-medium',
-                                                    new Date(alumno.fecha_vencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
-                                                )}>
-                                                    {formatFechaLocal(alumno.fecha_vencimiento)}
-                                                </span>
-                                            ) : (
-                                                <span className="text-gray-300">—</span>
+                                            {isAdmin && (
+                                                <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
+                                                    {alumno.profesorNombre || <span className="text-gray-300">—</span>}
+                                                </td>
                                             )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 text-gray-400">
-                                                <button
-                                                    onClick={() => { setEditingAlumno(alumno); setIsFormOpen(true); }}
-                                                    className="p-1.5 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Editar"
+                                            <td className="px-6 py-4 text-gray-700 text-sm whitespace-nowrap">
+                                                {alumno.numero_celular ? (
+                                                    <span className="font-medium text-gray-900">{alumno.numero_celular}</span>
+                                                ) : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                {alumno.numero_celular_emergencia ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                                        <PhoneCall size={12} className="text-red-500 flex-shrink-0" />
+                                                        <span>{alumno.numero_celular_emergencia}</span>
+                                                    </span>
+                                                ) : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm max-w-[160px]">
+                                                {alumno.alergia_medicamento ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 truncate" title={alumno.alergia_medicamento}>
+                                                        <AlertCircle size={12} className="text-amber-600 flex-shrink-0" />
+                                                        <span className="truncate">{alumno.alergia_medicamento}</span>
+                                                    </span>
+                                                ) : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                {alumno.tiempo_entrenamiento ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                                        <Clock size={11} className="text-gray-500 flex-shrink-0" />
+                                                        <span>{alumno.tiempo_entrenamiento}</span>
+                                                    </span>
+                                                ) : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm max-w-[150px] truncate" title={alumno.domicilio || undefined}>
+                                                {alumno.domicilio || '-'}
+                                            </td>
+                                            <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
+                                                {formatFechaLocal(alumno.fecha_nacimiento)}
+                                            </td>
+                                            <td className="hidden sm:table-cell px-6 py-4 text-gray-500 text-sm font-medium whitespace-nowrap">
+                                                {alumno.grupo_sanguineo ? (
+                                                    <span className="px-2 py-1 bg-red-50 text-brand-red rounded-md border border-red-100 uppercase text-xs">
+                                                        {alumno.grupo_sanguineo}
+                                                    </span>
+                                                ) : '-'}
+                                            </td>
+                                            <td className="hidden md:table-cell px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
+                                                {formatFechaLocal(alumno.fecha_ultimo_pago)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {/* 3-state dropdown */}
+                                                <select
+                                                    value={alumno.estado}
+                                                    disabled={updatingId === alumno.id_cliente}
+                                                    onChange={e => handleEstadoChange(alumno.id_cliente, e.target.value as EstadoAlumno)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border cursor-pointer appearance-none text-center focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-colors",
+                                                        ESTADO_CONFIG[alumno.estado].classes,
+                                                        updatingId === alumno.id_cliente && "opacity-50 cursor-wait"
+                                                    )}
                                                 >
-                                                    <Pencil size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => { setDeletingAlumno(alumno); setIsDeleteOpen(true); }}
-                                                    className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                    <option value="al día">Al día</option>
+                                                    <option value="pendiente">Pendiente</option>
+                                                    <option value="inactivo">Inactivo</option>
+                                                </select>
+                                            </td>
+                                            <td className="hidden md:table-cell px-6 py-4 text-sm whitespace-nowrap">
+                                                {alumno.fecha_vencimiento ? (
+                                                    <span className={cn(
+                                                        'font-medium',
+                                                        new Date(alumno.fecha_vencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
+                                                    )}>
+                                                        {formatFechaLocal(alumno.fecha_vencimiento)}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-300">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-right whitespace-nowrap">
+                                                <div className="flex items-center justify-end gap-1.5 text-gray-400">
+                                                    <button
+                                                        onClick={() => setExpandedId(expandedId === alumno.id_cliente ? null : alumno.id_cliente)}
+                                                        className={cn(
+                                                            "p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors",
+                                                            expandedId === alumno.id_cliente && "bg-red-50 text-brand-red"
+                                                        )}
+                                                        title={expandedId === alumno.id_cliente ? "Cerrar ficha" : "Ver ficha completa"}
+                                                    >
+                                                        {expandedId === alumno.id_cliente ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setEditingAlumno(alumno); setIsFormOpen(true); }}
+                                                        className="p-1.5 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Editar"
+                                                    >
+                                                        <Pencil size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setDeletingAlumno(alumno); setIsDeleteOpen(true); }}
+                                                        className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {expandedId === alumno.id_cliente && (
+                                            <tr className="bg-red-50/20 border-b border-gray-100">
+                                                <td colSpan={isAdmin ? 13 : 12} className="px-6 py-4">
+                                                    <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                                        <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                            <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">📞 Contacto</span>
+                                                            <div className="text-gray-900 font-medium">
+                                                                <span className="text-gray-500 font-normal">Celular: </span>
+                                                                {alumno.numero_celular || <span className="text-gray-400">Sin registrar</span>}
+                                                            </div>
+                                                            <div className="text-red-700 font-medium flex items-center gap-1">
+                                                                <span className="text-gray-500 font-normal">Emergencia (SOS): </span>
+                                                                {alumno.numero_celular_emergencia || <span className="text-gray-400 font-normal">Sin registrar</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                            <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🏥 Salud</span>
+                                                            <div className="text-amber-800 font-medium">
+                                                                <span className="text-gray-500 font-normal">Alergias a Medicamentos: </span>
+                                                                {alumno.alergia_medicamento || <span className="text-gray-500 font-normal">Ninguna declarada</span>}
+                                                            </div>
+                                                            <div className="text-gray-700">
+                                                                <span className="text-gray-500">Grupo Sanguíneo: </span>
+                                                                {alumno.grupo_sanguineo || '—'}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                            <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🥋 Entrenamiento</span>
+                                                            <div className="text-gray-900 font-medium">
+                                                                <span className="text-gray-500 font-normal">Tiempo de Entr.: </span>
+                                                                {alumno.tiempo_entrenamiento || 'No especificado'}
+                                                            </div>
+                                                            <div className="text-gray-700">
+                                                                <span className="text-gray-500">Disciplina: </span>
+                                                                {selectedDisciplinaName}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                            <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">📍 Personal & Pago</span>
+                                                            <div className="text-gray-700">
+                                                                <span className="text-gray-500">Domicilio: </span>
+                                                                {alumno.domicilio || '—'}
+                                                            </div>
+                                                            <div className="text-gray-700">
+                                                                <span className="text-gray-500">Profesor: </span>
+                                                                {alumno.profesorNombre || 'Sin asignar'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
                                 ))
                             ) : (
-                                <tr><td colSpan={isAdmin ? 9 : 8} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
+                                <tr><td colSpan={isAdmin ? 13 : 12} className="px-6 py-12 text-center text-gray-500">No se encontraron alumnos para esta disciplina.</td></tr>
                             )}
                         </tbody>
                     </table>

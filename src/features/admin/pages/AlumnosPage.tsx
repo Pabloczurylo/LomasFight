@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { ClienteBackend } from '../types';
 import { cn } from '../../../lib/utils';
-import { Search, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, Loader2, PhoneCall, AlertCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import StudentModal, { StudentFormData } from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -77,6 +77,7 @@ export default function AlumnosPage() {
     const [isLoading,            setIsLoading]         = useState(true);
     const [error,                setError]             = useState<string | null>(null);
     const [currentPage,          setCurrentPage]       = useState(1);
+    const [expandedId,           setExpandedId]        = useState<string | null>(null);
     const navigate = useNavigate();
 
     // Modal state
@@ -159,6 +160,9 @@ export default function AlumnosPage() {
                 a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 a.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (a.numeroCelular || '').includes(searchTerm) ||
+                (a.numeroCelularEmergencia || '').includes(searchTerm) ||
+                (a.alergiaMedicamento || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (a.tiempoEntrenamiento || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (a.dni || '').includes(searchTerm);
             const matchesDisciplina =
                 selectedDisciplina === 'Todas' || a.disciplinaNombre === selectedDisciplina;
@@ -381,12 +385,15 @@ export default function AlumnosPage() {
                 </div>
 
                 <div className="w-full overflow-x-auto rounded-lg">
-                    <table className="w-full min-w-[800px] text-left">
+                    <table className="w-full min-w-[1100px] text-left">
                         <thead>
                             <tr className="border-b border-gray-100 bg-gray-50/50">
                                 <th className="pb-3 pt-3 pl-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Nombre</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Profesor</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Celular</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Cel. Emergencia</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Alergias</th>
+                                <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Tiempo Entr.</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Domicilio</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Disciplina</th>
                                 <th className="pb-3 pt-3 font-bold text-gray-500 text-xs uppercase tracking-wider">Fecha Nac.</th>
@@ -398,54 +405,159 @@ export default function AlumnosPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {paged.map(a => (
-                                <tr key={a.id} className="group hover:bg-gray-50 transition-colors">
-                                    <td className="py-4 pl-4 font-medium text-gray-900 group-hover:text-brand-red transition-colors">
-                                        {a.nombre} {a.apellido}
-                                    </td>
-                                    <td className="py-4 text-gray-500 text-sm">{a.profesorNombre || <span className="text-gray-300">—</span>}</td>
-                                    <td className="py-4 text-gray-500 text-sm">{dash(a.numeroCelular)}</td>
-                                    <td className="py-4 text-gray-500 text-sm">{dash(a.domicilio)}</td>
-                                    <td className="py-4 text-gray-600 text-sm">{a.disciplinaNombre}</td>
-                                    <td className="py-4 text-gray-500 text-sm">
-                                        {a.fechaNacimiento ? new Date(a.fechaNacimiento).toLocaleDateString('es-AR') : '-'}
-                                    </td>
-                                    <td className="py-4 text-gray-500 text-sm">{dash(a.grupoSanguineo)}</td>
-                                    <td className="py-4">
-                                        <span className={cn(
-                                            'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide',
-                                            STATUS_BADGE[a.estadoPago]
-                                        )}>
-                                            {STATUS_LABEL[a.estadoPago]}
-                                        </span>
-                                    </td>
-                                    <td className="py-4 text-sm">
-                                        {a.fechaVencimiento ? (
+                                <Fragment key={a.id}>
+                                    <tr className={cn(
+                                        "group hover:bg-gray-50 transition-colors",
+                                        expandedId === a.id && "bg-red-50/20"
+                                    )}>
+                                        <td className="py-4 pl-4 font-medium text-gray-900 group-hover:text-brand-red transition-colors cursor-pointer"
+                                            onClick={() => setExpandedId(expandedId === a.id ? null : a.id)}>
+                                            <div className="flex items-center gap-2">
+                                                <span>{a.nombre} {a.apellido}</span>
+                                                <button
+                                                    type="button"
+                                                    className="text-gray-400 hover:text-brand-red transition-colors"
+                                                    title={expandedId === a.id ? "Cerrar ficha" : "Ver ficha"}
+                                                >
+                                                    {expandedId === a.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{a.profesorNombre || <span className="text-gray-300">—</span>}</td>
+                                        <td className="py-4 text-gray-700 text-sm whitespace-nowrap">
+                                            {a.numeroCelular ? (
+                                                <span className="font-medium text-gray-900">{a.numeroCelular}</span>
+                                            ) : <span className="text-gray-300">—</span>}
+                                        </td>
+                                        <td className="py-4 text-sm whitespace-nowrap">
+                                            {a.numeroCelularEmergencia ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                                    <PhoneCall size={12} className="text-red-500 flex-shrink-0" />
+                                                    <span>{a.numeroCelularEmergencia}</span>
+                                                </span>
+                                            ) : <span className="text-gray-300">—</span>}
+                                        </td>
+                                        <td className="py-4 text-sm max-w-[160px]">
+                                            {a.alergiaMedicamento ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 truncate" title={a.alergiaMedicamento}>
+                                                    <AlertCircle size={12} className="text-amber-600 flex-shrink-0" />
+                                                    <span className="truncate">{a.alergiaMedicamento}</span>
+                                                </span>
+                                            ) : <span className="text-gray-300">—</span>}
+                                        </td>
+                                        <td className="py-4 text-sm whitespace-nowrap">
+                                            {a.tiempoEntrenamiento ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                                    <Clock size={11} className="text-gray-500 flex-shrink-0" />
+                                                    <span>{a.tiempoEntrenamiento}</span>
+                                                </span>
+                                            ) : <span className="text-gray-300">—</span>}
+                                        </td>
+                                        <td className="py-4 text-gray-500 text-sm max-w-[150px] truncate" title={a.domicilio || undefined}>{dash(a.domicilio)}</td>
+                                        <td className="py-4 text-gray-600 text-sm whitespace-nowrap">{a.disciplinaNombre}</td>
+                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap">
+                                            {a.fechaNacimiento ? new Date(a.fechaNacimiento).toLocaleDateString('es-AR') : '-'}
+                                        </td>
+                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{dash(a.grupoSanguineo)}</td>
+                                        <td className="py-4 whitespace-nowrap">
                                             <span className={cn(
-                                                'font-medium',
-                                                new Date(a.fechaVencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
+                                                'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide',
+                                                STATUS_BADGE[a.estadoPago]
                                             )}>
-                                                {new Date(a.fechaVencimiento).toLocaleDateString('es-AR')}
+                                                {STATUS_LABEL[a.estadoPago]}
                                             </span>
-                                        ) : (
-                                            <span className="text-gray-300">—</span>
-                                        )}
-                                    </td>
-                                    <td className="py-4 pr-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button onClick={() => handleEdit(a)}
-                                                className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors" title="Editar">
-                                                <Pencil size={18} />
-                                            </button>
-                                            <button onClick={() => handleDeleteClick(a)}
-                                                className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td className="py-4 text-sm whitespace-nowrap">
+                                            {a.fechaVencimiento ? (
+                                                <span className={cn(
+                                                    'font-medium',
+                                                    new Date(a.fechaVencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
+                                                )}>
+                                                    {new Date(a.fechaVencimiento).toLocaleDateString('es-AR')}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-300">—</span>
+                                            )}
+                                        </td>
+                                        <td className="py-4 pr-4 text-right whitespace-nowrap">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    onClick={() => setExpandedId(expandedId === a.id ? null : a.id)}
+                                                    className={cn(
+                                                        "p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors",
+                                                        expandedId === a.id && "bg-red-50 text-brand-red"
+                                                    )}
+                                                    title={expandedId === a.id ? "Cerrar ficha" : "Ver ficha completa"}
+                                                >
+                                                    {expandedId === a.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                                </button>
+                                                <button onClick={() => handleEdit(a)}
+                                                    className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors" title="Editar">
+                                                    <Pencil size={18} />
+                                                </button>
+                                                <button onClick={() => handleDeleteClick(a)}
+                                                    className="p-1.5 text-gray-500 hover:text-brand-red hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {expandedId === a.id && (
+                                        <tr className="bg-red-50/20 border-b border-gray-100">
+                                            <td colSpan={13} className="px-6 py-4">
+                                                <div className="bg-white rounded-xl p-4 border border-gray-200/80 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                                    <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                        <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">📞 Contacto</span>
+                                                        <div className="text-gray-900 font-medium">
+                                                            <span className="text-gray-500 font-normal">Celular: </span>
+                                                            {a.numeroCelular || <span className="text-gray-400">Sin registrar</span>}
+                                                        </div>
+                                                        <div className="text-red-700 font-medium flex items-center gap-1">
+                                                            <span className="text-gray-500 font-normal">Emergencia (SOS): </span>
+                                                            {a.numeroCelularEmergencia || <span className="text-gray-400 font-normal">Sin registrar</span>}
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                        <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🏥 Salud</span>
+                                                        <div className="text-amber-800 font-medium">
+                                                            <span className="text-gray-500 font-normal">Alergias a Medicamentos: </span>
+                                                            {a.alergiaMedicamento || <span className="text-gray-500 font-normal">Ninguna declarada</span>}
+                                                        </div>
+                                                        <div className="text-gray-700">
+                                                            <span className="text-gray-500">Grupo Sanguíneo: </span>
+                                                            {a.grupoSanguineo || '—'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                        <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🥋 Entrenamiento</span>
+                                                        <div className="text-gray-900 font-medium">
+                                                            <span className="text-gray-500 font-normal">Tiempo de Entr.: </span>
+                                                            {a.tiempoEntrenamiento || 'No especificado'}
+                                                        </div>
+                                                        <div className="text-gray-700">
+                                                            <span className="text-gray-500">Disciplina: </span>
+                                                            {a.disciplinaNombre}
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                                                        <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">📍 Personal & Cuota</span>
+                                                        <div className="text-gray-700">
+                                                            <span className="text-gray-500">Domicilio: </span>
+                                                            {a.domicilio || '—'}
+                                                        </div>
+                                                        <div className="text-gray-700">
+                                                            <span className="text-gray-500">Profesor: </span>
+                                                            {a.profesorNombre || 'Sin asignar'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
                             ))}
                             {filtered.length === 0 && (
-                                <tr><td colSpan={10} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
+                                <tr><td colSpan={13} className="py-8 text-center text-gray-500">No se encontraron alumnos.</td></tr>
                             )}
                         </tbody>
                     </table>
