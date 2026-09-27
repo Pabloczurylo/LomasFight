@@ -45,6 +45,10 @@ interface Alumno {
     id_disciplina: number;
     id_profesor_que_cargo: number | null;
     profesorNombre: string | null;
+    numero_celular: string | null;
+    numero_celular_emergencia: string | null;
+    alergia_medicamento: string | null;
+    tiempo_entrenamiento: string | null;
     // computed
     estado: EstadoAlumno;
 }
@@ -125,6 +129,10 @@ interface AlumnoFormModalProps {
         dni: string | null; fecha_nacimiento: string | null;
         grupo_sanguineo: string | null; domicilio: string | null;
         id_profesor_que_cargo?: number | null;
+        numero_celular: string | null;
+        numero_celular_emergencia: string | null;
+        alergia_medicamento: string | null;
+        tiempo_entrenamiento: string | null;
     }) => void;
     initialData?: Alumno | null;
     fixedDisciplina: string;
@@ -133,25 +141,31 @@ interface AlumnoFormModalProps {
 }
 
 function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina, profesores, isAdmin }: AlumnoFormModalProps) {
-    const [nombre, setNombre] = useState('');
-    const [apellido, setApellido] = useState('');
-    const [dni, setDni] = useState('');
-    const [fechaNac, setFechaNac] = useState('');
-    const [grupoSanguineo, setGrupoSanguineo] = useState('');
-    const [domicilio, setDomicilio] = useState('');
-    const [idProfesor, setIdProfesor] = useState<number | null>(null);
+    const [nombre,                   setNombre]                  = useState('');
+    const [apellido,                 setApellido]                = useState('');
+    const [fechaNac,                 setFechaNac]                = useState('');
+    const [grupoSanguineo,           setGrupoSanguineo]          = useState('');
+    const [domicilio,                setDomicilio]               = useState('');
+    const [idProfesor,               setIdProfesor]              = useState<number | null>(null);
+    const [numeroCelular,            setNumeroCelular]           = useState('');
+    const [numeroCelularEmergencia,  setNumeroCelularEmergencia] = useState('');
+    const [alergiaMedicamento,       setAlergiaMedicamento]      = useState('');
+    const [tiempoEntrenamiento,      setTiempoEntrenamiento]     = useState('');
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
     useEffect(() => {
         if (isOpen) {
             setNombre(initialData?.nombre || '');
             setApellido(initialData?.apellido || '');
-            setDni(initialData?.dni || '');
             setFechaNac(initialData?.fecha_nacimiento
                 ? new Date(initialData.fecha_nacimiento).toISOString().split('T')[0] : '');
             setGrupoSanguineo(initialData?.grupo_sanguineo || '');
             setDomicilio(initialData?.domicilio || '');
             setIdProfesor(initialData?.id_profesor_que_cargo || null);
+            setNumeroCelular(initialData?.numero_celular || '');
+            setNumeroCelularEmergencia(initialData?.numero_celular_emergencia || '');
+            setAlergiaMedicamento(initialData?.alergia_medicamento || '');
+            setTiempoEntrenamiento(initialData?.tiempo_entrenamiento || '');
             setErrors({ nombre: '', apellido: '' });
         }
     }, [isOpen, initialData]);
@@ -170,13 +184,17 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
     const handleSubmit = (ev: React.FormEvent) => {
         ev.preventDefault();
         if (validate()) onSave({
-            nombre: nombre.trim(),
-            apellido: apellido.trim(),
-            dni: dni.trim() || null,
-            fecha_nacimiento: fechaNac || null,
-            grupo_sanguineo: grupoSanguineo || null,
-            domicilio: domicilio.trim() || null,
+            nombre:                    nombre.trim(),
+            apellido:                  apellido.trim(),
+            dni:                       initialData?.dni || null,
+            fecha_nacimiento:          fechaNac || null,
+            grupo_sanguineo:           grupoSanguineo || null,
+            domicilio:                 domicilio.trim() || null,
             ...(isAdmin && { id_profesor_que_cargo: idProfesor }),
+            numero_celular:            numeroCelular.trim() || null,
+            numero_celular_emergencia: numeroCelularEmergencia.trim() || null,
+            alergia_medicamento:       alergiaMedicamento.trim() || null,
+            tiempo_entrenamiento:      tiempoEntrenamiento.trim() || null,
         });
     };
 
@@ -215,16 +233,37 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
                         </div>
                     </div>
 
-                    {/* DNI */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-gray-700">DNI <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
-                        <input type="text" value={dni} onChange={e => setDni(e.target.value)} placeholder="Ej: 38123456" className={iClass()} />
-                    </div>
 
                     {/* Domicilio */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-bold text-gray-700">Domicilio <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
                         <input type="text" value={domicilio} onChange={e => setDomicilio(e.target.value)} placeholder="Ej: Av. Siempre Viva 123" className={iClass()} />
+                    </div>
+
+                    {/* Celulares */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Número de Celular <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                            <input type="tel" value={numeroCelular} onChange={e => setNumeroCelular(e.target.value)} placeholder="Ej: 11-1234-5678" className={iClass()} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-700">Celular de Emergencia <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                            <input type="tel" value={numeroCelularEmergencia} onChange={e => setNumeroCelularEmergencia(e.target.value)} placeholder="Ej: 11-8765-4321" className={iClass()} />
+                        </div>
+                    </div>
+
+                    {/* Alergia a medicamento */}
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-gray-700">Alergia a Medicamento <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                        <textarea value={alergiaMedicamento} onChange={e => setAlergiaMedicamento(e.target.value)}
+                            placeholder="Ej: Ibuprofeno, Penicilina..." rows={2}
+                            className={`${iClass()} resize-none`} />
+                    </div>
+
+                    {/* Tiempo de entrenamiento */}
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-gray-700">Tiempo de Entrenamiento <span className="text-xs font-normal text-gray-400">(opcional)</span></label>
+                        <input type="text" value={tiempoEntrenamiento} onChange={e => setTiempoEntrenamiento(e.target.value)} placeholder="Ej: Desde marzo 2023" className={iClass()} />
                     </div>
 
                     {/* Fecha Nac + Grupo Sanguíneo */}
@@ -354,22 +393,26 @@ export default function AlumnosPorDisciplina() {
                 const mapped: Alumno[] = filtered.map(c => {
                     const prof = c.profesores;
                     return {
-                        id_cliente: c.id_cliente || c.id,
-                        nombre: c.nombre,
-                        apellido: c.apellido,
-                        dni: c.dni || null,
-                        domicilio: c.domicilio || null,
-                        fecha_registro: c.fecha_registro || new Date().toISOString(),
-                        fecha_ultimo_pago: c.fecha_ultimo_pago || null,
-                        fecha_vencimiento: c.fecha_vencimiento || null,
-                        fecha_nacimiento: c.fecha_nacimiento || null,
-                        grupo_sanguineo: c.grupo_sanguineo || null,
-                        activo: c.activo !== false,
-                        inactivo: c.inactivo === true,
-                        id_disciplina: c.id_disciplina,
-                        id_profesor_que_cargo: c.id_profesor_que_cargo || null,
-                        profesorNombre: prof ? `${prof.nombre} ${prof.apellido}` : null,
-                        estado: deriveEstado(c.inactivo === true, c.fecha_vencimiento || null),
+                        id_cliente:                c.id_cliente || c.id,
+                        nombre:                    c.nombre,
+                        apellido:                  c.apellido,
+                        dni:                       c.dni || null,
+                        domicilio:                 c.domicilio || null,
+                        fecha_registro:            c.fecha_registro || new Date().toISOString(),
+                        fecha_ultimo_pago:         c.fecha_ultimo_pago || null,
+                        fecha_vencimiento:         c.fecha_vencimiento || null,
+                        fecha_nacimiento:          c.fecha_nacimiento || null,
+                        grupo_sanguineo:           c.grupo_sanguineo || null,
+                        activo:                    c.activo !== false,
+                        inactivo:                  c.inactivo === true,
+                        id_disciplina:             c.id_disciplina,
+                        id_profesor_que_cargo:     c.id_profesor_que_cargo || null,
+                        profesorNombre:            prof ? `${prof.nombre} ${prof.apellido}` : null,
+                        numero_celular:            c.numero_celular || null,
+                        numero_celular_emergencia: c.numero_celular_emergencia || null,
+                        alergia_medicamento:       c.alergia_medicamento || null,
+                        tiempo_entrenamiento:      c.tiempo_entrenamiento || null,
+                        estado:                    deriveEstado(c.inactivo === true, c.fecha_vencimiento || null),
                     };
                 });
                 setAlumnos(mapped);
@@ -444,16 +487,24 @@ export default function AlumnosPorDisciplina() {
         dni: string | null; fecha_nacimiento: string | null;
         grupo_sanguineo: string | null; domicilio: string | null;
         id_profesor_que_cargo?: number | null;
+        numero_celular: string | null;
+        numero_celular_emergencia: string | null;
+        alergia_medicamento: string | null;
+        tiempo_entrenamiento: string | null;
     }) => {
         try {
             const payload: any = {
-                nombre: data.nombre,
-                apellido: data.apellido,
-                id_disciplina: selectedDisciplina,
-                dni: data.dni,
-                fecha_nacimiento: data.fecha_nacimiento,
-                grupo_sanguineo: data.grupo_sanguineo,
-                domicilio: data.domicilio,
+                nombre:                    data.nombre,
+                apellido:                  data.apellido,
+                id_disciplina:             selectedDisciplina,
+                dni:                       data.dni,
+                fecha_nacimiento:          data.fecha_nacimiento,
+                grupo_sanguineo:           data.grupo_sanguineo,
+                domicilio:                 data.domicilio,
+                numero_celular:            data.numero_celular,
+                numero_celular_emergencia: data.numero_celular_emergencia,
+                alergia_medicamento:       data.alergia_medicamento,
+                tiempo_entrenamiento:      data.tiempo_entrenamiento,
             };
             if (isAdmin && data.id_profesor_que_cargo !== undefined) {
                 payload.id_profesor_que_cargo = data.id_profesor_que_cargo;
@@ -495,7 +546,8 @@ export default function AlumnosPorDisciplina() {
     const filteredAlumnos = alumnos
         .filter(a => {
             const matchesSearch = a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                a.apellido.toLowerCase().includes(searchTerm.toLowerCase());
+                a.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (a.numero_celular || '').includes(searchTerm);
             const matchesProfesor = !selectedProfesor || a.id_profesor_que_cargo === selectedProfesor;
             const matchesPendientes = !mostrarPendientes || a.estado === 'pendiente';
             return matchesSearch && matchesProfesor && matchesPendientes;
@@ -604,7 +656,7 @@ export default function AlumnosPorDisciplina() {
                             <tr>
                                 <th className="px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Alumno</th>
                                 {isAdmin && <th className="hidden md:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Profesor</th>}
-                                <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">DNI</th>
+                                <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Celular</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">Domicilio</th>
                                 <th className="hidden lg:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">F. Nacimiento</th>
                                 <th className="hidden sm:table-cell px-6 py-4 font-heading font-bold text-gray-900 uppercase text-xs tracking-wider">G. Sanguíneo</th>
@@ -636,7 +688,7 @@ export default function AlumnosPorDisciplina() {
                                             </td>
                                         )}
                                         <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
-                                            {alumno.dni || '-'}
+                                            {alumno.numero_celular || '-'}
                                         </td>
                                         <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm">
                                             {alumno.domicilio || '-'}

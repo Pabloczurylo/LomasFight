@@ -21,6 +21,10 @@ export interface ClienteBackend {
     fecha_vencimiento: string | null;
     activo: boolean | null;
     inactivo: boolean | null;
+    numero_celular: string | null;
+    numero_celular_emergencia: string | null;
+    alergia_medicamento: string | null;
+    tiempo_entrenamiento: string | null;
     disciplinas?: {
         nombre_disciplina: string;
     };

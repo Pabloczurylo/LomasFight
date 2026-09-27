@@ -14,6 +14,10 @@ export interface StudentFormData {
     grupo_sanguineo: string | null;
     domicilio: string | null;
     id_profesor_que_cargo?: number | null;
+    numero_celular: string | null;
+    numero_celular_emergencia: string | null;
+    alergia_medicamento: string | null;
+    tiempo_entrenamiento: string | null;
 }
 
 interface DisciplinaOption { id_disciplina: number; nombre_disciplina: string; }
@@ -32,15 +36,18 @@ interface StudentModalProps {
 export default function StudentModal({
     isOpen, onClose, onSave, initialData, onDelete, disciplinas, profesores = []
 }: StudentModalProps) {
-    const [nombre,             setNombre]            = useState('');
-    const [apellido,           setApellido]          = useState('');
-    const [idDisciplina,       setIdDisciplina]      = useState<number>(0);
-    const [estadoPago,         setEstadoPago]        = useState<StudentFormData['estadoPago']>('pendiente');
-    const [dni,                setDni]               = useState('');
-    const [fechaNacimiento,    setFechaNacimiento]   = useState('');
-    const [grupoSanguineo,     setGrupoSanguineo]    = useState('');
-    const [domicilio,          setDomicilio]         = useState('');
-    const [idProfesor,         setIdProfesor]        = useState<number | null>(null);
+    const [nombre,                   setNombre]                  = useState('');
+    const [apellido,                 setApellido]                = useState('');
+    const [idDisciplina,             setIdDisciplina]            = useState<number>(0);
+    const [estadoPago,               setEstadoPago]              = useState<StudentFormData['estadoPago']>('pendiente');
+    const [fechaNacimiento,          setFechaNacimiento]         = useState('');
+    const [grupoSanguineo,           setGrupoSanguineo]          = useState('');
+    const [domicilio,                setDomicilio]               = useState('');
+    const [idProfesor,               setIdProfesor]              = useState<number | null>(null);
+    const [numeroCelular,            setNumeroCelular]           = useState('');
+    const [numeroCelularEmergencia,  setNumeroCelularEmergencia] = useState('');
+    const [alergiaMedicamento,       setAlergiaMedicamento]      = useState('');
+    const [tiempoEntrenamiento,      setTiempoEntrenamiento]     = useState('');
 
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
@@ -51,23 +58,29 @@ export default function StudentModal({
             setApellido(initialData.apellido);
             setIdDisciplina(initialData.id_disciplina || disciplinas[0]?.id_disciplina || 0);
             setEstadoPago(initialData.estadoPago || 'pendiente');
-            setDni(initialData.dni || '');
             setFechaNacimiento(initialData.fecha_nacimiento
                 ? new Date(initialData.fecha_nacimiento).toISOString().split('T')[0]
                 : '');
             setGrupoSanguineo(initialData.grupo_sanguineo || '');
             setDomicilio(initialData.domicilio || '');
             setIdProfesor(initialData.id_profesor_que_cargo ?? null);
+            setNumeroCelular(initialData.numero_celular || '');
+            setNumeroCelularEmergencia(initialData.numero_celular_emergencia || '');
+            setAlergiaMedicamento(initialData.alergia_medicamento || '');
+            setTiempoEntrenamiento(initialData.tiempo_entrenamiento || '');
         } else {
             setNombre('');
             setApellido('');
             setIdDisciplina(disciplinas[0]?.id_disciplina || 0);
             setEstadoPago('pendiente');
-            setDni('');
             setFechaNacimiento('');
             setGrupoSanguineo('');
             setDomicilio('');
             setIdProfesor(null);
+            setNumeroCelular('');
+            setNumeroCelularEmergencia('');
+            setAlergiaMedicamento('');
+            setTiempoEntrenamiento('');
         }
         setErrors({ nombre: '', apellido: '' });
     }, [isOpen, initialData, disciplinas]);
@@ -87,15 +100,19 @@ export default function StudentModal({
         ev.preventDefault();
         if (!validate()) return;
         onSave({
-            nombre:   nombre.trim(),
-            apellido: apellido.trim(),
-            id_disciplina: idDisciplina,
+            nombre:                      nombre.trim(),
+            apellido:                    apellido.trim(),
+            id_disciplina:               idDisciplina,
             estadoPago,
-            dni:                   dni.trim()            || null,
-            fecha_nacimiento:      fechaNacimiento        || null,
-            grupo_sanguineo:       grupoSanguineo         || null,
-            domicilio:             domicilio.trim()       || null,
-            id_profesor_que_cargo: idProfesor,
+            dni:                         initialData?.dni || null,
+            fecha_nacimiento:            fechaNacimiento                   || null,
+            grupo_sanguineo:             grupoSanguineo                   || null,
+            domicilio:                   domicilio.trim()                 || null,
+            id_profesor_que_cargo:       idProfesor,
+            numero_celular:              numeroCelular.trim()             || null,
+            numero_celular_emergencia:   numeroCelularEmergencia.trim()   || null,
+            alergia_medicamento:         alergiaMedicamento.trim()        || null,
+            tiempo_entrenamiento:        tiempoEntrenamiento.trim()       || null,
         });
         onClose();
     };
@@ -141,18 +158,42 @@ export default function StudentModal({
                         </div>
                     </div>
 
-                    {/* DNI */}
-                    <div className="space-y-1.5">
-                        <label className={labelClass}>DNI <span className={optionalClass}>(opcional)</span></label>
-                        <input type="text" value={dni} onChange={e => setDni(e.target.value)}
-                            placeholder="Ej: 38123456" className={inputClass()} />
-                    </div>
 
                     {/* Domicilio */}
                     <div className="space-y-1.5">
                         <label className={labelClass}>Domicilio <span className={optionalClass}>(opcional)</span></label>
                         <input type="text" value={domicilio} onChange={e => setDomicilio(e.target.value)}
                             placeholder="Ej: Av. Siempre Viva 123" className={inputClass()} />
+                    </div>
+
+
+                    {/* Celulares */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className={labelClass}>Número de Celular <span className={optionalClass}>(opcional)</span></label>
+                            <input type="tel" value={numeroCelular} onChange={e => setNumeroCelular(e.target.value)}
+                                placeholder="Ej: 11-1234-5678" className={inputClass()} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className={labelClass}>Celular de Emergencia <span className={optionalClass}>(opcional)</span></label>
+                            <input type="tel" value={numeroCelularEmergencia} onChange={e => setNumeroCelularEmergencia(e.target.value)}
+                                placeholder="Ej: 11-8765-4321" className={inputClass()} />
+                        </div>
+                    </div>
+
+                    {/* Alergia a medicamento */}
+                    <div className="space-y-1.5">
+                        <label className={labelClass}>Alergia a Medicamento <span className={optionalClass}>(opcional)</span></label>
+                        <textarea value={alergiaMedicamento} onChange={e => setAlergiaMedicamento(e.target.value)}
+                            placeholder="Ej: Ibuprofeno, Penicilina..." rows={2}
+                            className={`${inputClass()} resize-none`} />
+                    </div>
+
+                    {/* Tiempo de entrenamiento */}
+                    <div className="space-y-1.5">
+                        <label className={labelClass}>Tiempo de Entrenamiento <span className={optionalClass}>(opcional)</span></label>
+                        <input type="text" value={tiempoEntrenamiento} onChange={e => setTiempoEntrenamiento(e.target.value)}
+                            placeholder="Ej: Desde marzo 2023" className={inputClass()} />
                     </div>
 
                     {/* Disciplina */}
