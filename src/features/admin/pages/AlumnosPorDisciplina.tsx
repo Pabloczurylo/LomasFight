@@ -708,34 +708,17 @@ export default function AlumnosPorDisciplina() {
                                                     {alumno.profesorNombre || <span className="text-gray-300">—</span>}
                                                 </td>
                                             )}
-                                            <td className="px-6 py-4 text-gray-700 text-sm whitespace-nowrap">
-                                                {alumno.numero_celular ? (
-                                                    <span className="font-medium text-gray-900">{alumno.numero_celular}</span>
-                                                ) : <span className="text-gray-300">—</span>}
+                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
+                                                {alumno.numero_celular || '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                {alumno.numero_celular_emergencia ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                                                        <PhoneCall size={12} className="text-red-500 flex-shrink-0" />
-                                                        <span>{alumno.numero_celular_emergencia}</span>
-                                                    </span>
-                                                ) : <span className="text-gray-300">—</span>}
+                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
+                                                {alumno.numero_celular_emergencia || '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm max-w-[160px]">
-                                                {alumno.alergia_medicamento ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 truncate" title={alumno.alergia_medicamento}>
-                                                        <AlertCircle size={12} className="text-amber-600 flex-shrink-0" />
-                                                        <span className="truncate">{alumno.alergia_medicamento}</span>
-                                                    </span>
-                                                ) : <span className="text-gray-300">—</span>}
+                                            <td className="px-6 py-4 text-gray-500 text-sm max-w-[160px] truncate" title={alumno.alergia_medicamento || undefined}>
+                                                {alumno.alergia_medicamento || '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                {alumno.tiempo_entrenamiento ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                                                        <Clock size={11} className="text-gray-500 flex-shrink-0" />
-                                                        <span>{alumno.tiempo_entrenamiento}</span>
-                                                    </span>
-                                                ) : <span className="text-gray-300">—</span>}
+                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap">
+                                                {alumno.tiempo_entrenamiento || '-'}
                                             </td>
                                             <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm max-w-[150px] truncate" title={alumno.domicilio || undefined}>
                                                 {alumno.domicilio || '-'}
@@ -849,7 +832,7 @@ export default function AlumnosPorDisciplina() {
                                                             </div>
                                                         </div>
                                                         <div className="space-y-1.5 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
-                                                            <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">📍 Personal & Pago</span>
+                                                            <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">📍 Personal</span>
                                                             <div className="text-gray-700">
                                                                 <span className="text-gray-500">Domicilio: </span>
                                                                 {alumno.domicilio || '—'}
