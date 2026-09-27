@@ -1,7 +1,7 @@
 import { useState, useEffect, Fragment } from 'react';
 import { ClienteBackend } from '../types';
 import { cn } from '../../../lib/utils';
-import { Search, Plus, Pencil, Trash2, Loader2, PhoneCall, AlertCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import StudentModal, { StudentFormData } from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { Pagination } from '../../../components/ui/Pagination';

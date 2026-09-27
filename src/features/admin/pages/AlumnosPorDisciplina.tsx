@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { api } from '../../../services/api';
-import { Loader2, Search, Plus, Pencil, Trash2, PhoneCall, AlertCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, Plus, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
