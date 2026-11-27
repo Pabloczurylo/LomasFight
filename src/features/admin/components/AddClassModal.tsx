@@ -25,6 +25,15 @@ interface AddClassModalProps {
     onDelete?: () => void;
 }
 
+// Duración de la clase en horas (el backend acepta 1 a 6)
+const DURACIONES = [1, 2, 3, 4, 5, 6];
+
+/** "19:00" + 2 h -> "21:00" (da la vuelta pasada la medianoche) */
+const horaFin = (inicio: string, horas: number) => {
+    const [h, m] = inicio.split(':').map(Number);
+    return `${String((h + horas) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const DAYS = [
     { label: 'LUN', value: 'LUNES' },
     { label: 'MAR', value: 'MARTES' },
@@ -46,6 +55,7 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
+    const [duracionHoras, setDuracionHoras] = useState(1);
 
     const [confirmState, setConfirmState] = useState({
         isOpen: false,
@@ -84,12 +94,14 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
             setSelectedDays(initialData.days || []);
             setStartTime(initialData.startTime || '');
             setEndTime(initialData.endTime || '');
+            setDuracionHoras(initialData.duracionHoras || 1);
         } else if (isOpen && !initialData) {
             setDisciplineId('');
             setInstructorId('');
             setSelectedDays([]);
             setStartTime('');
             setEndTime('');
+            setDuracionHoras(1);
         }
     }, [isOpen, initialData]);
 
@@ -110,6 +122,7 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
             days: selectedDays,
             startTime,
             endTime,
+            duracionHoras,
         };
 
         if (initialData) {
@@ -243,6 +256,32 @@ export default function AddClassModal({ isOpen, onClose, onSave, initialData, on
                                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white outline-none font-medium text-gray-700"
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-gray-800 tracking-wide">Duración</label>
+                            <div className="grid grid-cols-6 gap-2">
+                                {DURACIONES.map(h => (
+                                    <button
+                                        key={h}
+                                        type="button"
+                                        onClick={() => setDuracionHoras(h)}
+                                        className={cn(
+                                            "py-2 rounded-xl text-sm font-bold border transition-all",
+                                            duracionHoras === h
+                                                ? "bg-brand-red text-white border-brand-red shadow-md"
+                                                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                                        )}
+                                    >
+                                        {h} h
+                                    </button>
+                                ))}
+                            </div>
+                            {startTime && (
+                                <p className="text-xs text-gray-500">
+                                    {duracionHoras} {duracionHoras === 1 ? 'hora' : 'horas'}: de {startTime} a {horaFin(startTime, duracionHoras)}
+                                </p>
+                            )}
                         </div>
 
                         {/* Botones de acción */}
