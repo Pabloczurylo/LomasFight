@@ -1,3 +1,4 @@
+import { toDateInputValue } from '../../../lib/dateUtils';
 import React, { useState, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
@@ -48,6 +49,7 @@ export default function StudentModal({
     const [numeroCelularEmergencia,  setNumeroCelularEmergencia] = useState('');
     const [alergiaMedicamento,       setAlergiaMedicamento]      = useState('');
     const [tiempoEntrenamiento,      setTiempoEntrenamiento]     = useState('');
+    const [tiempoLegacy,             setTiempoLegacy]            = useState('');
 
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
@@ -66,11 +68,9 @@ export default function StudentModal({
             setIdProfesor(initialData.id_profesor_que_cargo ?? null);
             setNumeroCelular(initialData.numero_celular || '');
             setNumeroCelularEmergencia(initialData.numero_celular_emergencia || '');
-            setTiempoEntrenamiento(
-                initialData.tiempo_entrenamiento
-                    ? (initialData.tiempo_entrenamiento.includes('T') ? initialData.tiempo_entrenamiento.split('T')[0] : initialData.tiempo_entrenamiento)
-                    : ''
-            );
+            setTiempoEntrenamiento(toDateInputValue(initialData.tiempo_entrenamiento));
+            setTiempoLegacy(toDateInputValue(initialData.tiempo_entrenamiento) ? '' : (initialData.tiempo_entrenamiento || ''));
+            setAlergiaMedicamento(initialData.alergia_medicamento || '');
         } else {
             setNombre('');
             setApellido('');
@@ -84,6 +84,7 @@ export default function StudentModal({
             setNumeroCelularEmergencia('');
             setAlergiaMedicamento('');
             setTiempoEntrenamiento('');
+            setTiempoLegacy('');
         }
         setErrors({ nombre: '', apellido: '' });
     }, [isOpen, initialData, disciplinas]);
@@ -115,7 +116,7 @@ export default function StudentModal({
             numero_celular:              numeroCelular.trim()             || null,
             numero_celular_emergencia:   numeroCelularEmergencia.trim()   || null,
             alergia_medicamento:         alergiaMedicamento.trim()        || null,
-            tiempo_entrenamiento:        tiempoEntrenamiento.trim()       || null,
+            tiempo_entrenamiento:        (tiempoEntrenamiento.trim() || tiempoLegacy.trim())       || null,
         });
         onClose();
     };

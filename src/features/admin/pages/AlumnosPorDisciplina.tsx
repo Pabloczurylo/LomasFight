@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
-import { api } from '../../../services/api';
+import { api, mensajeError } from '../../../services/api';
 import { Loader2, Search, Plus, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { AxiosError } from 'axios';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import FechaPagoModal from '../components/FechaPagoModal';
 import { Pagination } from '../../../components/ui/Pagination';
+import { describirTiempoEntrenamiento, formatFechaLocal, toDateInputValue, cuotaVigente, inputFechaAISO } from '../../../lib/dateUtils';
 
 const GRUPOS_SANGUINEOS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -56,11 +57,7 @@ interface Alumno {
 // Derive 3-state status from raw data — basado en fecha_vencimiento
 function deriveEstado(inactivo: boolean, fecha_vencimiento: string | null): EstadoAlumno {
     if (inactivo) return 'inactivo';
-    if (!fecha_vencimiento) return 'pendiente';
-    const vencimiento = new Date(fecha_vencimiento);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    return vencimiento >= hoy ? 'al día' : 'pendiente';
+    return cuotaVigente(fecha_vencimiento) ? 'al día' : 'pendiente';
 }
 
 // Payload to send to backend based on selected estado
@@ -91,7 +88,9 @@ function estadoToPayload(estado: EstadoAlumno, alumno?: Alumno): object {
             };
         }
         case 'pendiente':
-            return { activo: true, inactivo: false, fecha_ultimo_pago: null };
+            // El estado se deriva del vencimiento: hay que anularlo para que quede pendiente.
+            // Se conserva la fecha del último pago como historial.
+            return { activo: true, inactivo: false, fecha_vencimiento: null };
         case 'inactivo':
             return { activo: true, inactivo: true };
     }
@@ -103,7 +102,6 @@ const ESTADO_CONFIG: Record<EstadoAlumno, { label: string; classes: string }> = 
     'inactivo': { label: 'Inactivo', classes: 'bg-gray-100 text-gray-500 border-gray-200' },
 };
 
-import { formatFechaLocal, calcularTiempoEntrenamiento } from '../../../lib/dateUtils';
 
 
 // ─── Inline form modal ──────────────────────────────────────────────────────────
@@ -138,6 +136,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
     const [numeroCelularEmergencia,  setNumeroCelularEmergencia] = useState('');
     const [alergiaMedicamento,       setAlergiaMedicamento]      = useState('');
     const [tiempoEntrenamiento,      setTiempoEntrenamiento]     = useState('');
+    const [tiempoLegacy,             setTiempoLegacy]            = useState('');
     const [errors, setErrors] = useState({ nombre: '', apellido: '' });
 
     useEffect(() => {
@@ -151,11 +150,9 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
             setIdProfesor(initialData?.id_profesor_que_cargo || null);
             setNumeroCelular(initialData?.numero_celular || '');
             setNumeroCelularEmergencia(initialData?.numero_celular_emergencia || '');
-            setTiempoEntrenamiento(
-                initialData?.tiempo_entrenamiento
-                    ? (initialData.tiempo_entrenamiento.includes('T') ? initialData.tiempo_entrenamiento.split('T')[0] : initialData.tiempo_entrenamiento)
-                    : ''
-            );
+            setTiempoEntrenamiento(toDateInputValue(initialData?.tiempo_entrenamiento));
+            setTiempoLegacy(toDateInputValue(initialData?.tiempo_entrenamiento) ? '' : (initialData?.tiempo_entrenamiento || ''));
+            setAlergiaMedicamento(initialData?.alergia_medicamento || '');
             setErrors({ nombre: '', apellido: '' });
         }
     }, [isOpen, initialData]);
@@ -184,7 +181,7 @@ function AlumnoFormModal({ isOpen, onClose, onSave, initialData, fixedDisciplina
             numero_celular:            numeroCelular.trim() || null,
             numero_celular_emergencia: numeroCelularEmergencia.trim() || null,
             alergia_medicamento:       alergiaMedicamento.trim() || null,
-            tiempo_entrenamiento:      tiempoEntrenamiento.trim() || null,
+            tiempo_entrenamiento:      (tiempoEntrenamiento.trim() || tiempoLegacy.trim()) || null,
         });
     };
 
@@ -443,7 +440,9 @@ export default function AlumnosPorDisciplina() {
         }
     };
 
-    // Confirmar pago desde el modal del profesor con fecha elegida
+    // Confirmar pago desde el modal del profesor con fecha elegida.
+    // A propósito NO crea un registro en Caja (/pagos): cada profesor maneja el cobro de sus
+    // alumnos por su cuenta; acá solo se actualizan fecha_ultimo_pago / fecha_vencimiento.
     const handleConfirmFechaPago = async (fechaPago: string) => {
         const alumno = fechaPagoModal.alumno;
         if (!alumno) return;
@@ -451,8 +450,8 @@ export default function AlumnosPorDisciplina() {
         setFechaPagoLoading(true);
 
         // Calcular fecha de vencimiento: fecha elegida + 31 días
-        const fechaBase = new Date(fechaPago);
-        fechaBase.setHours(12, 0, 0, 0); // Evitar desfase de timezone
+        // Mediodía LOCAL del día elegido (new Date('YYYY-MM-DD') es UTC y caía el día anterior)
+        const fechaBase = new Date(inputFechaAISO(fechaPago));
         const nuevaFechaVencimiento = new Date(fechaBase);
         nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 31);
 
@@ -510,8 +509,8 @@ export default function AlumnosPorDisciplina() {
             await fetchAlumnos();
             setIsFormOpen(false);
             setEditingAlumno(null);
-        } catch {
-            alert('Error al guardar el alumno.');
+        } catch (e) {
+            alert(mensajeError(e, 'Error al guardar el alumno.'));
         }
     };
 
@@ -707,8 +706,8 @@ export default function AlumnosPorDisciplina() {
                                             <td className="px-6 py-4 text-gray-500 text-sm max-w-[160px] truncate" title={alumno.alergia_medicamento || undefined}>
                                                 {alumno.alergia_medicamento || '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap" title={formatFechaLocal(alumno.tiempo_entrenamiento) !== alumno.tiempo_entrenamiento && alumno.tiempo_entrenamiento ? `Desde: ${formatFechaLocal(alumno.tiempo_entrenamiento)}` : undefined}>
-                                                {calcularTiempoEntrenamiento(alumno.tiempo_entrenamiento)}
+                                            <td className="px-6 py-4 text-gray-500 text-sm whitespace-nowrap" title={describirTiempoEntrenamiento(alumno.tiempo_entrenamiento).desde ? `Desde: ${describirTiempoEntrenamiento(alumno.tiempo_entrenamiento).desde}` : undefined}>
+                                                {describirTiempoEntrenamiento(alumno.tiempo_entrenamiento).label}
                                             </td>
                                             <td className="hidden lg:table-cell px-6 py-4 text-gray-500 text-sm max-w-[150px] truncate" title={alumno.domicilio || undefined}>
                                                 {alumno.domicilio || '-'}
@@ -747,7 +746,7 @@ export default function AlumnosPorDisciplina() {
                                                 {alumno.fecha_vencimiento ? (
                                                     <span className={cn(
                                                         'font-medium',
-                                                        new Date(alumno.fecha_vencimiento) < new Date() ? 'text-red-600' : 'text-gray-600'
+                                                        !cuotaVigente(alumno.fecha_vencimiento) ? 'text-red-600' : 'text-gray-600'
                                                     )}>
                                                         {formatFechaLocal(alumno.fecha_vencimiento)}
                                                     </span>
@@ -814,16 +813,11 @@ export default function AlumnosPorDisciplina() {
                                                             <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🥋 Entrenamiento</span>
                                                             <div className="text-gray-900 font-medium">
                                                                 <span className="text-gray-500 font-normal">Tiempo de Entr.: </span>
-                                                                {calcularTiempoEntrenamiento(alumno.tiempo_entrenamiento) !== '-' ? (
-                                                                    <>
-                                                                        {calcularTiempoEntrenamiento(alumno.tiempo_entrenamiento)}
-                                                                        {formatFechaLocal(alumno.tiempo_entrenamiento) !== alumno.tiempo_entrenamiento && alumno.tiempo_entrenamiento && (
-                                                                            <span className="text-gray-400 font-normal ml-1">
-                                                                                (desde {formatFechaLocal(alumno.tiempo_entrenamiento)})
-                                                                            </span>
-                                                                        )}
-                                                                    </>
-                                                                ) : 'No especificado'}
+                                                                {(() => {
+                                                            const t = describirTiempoEntrenamiento(alumno.tiempo_entrenamiento);
+                                                            if (t.label === '-') return 'No especificado';
+                                                            return (<>{t.label}{t.desde && <span className="text-gray-400 font-normal ml-1">(desde {t.desde})</span>}</>);
+                                                        })()}
                                                             </div>
                                                             <div className="text-gray-700">
                                                                 <span className="text-gray-500">Disciplina: </span>

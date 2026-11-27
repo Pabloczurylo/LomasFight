@@ -5,6 +5,7 @@ import { cn } from '../../../lib/utils';
 import RegistroPagoModal, { CuotaPayload, GastoPayload } from '../components/RegistroPagoModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { api } from '../../../services/api';
+import { cuotaVigente, esMismoMes } from '../../../lib/dateUtils';
 
 interface ProfesorOption {
     id_profesor: number;
@@ -29,6 +30,7 @@ export default function PagosPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('Todos');
+    const [selectedYear, setSelectedYear] = useState<number | 'Todos'>(new Date().getFullYear());
     const [filterTipo, setFilterTipo] = useState<'TODOS' | 'CUOTA' | 'ALQUILER' | 'ENTRADA' | 'GASTO'>('TODOS');
     const [filterProfesor, setFilterProfesor] = useState<number | 'TODOS'>('TODOS');
     const [currentPage, setCurrentPage] = useState(1);
@@ -132,8 +134,7 @@ export default function PagosPage() {
 
     // Métricas
     const metrics = useMemo(() => {
-        const currentMonthIndex = new Date().getMonth() + 1;
-        const targetMonth = MESES[currentMonthIndex];
+        const hoy = new Date();
 
         let totalIngresos = 0;
         let totalGastos = 0;
@@ -141,9 +142,8 @@ export default function PagosPage() {
         let totalAlquileres = 0;
 
         pagos.forEach(p => {
-            const pDate = new Date(p.fecha);
-            const pMonth = MESES[pDate.getMonth() + 1];
-            const isCurrentMonth = targetMonth === 'Todos' || pMonth === targetMonth;
+            // Mes actual DEL AÑO actual (antes se mezclaban años distintos)
+            const isCurrentMonth = esMismoMes(p.fecha, hoy.getMonth(), hoy.getFullYear());
 
             if (p.tipo === 'GASTO' && isCurrentMonth) {
                 totalGastos += p.monto;
@@ -160,9 +160,7 @@ export default function PagosPage() {
         // Deudores: basado en fecha_vencimiento
         const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
         activeStudents.forEach(student => {
-            const fv = student.fecha_vencimiento;
-            const isPendiente = !fv || new Date(fv) < new Date();
-            if (isPendiente) pendientes++;
+            if (!cuotaVigente(student.fecha_vencimiento)) pendientes++;
         });
 
         const balance = totalIngresos - totalGastos;
@@ -172,16 +170,14 @@ export default function PagosPage() {
 
     // Ingresos por profesor del mes actual
     const ingresosPorProfesorMes = useMemo(() => {
-        const currentMonthIndex = new Date().getMonth() + 1;
-        const targetMonth = MESES[currentMonthIndex];
+        const hoy = new Date();
         const map: Record<number, { nombre: string; total: number; cantidad: number }> = {};
         let sinProfesor = 0;
         let cantSinProfesor = 0;
 
         pagos.forEach(p => {
             if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return;
-            const pMonth = MESES[new Date(p.fecha).getMonth() + 1];
-            if (pMonth !== targetMonth) return;
+            if (!esMismoMes(p.fecha, hoy.getMonth(), hoy.getFullYear())) return;
 
             if (p.idProfesorQueCargo != null) {
                 const prof = profesores.find(pr => pr.id_profesor === p.idProfesorQueCargo);
@@ -208,10 +204,10 @@ export default function PagosPage() {
         const matchesSearch = pago.concepto.toLowerCase().includes(searchTerm.toLowerCase());
 
         let matchesMonth = true;
-        if (selectedMonth !== 'Todos' && pago.fecha) {
+        if (pago.fecha) {
             const date = new Date(pago.fecha);
-            const pMonth = MESES[date.getMonth() + 1];
-            matchesMonth = pMonth === selectedMonth;
+            if (selectedYear !== 'Todos' && date.getFullYear() !== selectedYear) matchesMonth = false;
+            if (selectedMonth !== 'Todos' && MESES[date.getMonth() + 1] !== selectedMonth) matchesMonth = false;
         }
 
         const matchesTipo = filterTipo === 'TODOS' || pago.tipo === filterTipo;
@@ -223,12 +219,18 @@ export default function PagosPage() {
         }
 
         return matchesSearch && matchesMonth && matchesTipo && matchesProfesor;
-    }), [pagos, searchTerm, selectedMonth, filterTipo, filterProfesor]);
+    }), [pagos, searchTerm, selectedMonth, selectedYear, filterTipo, filterProfesor]);
 
     // Reset to page 1 whenever filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedMonth, filterTipo, filterProfesor]);
+    }, [searchTerm, selectedMonth, selectedYear, filterTipo, filterProfesor]);
+
+    const aniosDisponibles = useMemo(() => {
+        const set = new Set<number>([new Date().getFullYear()]);
+        pagos.forEach(p => { const y = new Date(p.fecha).getFullYear(); if (!isNaN(y)) set.add(y); });
+        return [...set].sort((a, b) => b - a);
+    }, [pagos]);
 
     const totalPages = Math.max(1, Math.ceil(filteredPagos.length / ITEMS_PER_PAGE));
     const paginatedPagos = filteredPagos.slice(
@@ -254,8 +256,19 @@ export default function PagosPage() {
 
     const handleSaveGasto = async (payload: GastoPayload) => {
         try {
-            if (editingPago && editingPago.tipo === 'GASTO') {
+            if (editingPago && (editingPago.tipo === 'GASTO' || editingPago.tipo === 'ENTRADA')) {
+                // Gastos y Entradas viven en la misma tabla: editar = actualizar, no crear otro
                 await api.put(`/gastos/${editingPago.originalId}`, payload);
+            } else if (editingPago && editingPago.tipo === 'ALQUILER') {
+                // Los alquileres viejos se editan como Entrada: se migra el registro
+                // (se crea la Entrada y se da de baja el alquiler original para no duplicarlo)
+                await api.post('/gastos', payload);
+                try {
+                    await api.delete(`/pago-disciplina/${editingPago.originalId}`);
+                } catch (err) {
+                    console.error("Error al dar de baja el alquiler original:", err);
+                    alert("Se guardó la Entrada, pero no se pudo borrar el alquiler original. Borralo a mano para no duplicar el ingreso.");
+                }
             } else {
                 await api.post('/gastos', payload);
             }
@@ -415,6 +428,17 @@ export default function PagosPage() {
                             >
                                 {MESES.map(mes => (
                                     <option key={mes} value={mes}>{mes}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value === 'Todos' ? 'Todos' : Number(e.target.value))}
+                                aria-label="Año"
+                                className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red bg-white"
+                            >
+                                <option value="Todos">Todos los años</option>
+                                {aniosDisponibles.map(y => (
+                                    <option key={y} value={y}>{y}</option>
                                 ))}
                             </select>
                         </div>

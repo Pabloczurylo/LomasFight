@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, CheckCircle } from 'lucide-react';
+import { hoyLocalISO } from '../../../lib/dateUtils';
 
 interface FechaPagoModalProps {
     isOpen: boolean;
@@ -18,12 +19,12 @@ export default function FechaPagoModal({
     disciplinaNombre,
     isLoading = false,
 }: FechaPagoModalProps) {
-    const [fechaPago, setFechaPago] = useState(new Date().toISOString().split('T')[0]);
+    const [fechaPago, setFechaPago] = useState(hoyLocalISO());
 
     // Reset fecha al abrir el modal
     useEffect(() => {
         if (isOpen) {
-            setFechaPago(new Date().toISOString().split('T')[0]);
+            setFechaPago(hoyLocalISO());
         }
     }, [isOpen]);
 
