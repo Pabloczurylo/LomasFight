@@ -121,7 +121,7 @@ export default function DisciplinasPage() {
                 fetchDisciplinas();
 
                 // Redirect user to see the newly created discipline details page
-                navigate(`/disciplina/${encodeURIComponent(payload.nombre_disciplina.toLowerCase())}`);
+                if (response.data?.id_disciplina) navigate(`/disciplina/${response.data.id_disciplina}`);
             }
         } catch (error) {
             console.error("Error saving disciplina (CRITICAL):", error);
