@@ -24,11 +24,25 @@ interface CalendarGridProps {
     isLastDay?: boolean;
 }
 
-const START_HOUR = 8;
-const END_HOUR = 22;
-const TOTAL_HOURS = END_HOUR - START_HOUR + 1; // 15 hours
+// Rango por defecto (08:00 a 22:59). Se amplía solo si hay clases fuera de él.
+const DEFAULT_START_HOUR = 8;
+const DEFAULT_LAST_HOUR = 22;
 const SLOTS_PER_HOUR = 2; // 30 min slots
-const TOTAL_SLOTS = TOTAL_HOURS * SLOTS_PER_HOUR; // 30 slots
+
+/** Minutos desde 00:00 de "HH:mm" */
+const toMinutes = (timeStr: string) => {
+    const [h, m] = timeStr.trim().split(':').map(Number);
+    return h * 60 + (m || 0);
+};
+
+/** Inicio y duración (en minutos) de un evento. La duración sale de duracionHoras o del rango "HH:mm - HH:mm". */
+const eventBounds = (evt: CalendarEvent) => {
+    const [start, end] = evt.time.split('-').map(t => t.trim());
+    const startMin = toMinutes(start);
+    let duration = evt.duracionHoras ? evt.duracionHoras * 60 : toMinutes(end) - startMin;
+    if (duration <= 0) duration += 24 * 60; // pasa la medianoche
+    return { startMin, duration };
+};
 
 const WEEK_DAYS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
 
@@ -50,18 +64,28 @@ export function CalendarGrid({
         return WEEK_DAYS;
     }, [view, activeDay]);
 
-    // Helper to get grid row from time string "HH:mm"
-    const getGridRow = (timeStr: string) => {
-        const [hours, minutes] = timeStr.trim().split(':').map(Number);
-        if (hours < START_HOUR) return 1;
-        return (hours - START_HOUR) * 2 + (minutes >= 30 ? 1 : 0) + 1;
-    };
+    // Rango de horas visible: 08:00–22:59 por defecto, ampliado para que entren todas las clases
+    // (antes las clases fuera de ese rango quedaban aplastadas arriba con alto 0).
+    const { START_HOUR, TOTAL_HOURS } = useMemo(() => {
+        let first = DEFAULT_START_HOUR;
+        let last = DEFAULT_LAST_HOUR;
+        events.forEach(evt => {
+            const { startMin, duration } = eventBounds(evt);
+            first = Math.min(first, Math.floor(startMin / 60));
+            const endMin = Math.min(startMin + duration, 24 * 60); // el calendario termina a las 24:00
+            last = Math.max(last, Math.ceil(endMin / 60) - 1);
+        });
+        return { START_HOUR: first, TOTAL_HOURS: last - first + 1 };
+    }, [events]);
+    const TOTAL_SLOTS = TOTAL_HOURS * SLOTS_PER_HOUR;
 
-    const getDurationSlots = (timeRange: string) => {
-        const [start, end] = timeRange.split('-').map(t => t.trim());
-        const startRow = getGridRow(start);
-        const endRow = getGridRow(end);
-        return endRow - startRow;
+    /** Posición vertical del evento como porcentaje del alto total del día visible */
+    const getEventPosition = (evt: CalendarEvent) => {
+        const { startMin, duration } = eventBounds(evt);
+        const total = TOTAL_HOURS * 60;
+        const top = startMin - START_HOUR * 60;
+        const height = Math.min(duration, total - top); // si pasa la medianoche, se corta al final
+        return { topPercent: (top / total) * 100, heightPercent: (height / total) * 100 };
     };
 
     return (
@@ -145,12 +169,7 @@ export function CalendarGrid({
 
                                         {/* Render Events */}
                                         {dayEvents.map((evt, idx) => {
-                                            const [startTime] = evt.time.split(' - ');
-                                            const startRow = getGridRow(startTime);
-                                            const span = getDurationSlots(evt.time);
-
-                                            const topPercent = ((startRow - 1) / TOTAL_SLOTS) * 100;
-                                            const heightPercent = (span / TOTAL_SLOTS) * 100;
+                                            const { topPercent, heightPercent } = getEventPosition(evt);
 
                                             return (
                                                 <div
