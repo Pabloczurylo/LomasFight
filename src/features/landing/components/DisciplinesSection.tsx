@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { DisciplineCard } from "./DisciplineCard";
 import { api } from "../../../services/api";
+import { rutaDisciplina } from "../../../lib/seo";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Discipline {
@@ -98,7 +99,7 @@ export function DisciplinesSection() {
                                         title={discipline.nombre_disciplina}
                                         description={discipline.descripcion || "Entrena con los mejores profesionales en Lomas Fight."}
                                         image={discipline.img_preview || discipline.img_banner || "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"}
-                                        slug={String(discipline.id_disciplina)} // por ID: el nombre puede tener espacios/caracteres que rompen la URL
+                                        href={rutaDisciplina(discipline.id_disciplina, discipline.nombre_disciplina)}
                                     />
                                 </div>
                             ))

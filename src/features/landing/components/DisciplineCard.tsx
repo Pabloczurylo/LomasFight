@@ -1,33 +1,26 @@
-import { useNavigate } from "react-router-dom";
-
-import { Button } from "../../../components/ui/Button";
+import { Link } from "react-router-dom";
 
 interface DisciplineCardProps {
   title: string;
-  slug?: string;
+  /** Ruta de la disciplina, ej. "/disciplina/2-jiu-jitsu" */
+  href?: string;
   description: string;
   image: string;
 }
 
-export function DisciplineCard({ title, slug, image }: DisciplineCardProps) {
-  const navigate = useNavigate();
+// Mismo aspecto que <Button variant="outline" size="sm">, pero como <span>:
+// un <button> dentro de un <a> no es HTML válido.
+const verDetallesClass =
+  "inline-flex items-center justify-center w-full h-8 px-3 text-sm rounded-md font-heading font-bold uppercase tracking-wide border border-brand-red text-brand-red bg-transparent group-hover:bg-brand-red/10 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300";
 
-  const handleClick = () => {
-    if (slug) {
-      navigate(`/disciplina/${slug}`);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  return (
-    <div
-      onClick={handleClick}
-      className="group relative overflow-hidden rounded-xl h-[400px] w-full shadow-lg transition-transform duration-300 hover:-translate-y-2 cursor-pointer"
-    >
+export function DisciplineCard({ title, href, image }: DisciplineCardProps) {
+  const contenido = (
+    <>
       {/* Background Image */}
       <img
         src={image}
-        alt={title}
+        alt={`Clases de ${title} en Lomas Fight`}
+        loading="lazy"
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
 
@@ -40,12 +33,22 @@ export function DisciplineCard({ title, slug, image }: DisciplineCardProps) {
           <h3 className="text-3xl font-heading font-bold text-white uppercase mb-4">{title}</h3>
 
           <div className="space-y-4">
-            <Button variant="outline" size="sm" className="w-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              VER DETALLES
-            </Button>
+            <span className={verDetallesClass}>VER DETALLES</span>
           </div>
         </div>
       </div>
-    </div>
+    </>
+  );
+
+  const cardClass =
+    "group relative block overflow-hidden rounded-xl h-[400px] w-full shadow-lg transition-transform duration-300 hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red";
+
+  // Link real (<a href>) para que Google pueda seguirlo y descubrir la página de la disciplina
+  return href ? (
+    <Link to={href} onClick={() => window.scrollTo(0, 0)} className={cardClass} aria-label={`Ver detalles de ${title}`}>
+      {contenido}
+    </Link>
+  ) : (
+    <div className={cardClass}>{contenido}</div>
   );
 }

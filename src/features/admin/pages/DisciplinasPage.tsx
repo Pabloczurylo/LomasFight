@@ -6,6 +6,7 @@ import { Disciplina } from '../types';
 import { api } from '../../../services/api';
 import { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { rutaDisciplina } from '../../../lib/seo';
 
 const getSafeUrl = (url?: string | null) => {
     if (!url) return '';
@@ -122,7 +123,7 @@ export default function DisciplinasPage() {
                 fetchDisciplinas();
 
                 // Redirect user to see the newly created discipline details page
-                if (response.data?.id_disciplina) navigate(`/disciplina/${response.data.id_disciplina}`);
+                if (response.data?.id_disciplina) navigate(rutaDisciplina(response.data.id_disciplina, response.data.nombre_disciplina || ''));
             }
         } catch (error) {
             console.error("Error saving disciplina (CRITICAL):", error);

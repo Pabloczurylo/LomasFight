@@ -1,5 +1,6 @@
 ﻿import { Link } from "react-router-dom";
 import { ChevronLeft, ShieldCheck, Eye, FileEdit, Trash2, Lock } from "lucide-react";
+import { usePageMeta } from "../../../lib/seo";
 
 const SECTIONS = [
   {
@@ -103,7 +104,14 @@ const SECTIONS = [
   },
 ];
 
+const META_PRIVACIDAD = {
+  title: "Política de Privacidad | Lomas Fight",
+  description: "Cómo Lomas Fight recopila, usa y protege los datos personales de sus alumnos y visitantes.",
+  path: "/politica-de-privacidad",
+};
+
 export default function PrivacyPolicyPage() {
+  usePageMeta(META_PRIVACIDAD);
   return (
     <div className="min-h-screen bg-gray-950 text-white">
 

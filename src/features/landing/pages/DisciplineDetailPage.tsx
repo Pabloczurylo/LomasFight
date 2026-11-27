@@ -6,6 +6,7 @@ import { MembershipSection } from "../components/MembershipSection";
 import { ScheduleSection } from "../components/ScheduleSection";
 import { BenefitsSection, type Benefit } from "../components/BenefitsSection";
 import { api } from "../../../services/api";
+import { idDesdeParam, rutaDisciplina, usePageMeta } from "../../../lib/seo";
 import { Button } from "../../../components/ui/Button";
 
 interface DisciplineData {
@@ -70,9 +71,17 @@ export default function DisciplineDetailPage() {
             try {
                 setLoading(true);
                 setError(false);
-                // Fetch Discipline
-                const responseDiscipline = await api.get(`/diciplinas/${id}`);
+                // URL nueva "/disciplina/2-jiu-jitsu" -> se busca por ID (2).
+                // Links viejos por nombre ("/disciplina/kickboxing") siguen andando: el backend busca por nombre.
+                const numero = idDesdeParam(id);
+                const responseDiscipline = await api.get(`/diciplinas/${numero ?? id}`);
                 setDiscipline(responseDiscipline.data);
+
+                // Si la URL no es la canónica (link viejo o nombre cambiado), reemplazarla sin recargar
+                const canonica = rutaDisciplina(responseDiscipline.data.id_disciplina, responseDiscipline.data.nombre_disciplina);
+                if (window.location.pathname !== canonica) {
+                    navigate(canonica, { replace: true });
+                }
 
                 // Fetch and filter Teachers
                 const responseTeachers = await api.get<ProfesorBackend[]>('/profesores');
@@ -93,6 +102,17 @@ export default function DisciplineDetailPage() {
             fetchDisciplineAndTeachers();
         }
     }, [id]);
+
+    // Título y descripción propios de cada disciplina (para Google y al compartir el link)
+    const nombre = discipline?.nombre_disciplina?.trim();
+    usePageMeta(discipline && nombre ? {
+        title: `${nombre} en Tucumán | Lomas Fight`,
+        description: (discipline.descripcion?.trim()
+            ? `${nombre} en Lomas Fight: ${discipline.descripcion.trim()}`
+            : `Clases de ${nombre} en Lomas Fight, Lomas de Tafí y Tafí Viejo, Tucumán. Horarios, profesores y cuota.`
+        ).slice(0, 160),
+        path: rutaDisciplina(discipline.id_disciplina, nombre),
+    } : null);
 
     if (loading) {
         return (
