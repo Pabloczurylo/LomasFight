@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Menu, X, User } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Logo } from "../ui/Logo";
 
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -88,10 +89,7 @@ export function Navbar() {
             <div className="container mx-auto px-4 flex items-center justify-between">
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-2" onClick={() => window.scrollTo(0, 0)}>
-                    <div className="h-8 w-8 bg-brand-red rounded transform skew-x-[-10deg]" />
-                    <span className="text-2xl font-heading font-bold text-white uppercase tracking-wider">
-                        LOMAS <span className="text-brand-red">FIGHT</span>
-                    </span>
+                    <Logo className="h-9 md:h-11" />
                 </Link>
 
                 {/* Desktop Nav */}

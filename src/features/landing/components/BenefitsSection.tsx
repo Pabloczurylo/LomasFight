@@ -1,10 +1,12 @@
-import { LucideIcon } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 
-interface Benefit {
+export interface Benefit {
     title: string;
     description: string;
-    icon: LucideIcon;
 }
+
+// Imagen por defecto si la disciplina no tiene img_preview ni img_banner
+const IMAGEN_POR_DEFECTO = "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2020&auto=format&fit=crop";
 
 interface BenefitsSectionProps {
     disciplineName: string;
@@ -34,14 +36,17 @@ export function BenefitsSection({ disciplineName, benefits, image }: BenefitsSec
                                 <div key={idx} className="flex gap-6 group">
                                     <div className="flex-shrink-0">
                                         <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-brand-red transition-colors duration-300">
-                                            <benefit.icon className="w-8 h-8 text-brand-red group-hover:text-white transition-colors duration-300" />
+                                            {/* Mismo ícono para todos los beneficios */}
+                                            <CircleCheck className="w-8 h-8 text-brand-red group-hover:text-white transition-colors duration-300" />
                                         </div>
                                     </div>
                                     <div>
                                         <h4 className="text-xl font-heading font-bold text-brand-black mb-2 uppercase">{benefit.title}</h4>
-                                        <p className="text-gray-500 leading-relaxed">
-                                            {benefit.description}
-                                        </p>
+                                        {benefit.description && (
+                                            <p className="text-gray-500 leading-relaxed">
+                                                {benefit.description}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -52,7 +57,7 @@ export function BenefitsSection({ disciplineName, benefits, image }: BenefitsSec
                     <div className="w-full lg:w-1/2 relative">
                         <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] w-full transform md:rotate-3 transition-transform duration-500 hover:rotate-0">
                             <img
-                                src={image}
+                                src={image || IMAGEN_POR_DEFECTO}
                                 alt={`Beneficios de ${disciplineName}`}
                                 className="w-full h-full object-cover"
                             />

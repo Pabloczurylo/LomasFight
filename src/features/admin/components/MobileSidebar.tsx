@@ -1,6 +1,7 @@
 import { LayoutDashboard, Users, CreditCard, LogOut, X, Dumbbell, Shield, UserCheck, Calendar } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils";
+import { Logo } from "../../../components/ui/Logo";
 
 const getNavItems = () => {
     const user = JSON.parse(localStorage.getItem('usuario') || '{}');
@@ -49,12 +50,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             >
                 {/* Logo Area & Close Button */}
                 <div className="p-6 flex items-center justify-between border-b border-zinc-800">
-                    <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 bg-brand-red rounded transform skew-x-[-10deg]" />
-                        <span className="text-lg font-heading font-bold uppercase tracking-wider">
-                            LOMAS <span className="text-brand-red">FIGHT</span>
-                        </span>
-                    </div>
+                    <Logo className="h-8" />
                     <button onClick={onClose} className="text-zinc-400 hover:text-white">
                         <X className="w-6 h-6" />
                     </button>

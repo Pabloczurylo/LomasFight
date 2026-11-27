@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Target, Zap } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { MembershipSection } from "../components/MembershipSection";
 import { ScheduleSection } from "../components/ScheduleSection";
-import { BenefitsSection } from "../components/BenefitsSection";
+import { BenefitsSection, type Benefit } from "../components/BenefitsSection";
 import { api } from "../../../services/api";
 import { Button } from "../../../components/ui/Button";
 
@@ -16,6 +16,7 @@ interface DisciplineData {
     img_banner: string;
     img_preview: string;
     numero_celular: string | null;
+    beneficios?: { titulo: string; descripcion: string }[] | null;
 }
 
 interface ProfesorBackend {
@@ -32,23 +33,28 @@ interface ProfesorBackend {
     };
 }
 
-const GENERIC_BENEFITS = [
+// Se muestran cuando la disciplina no tiene beneficios propios cargados desde el admin
+const GENERIC_BENEFITS: Benefit[] = [
     {
         title: "Enfoque Técnico",
-        description: "Aprendé la ejecución correcta de cada movimiento con una base sólida que te acompañará siempre.",
-        icon: Target
+        description: "Aprendé la ejecución correcta de cada movimiento con una base sólida que te acompañará siempre."
     },
     {
         title: "Acondicionamiento Integral",
-        description: "Mejorá tu capacidad física, resistencia y energía a través de entrenamientos diseñados para tu progreso.",
-        icon: Zap
+        description: "Mejorá tu capacidad física, resistencia y energía a través de entrenamientos diseñados para tu progreso."
     },
     {
         title: "Bienestar y Confianza",
-        description: "Ganá seguridad en un ambiente motivador, ideal para liberar tensiones y alcanzar tu mejor versión.",
-        icon: Shield
+        description: "Ganá seguridad en un ambiente motivador, ideal para liberar tensiones y alcanzar tu mejor versión."
     }
 ];
+
+function beneficiosDe(discipline: DisciplineData | null): Benefit[] {
+    const propios = (discipline?.beneficios ?? [])
+        .filter(b => b?.titulo?.trim())
+        .map(b => ({ title: b.titulo, description: b.descripcion || '' }));
+    return propios.length ? propios : GENERIC_BENEFITS;
+}
 
 export default function DisciplineDetailPage() {
     const { id } = useParams();
@@ -146,10 +152,10 @@ export default function DisciplineDetailPage() {
                 </p>
             </section>
 
-            {/* Generic Benefits */}
+            {/* Beneficios: los cargados en el admin o, si no hay, los genéricos */}
             <BenefitsSection
                 disciplineName={discipline?.nombre_disciplina || 'Disciplina'}
-                benefits={GENERIC_BENEFITS}
+                benefits={beneficiosDe(discipline)}
                 image={discipline?.img_preview || discipline?.img_banner || ''}
             />
 

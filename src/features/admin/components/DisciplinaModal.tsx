@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { Disciplina } from '../types';
+import { X, Plus, Trash2 } from 'lucide-react';
+import { Beneficio, Disciplina, MAX_BENEFICIOS } from '../types';
 
 interface DisciplinaModalProps {
     isOpen: boolean;
@@ -19,6 +19,7 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
     const [imgPreview, setImgPreview] = useState('');
     const [cuota, setCuota] = useState<string>('0');
     const [telefono, setTelefono] = useState('');
+    const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
 
     useEffect(() => {
         if (initialData) {
@@ -28,6 +29,7 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
             setImgPreview(initialData.img_preview || '');
             setCuota(initialData.cuota?.toString() || '0');
             setTelefono(initialData.numero_celular || '');
+            setBeneficios(Array.isArray(initialData.beneficios) ? initialData.beneficios : []);
         } else {
             setNombre('');
             setDescripcion('');
@@ -35,10 +37,18 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
             setImgPreview('');
             setCuota('0');
             setTelefono('');
+            setBeneficios([]);
         }
     }, [initialData, isOpen]);
 
     if (!isOpen) return null;
+
+    const actualizarBeneficio = (idx: number, campo: keyof Beneficio, valor: string) =>
+        setBeneficios(prev => prev.map((b, i) => (i === idx ? { ...b, [campo]: valor } : b)));
+    const agregarBeneficio = () =>
+        setBeneficios(prev => (prev.length < MAX_BENEFICIOS ? [...prev, { titulo: '', descripcion: '' }] : prev));
+    const quitarBeneficio = (idx: number) =>
+        setBeneficios(prev => prev.filter((_, i) => i !== idx));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,6 +60,10 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
             img_preview: imgPreview,
             cuota: parseFloat(cuota) || 0,
             numero_celular: telefono || null,
+            // Solo los que tienen título; vacío = se usan los genéricos en la página pública
+            beneficios: beneficios
+                .map(b => ({ titulo: b.titulo.trim(), descripcion: b.descripcion.trim() }))
+                .filter(b => b.titulo),
         });
         onClose();
     };
@@ -89,6 +103,40 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
                         <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)}
                             className={`${inputClass} resize-none h-24`}
                             placeholder="Breve descripción de la disciplina..." required />
+                    </div>
+
+                    {/* Beneficios ("Por qué elegir ...") */}
+                    <div>
+                        <label className={labelClass}>
+                            Beneficios <span className="font-normal text-gray-400">(sección "Por qué elegir {nombre.trim() || '...'}")</span>
+                        </label>
+                        <p className="text-xs text-gray-400 mb-2">
+                            Si no cargás ninguno, se muestran los beneficios genéricos. Máximo {MAX_BENEFICIOS}.
+                        </p>
+                        <div className="space-y-3">
+                            {beneficios.map((b, idx) => (
+                                <div key={idx} className="relative rounded-lg border border-gray-200 p-3 pr-10 space-y-2 bg-gray-50/50">
+                                    <input type="text" value={b.titulo} maxLength={80}
+                                        onChange={e => actualizarBeneficio(idx, 'titulo', e.target.value)}
+                                        className={inputClass} placeholder="Título (ej: Defensa personal)" />
+                                    <textarea value={b.descripcion} maxLength={300}
+                                        onChange={e => actualizarBeneficio(idx, 'descripcion', e.target.value)}
+                                        className={`${inputClass} resize-none h-16`}
+                                        placeholder="Descripción breve del beneficio..." />
+                                    <button type="button" onClick={() => quitarBeneficio(idx)}
+                                        aria-label={`Quitar beneficio ${idx + 1}`}
+                                        className="absolute top-3 right-2 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        {beneficios.length < MAX_BENEFICIOS && (
+                            <button type="button" onClick={agregarBeneficio}
+                                className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-brand-red hover:text-red-700 transition-colors">
+                                <Plus className="w-4 h-4" /> Agregar beneficio
+                            </button>
+                        )}
                     </div>
 
                     {/* Número WhatsApp */}

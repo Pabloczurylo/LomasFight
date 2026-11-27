@@ -1,4 +1,14 @@
 import { Button } from "../../../components/ui/Button";
+import logoCupaTeam from "../../../assets/logos/cupa-team.webp";
+import logoAlTeam from "../../../assets/logos/al-team-tucuman.webp";
+
+// Escuelas que entrenan en Lomas Fight (se muestran a cada costado del hero)
+const ESCUELAS = [
+    { src: logoCupaTeam, alt: "Cupa Team - Jiujitsu, MMA y Kickboxing" },
+    { src: logoAlTeam, alt: "AL Team Tucumán - Alberto Lechesi Kickboxing" },
+];
+
+const logoEscuelaClass = "object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.6)] select-none";
 
 const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -17,9 +27,23 @@ export function HeroSection() {
                 />
             </div>
 
-            <div className="relative z-20 container mx-auto px-4 text-center flex flex-col items-center">
-                <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-heading font-bold text-white uppercase leading-[0.9] mb-4">
-                    BIENVENIDOS A <br />
+            <div className="relative z-20 container mx-auto px-4 flex items-center justify-center gap-8 2xl:gap-12">
+                {/* Escuela izquierda (pantallas grandes) */}
+                <img src={ESCUELAS[0].src} alt={ESCUELAS[0].alt} draggable={false}
+                    className={`hidden xl:block shrink-0 w-48 2xl:w-64 ${logoEscuelaClass}`} />
+
+            <div className="text-center flex flex-col items-center min-w-0">
+                {/* Escuelas arriba del título (celular y tablet) */}
+                <div className="flex xl:hidden items-center justify-center gap-6 sm:gap-10 mb-6">
+                    {ESCUELAS.map(e => (
+                        <img key={e.alt} src={e.src} alt={e.alt} draggable={false}
+                            className={`h-20 sm:h-28 w-auto ${logoEscuelaClass}`} />
+                    ))}
+                </div>
+
+                {/* En xl+ los logos ocupan los costados: el título baja un tamaño para no partirse */}
+                <h1 className="text-4xl sm:text-6xl md:text-8xl xl:text-7xl 2xl:text-8xl font-heading font-bold text-white uppercase leading-[0.9] mb-4">
+                    <span className="sm:whitespace-nowrap">BIENVENIDOS A</span> <br />
                     <span className="text-brand-red">LOMAS FIGHT</span>
                 </h1>
 
@@ -50,6 +74,11 @@ export function HeroSection() {
                         VER HORARIOS
                     </Button>
                 </div>
+            </div>
+
+                {/* Escuela derecha (pantallas grandes) */}
+                <img src={ESCUELAS[1].src} alt={ESCUELAS[1].alt} draggable={false}
+                    className={`hidden xl:block shrink-0 w-48 2xl:w-64 ${logoEscuelaClass}`} />
             </div>
         </section>
     );

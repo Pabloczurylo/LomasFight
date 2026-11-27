@@ -94,7 +94,8 @@ export default function DisciplinasPage() {
             img_banner: disciplina.img_banner,
             img_preview: disciplina.img_preview,
             numero_celular: disciplina.numero_celular || null,
-            cuota: disciplina.cuota || 0
+            cuota: disciplina.cuota || 0,
+            beneficios: disciplina.beneficios ?? []
         };
 
         try {
