@@ -20,6 +20,7 @@ interface ProfesorBackend {
     activo: boolean;
     descripcion: string | null;
     imagen: string | null;
+    prefijo?: string;
     disciplinas: Disciplina;
 }
 
@@ -35,7 +36,8 @@ export default function TeachersPage() {
         apellido: '',
         id_disciplina: '', // Usaremos el ID de la DB
         presentacion: '',   // Nota: No está en Prisma, se mantiene local por ahora
-        imagen: ''
+        imagen: '',
+        prefijo: 'Sensei'
     });
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -62,6 +64,7 @@ export default function TeachersPage() {
                 disciplinas: [p.disciplinas.nombre_disciplina], // Mapeo para TeacherList
                 presentacion: p.descripcion || '',
                 imagen: p.imagen || '',
+                prefijo: p.prefijo ?? 'Sensei',
                 estado: p.activo ? 'Activo' : 'Inactivo'
             }));
 
@@ -97,7 +100,8 @@ export default function TeachersPage() {
                 apellido: formData.apellido,
                 id_disciplina: Number(formData.id_disciplina),
                 descripcion: formData.presentacion,
-                imagen: formData.imagen || null
+                imagen: formData.imagen || null,
+                prefijo: formData.prefijo.trim()
             };
 
             if (isEditing) {
@@ -125,7 +129,7 @@ export default function TeachersPage() {
 
 
     const handleDiscard = () => {
-        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '' });
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '', prefijo: 'Sensei' });
         setIsEditing(false);
         setIsFormOpen(false);
     };
@@ -137,14 +141,15 @@ export default function TeachersPage() {
             apellido: teacher.apellido,
             id_disciplina: teacher.id_disciplina ? teacher.id_disciplina.toString() : '',
             presentacion: teacher.presentacion,
-            imagen: teacher.imagen || ''
+            imagen: teacher.imagen || '',
+            prefijo: teacher.prefijo
         });
         setIsEditing(true);
         setIsFormOpen(true);
     };
 
     const handleAddNewClick = () => {
-        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '' });
+        setFormData({ id: 0, nombre: '', apellido: '', id_disciplina: '', presentacion: '', imagen: '', prefijo: 'Sensei' });
         setIsEditing(false);
         setIsFormOpen(true);
     };

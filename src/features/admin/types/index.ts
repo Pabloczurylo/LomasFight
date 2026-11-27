@@ -131,6 +131,8 @@ export interface Teacher {
     disciplinas: string[];
     presentacion: string;
     imagen?: string;
+    /** Se muestra antes del nombre en los horarios ("Sensei", "Profe"...). Vacío = solo el nombre. */
+    prefijo: string;
     estado: 'Activo' | 'Inactivo';
 }
 
