@@ -106,7 +106,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                                 {JSON.parse(localStorage.getItem('usuario') || '{}').nombre_usuario || 'Administrador'}
                             </span>
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
-                                {JSON.parse(localStorage.getItem('usuario') || '{}').rol_usuario || 'Staff'}
+                                {JSON.parse(localStorage.getItem('usuario') || '{}').rol === 'admin' ? 'Administrador' : 'Profesor'}
                             </span>
                         </div>
                     </div>

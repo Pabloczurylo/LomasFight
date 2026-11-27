@@ -5,9 +5,10 @@ import { Search, Plus, Pencil, Trash2, Loader2, ChevronDown, ChevronUp } from 'l
 import StudentModal, { StudentFormData } from '../components/StudentModal';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { Pagination } from '../../../components/ui/Pagination';
-import { api } from '../../../services/api';
+import { api, mensajeError } from '../../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
+import { describirTiempoEntrenamiento, cuotaVigente } from '../../../lib/dateUtils';
 
 const PAGE_SIZE = 10;
 
@@ -43,14 +44,9 @@ interface AlumnoRow {
 
 function deriveEstado(inactivo: boolean, fecha_vencimiento: string | null): EstadoPago {
     if (inactivo) return 'inactivo';
-    if (!fecha_vencimiento) return 'pendiente';
-    const vencimiento = new Date(fecha_vencimiento);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    return vencimiento >= hoy ? 'al día' : 'pendiente';
+    return cuotaVigente(fecha_vencimiento) ? 'al día' : 'pendiente';
 }
 
-import { formatFechaLocal, calcularTiempoEntrenamiento } from '../../../lib/dateUtils';
 
 const dash = (v: string | null | undefined) => v || '-';
 
@@ -227,38 +223,36 @@ export default function AlumnosPage() {
             };
             api.post('/clientes', payload)
                 .then(() => { fetchAll(); setIsModalOpen(false); })
-                .catch(e => { console.error(e); alert('Error al crear el alumno.'); });
+                .catch(e => { console.error(e); alert(mensajeError(e, 'Error al crear el alumno.')); });
         }
     };
 
     const confirmSave = async () => {
         if (!pendingData || !editingAlumno) return;
         try {
-            const inactivo = pendingData.estadoPago === 'inactivo';
-            const ahora = new Date();
+            // Las fechas de pago solo se tocan si el usuario CAMBIÓ el estado en el formulario.
+            // Editar otros datos (teléfono, DNI, etc.) no debe sumar ni borrar vencimientos.
+            const estadoCambio = pendingData.estadoPago !== editingAlumno.estadoPago;
+            const cambiosEstado: Record<string, unknown> = {};
 
-            // Calcular fecha_vencimiento según la lógica inteligente
-            let fecha_ultimo_pago: string | null = null;
-            let fecha_vencimiento: string | null = null;
+            if (estadoCambio) {
+                cambiosEstado.inactivo = pendingData.estadoPago === 'inactivo';
+                const ahora = new Date();
 
-            if (pendingData.estadoPago === 'al día') {
-                fecha_ultimo_pago = ahora.toISOString();
-                // Si estaba inactivo: resetear desde hoy + 31 días
-                if (editingAlumno.estadoPago === 'inactivo') {
-                    const fv = new Date(ahora);
-                    fv.setDate(fv.getDate() + 31);
-                    fecha_vencimiento = fv.toISOString();
-                } else if (editingAlumno.fechaVencimiento) {
-                    // Si tenía vencimiento previo: sumar 31 días desde ahí
-                    const fv = new Date(editingAlumno.fechaVencimiento);
-                    fv.setDate(fv.getDate() + 31);
-                    fecha_vencimiento = fv.toISOString();
-                } else {
-                    // Sin vencimiento previo: hoy + 31
-                    const fv = new Date(ahora);
-                    fv.setDate(fv.getDate() + 31);
-                    fecha_vencimiento = fv.toISOString();
+                if (pendingData.estadoPago === 'al día') {
+                    // Si estaba inactivo o no tenía vencimiento: hoy + 31.
+                    // Si tenía vencimiento previo (pendiente): sumar 31 desde ahí.
+                    const base = editingAlumno.estadoPago !== 'inactivo' && editingAlumno.fechaVencimiento
+                        ? new Date(editingAlumno.fechaVencimiento)
+                        : new Date(ahora);
+                    base.setDate(base.getDate() + 31);
+                    cambiosEstado.fecha_ultimo_pago = ahora.toISOString();
+                    cambiosEstado.fecha_vencimiento = base.toISOString();
+                } else if (pendingData.estadoPago === 'pendiente') {
+                    // Marcado explícitamente como pendiente: el vencimiento deja de estar vigente
+                    cambiosEstado.fecha_vencimiento = null;
                 }
+                // 'inactivo': solo cambia el flag, se conservan las fechas
             }
 
             await api.put(`/clientes/${editingAlumno.id}`, {
@@ -266,9 +260,7 @@ export default function AlumnosPage() {
                 apellido:                  pendingData.apellido,
                 id_disciplina:             pendingData.id_disciplina,
                 activo:                    true,
-                inactivo,
-                fecha_ultimo_pago,
-                fecha_vencimiento,
+                ...cambiosEstado,
                 dni:                       pendingData.dni,
                 fecha_nacimiento:          pendingData.fecha_nacimiento,
                 grupo_sanguineo:           pendingData.grupo_sanguineo,
@@ -285,7 +277,7 @@ export default function AlumnosPage() {
             setIsModalOpen(false);
         } catch (e) {
             console.error(e);
-            alert('Error al actualizar el alumno.');
+            alert(mensajeError(e, 'Error al actualizar el alumno.'));
         }
     };
 
@@ -430,8 +422,8 @@ export default function AlumnosPage() {
                                         <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{dash(a.numeroCelular)}</td>
                                         <td className="py-4 text-gray-500 text-sm whitespace-nowrap">{dash(a.numeroCelularEmergencia)}</td>
                                         <td className="py-4 text-gray-500 text-sm max-w-[160px] truncate" title={a.alergiaMedicamento || undefined}>{dash(a.alergiaMedicamento)}</td>
-                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap" title={formatFechaLocal(a.tiempoEntrenamiento) !== a.tiempoEntrenamiento && a.tiempoEntrenamiento ? `Desde: ${formatFechaLocal(a.tiempoEntrenamiento)}` : undefined}>
-                                            {calcularTiempoEntrenamiento(a.tiempoEntrenamiento)}
+                                        <td className="py-4 text-gray-500 text-sm whitespace-nowrap" title={describirTiempoEntrenamiento(a.tiempoEntrenamiento).desde ? `Desde: ${describirTiempoEntrenamiento(a.tiempoEntrenamiento).desde}` : undefined}>
+                                            {describirTiempoEntrenamiento(a.tiempoEntrenamiento).label}
                                         </td>
                                         <td className="py-4 text-gray-500 text-sm max-w-[150px] truncate" title={a.domicilio || undefined}>{dash(a.domicilio)}</td>
                                         <td className="py-4 text-gray-600 text-sm whitespace-nowrap">{a.disciplinaNombre}</td>
@@ -512,16 +504,11 @@ export default function AlumnosPage() {
                                                         <span className="font-bold text-gray-700 uppercase tracking-wider block text-[11px]">🥋 Entrenamiento</span>
                                                         <div className="text-gray-900 font-medium">
                                                             <span className="text-gray-500 font-normal">Tiempo de Entr.: </span>
-                                                            {calcularTiempoEntrenamiento(a.tiempoEntrenamiento) !== '-' ? (
-                                                                <>
-                                                                    {calcularTiempoEntrenamiento(a.tiempoEntrenamiento)}
-                                                                    {formatFechaLocal(a.tiempoEntrenamiento) !== a.tiempoEntrenamiento && a.tiempoEntrenamiento && (
-                                                                        <span className="text-gray-400 font-normal ml-1">
-                                                                            (desde {formatFechaLocal(a.tiempoEntrenamiento)})
-                                                                        </span>
-                                                                    )}
-                                                                </>
-                                                            ) : 'No especificado'}
+                                                            {(() => {
+                                                            const t = describirTiempoEntrenamiento(a.tiempoEntrenamiento);
+                                                            if (t.label === '-') return 'No especificado';
+                                                            return (<>{t.label}{t.desde && <span className="text-gray-400 font-normal ml-1">(desde {t.desde})</span>}</>);
+                                                        })()}
                                                         </div>
                                                         <div className="text-gray-700">
                                                             <span className="text-gray-500">Disciplina: </span>

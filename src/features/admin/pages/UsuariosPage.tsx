@@ -4,7 +4,7 @@ import { ChevronRight, Shield, X } from 'lucide-react';
 import UserForm from '../components/UserForm';
 import UserList from '../components/UserList';
 import { Usuario } from '../types';
-import { api } from '../../../services/api';
+import { api, mensajeError } from '../../../services/api';
 import { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
@@ -69,6 +69,9 @@ function EditUserModal({ user, disciplines, profesores, onClose, onSave }: EditU
             }
             await onSave(user.id_usuario, data);
             onClose();
+        } catch (error) {
+            console.error('Error updating usuario:', error);
+            alert(mensajeError(error, 'Error al guardar los cambios del usuario.'));
         } finally {
             setSaving(false);
         }
@@ -255,7 +258,9 @@ export default function UsuariosPage() {
             if (error instanceof AxiosError && error.response?.status === 401) {
                 localStorage.clear();
                 navigate('/login');
+                return;
             }
+            alert(mensajeError(error, 'Error al crear el usuario.'));
         }
     };
 

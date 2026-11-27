@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DollarSign, Dumbbell, AlertCircle, Users, TrendingUp, ArrowDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../../services/api';
+import { cuotaVigente, esMismoMes } from '../../../lib/dateUtils';
 import { ClienteBackend, PagoBackend, PagoDisciplinaBackend, GastoBackend, UnifiedPago } from '../../admin/types';
 import { cn } from '../../../lib/utils';
 
@@ -383,15 +384,14 @@ export default function DashboardHome() {
     // ── Metrics ──────────────────────────────────────────────────────────────
 
     const metrics = useMemo(() => {
-        const currentMonthIndex = new Date().getMonth() + 1;
-        const targetMonth = MESES[currentMonthIndex];
+        const hoy = new Date();
         let totalIngresosMes = 0;
         let totalGastosMes = 0;
         let pendientes = 0;
 
         pagos.forEach(p => {
-            const pMonth = MESES[new Date(p.fecha).getMonth() + 1];
-            if (pMonth === targetMonth) {
+            // Mes actual DEL AÑO actual (antes se mezclaban años distintos)
+            if (esMismoMes(p.fecha, hoy.getMonth(), hoy.getFullYear())) {
                 if (p.tipo === 'GASTO') {
                     totalGastosMes += p.monto;
                 } else if ((p.tipo === 'CUOTA' || p.tipo === 'ALQUILER' || p.tipo === 'ENTRADA') && p.estado === 'Pagado') {
@@ -403,9 +403,7 @@ export default function DashboardHome() {
         // Pendientes: basado en fecha_vencimiento (todos los alumnos, no solo kickboxing)
         const activeStudents = clientes.filter(c => c.activo && !c.inactivo);
         activeStudents.forEach(student => {
-            const fv = student.fecha_vencimiento;
-            const isPendiente = !fv || new Date(fv) < new Date();
-            if (isPendiente) pendientes++;
+            if (!cuotaVigente(student.fecha_vencimiento)) pendientes++;
         });
 
         const balanceMes = totalIngresosMes - totalGastosMes;
@@ -415,16 +413,14 @@ export default function DashboardHome() {
 
     // ── Ingresos por profesor del mes actual ─────────────────────────────────
     const ingresosPorProfesorMesActual = useMemo((): ProfesorIngresoItem[] => {
-        const currentMonthIndex = new Date().getMonth() + 1;
-        const targetMonth = MESES[currentMonthIndex];
+        const hoy = new Date();
         const map: Record<number, ProfesorIngresoItem> = {};
         let sinProfesor = 0;
         let cantSinProfesor = 0;
 
         pagos.forEach(p => {
             if (p.tipo !== 'CUOTA' || p.estado !== 'Pagado') return;
-            const pMonth = MESES[new Date(p.fecha).getMonth() + 1];
-            if (pMonth !== targetMonth) return;
+            if (!esMismoMes(p.fecha, hoy.getMonth(), hoy.getFullYear())) return;
 
             if (p.idProfesorQueCargo != null) {
                 const prof = profesores.find(pr => pr.id_profesor === p.idProfesorQueCargo);

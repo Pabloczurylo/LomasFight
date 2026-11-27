@@ -36,21 +36,25 @@ export function generateTimeSlots(startHour: number, endHour: number): string[] 
 }
 
 /**
+ * Devuelve YYYY-MM-DD si el string es una fecha (YYYY-MM-DD o ISO con hora), o '' si es texto libre.
+ * Usa la parte de fecha tal cual (sin pasar por Date) para evitar corrimientos por zona horaria.
+ */
+export function toDateInputValue(fechaStr: string | null | undefined): string {
+    if (!fechaStr) return '';
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(fechaStr);
+    return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+
+/**
  * Formatea una fecha YYYY-MM-DD o ISO a DD/MM/AAAA.
  * Si es texto libre (ej: "ayer"), lo devuelve tal cual.
  */
 export function formatFechaLocal(fechaStr: string | null | undefined): string {
     if (!fechaStr) return '-';
-    if (fechaStr.includes('T')) {
-        const d = new Date(fechaStr);
-        return isNaN(d.getTime()) ? fechaStr : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
-    const parts = fechaStr.split('-');
-    if (parts.length === 3 && parts[0].length === 4) {
-        const [year, month, day] = parts;
-        return `${day.substring(0, 2)}/${month}/${year}`;
-    }
-    return fechaStr;
+    const iso = toDateInputValue(fechaStr);
+    if (!iso) return fechaStr;
+    const [year, month, day] = iso.split('-');
+    return `${day}/${month}/${year}`;
 }
 
 /**
@@ -60,20 +64,10 @@ export function formatFechaLocal(fechaStr: string | null | undefined): string {
 export function calcularTiempoEntrenamiento(fechaStr: string | null | undefined): string {
     if (!fechaStr) return '-';
 
-    let d: Date;
-    if (fechaStr.includes('T')) {
-        d = new Date(fechaStr);
-    } else {
-        const parts = fechaStr.split('-');
-        if (parts.length === 3 && parts[0].length === 4) {
-            const year = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            const day = parseInt(parts[2].substring(0, 2), 10);
-            d = new Date(year, month, day);
-        } else {
-            return fechaStr;
-        }
-    }
+    const iso = toDateInputValue(fechaStr);
+    if (!iso) return fechaStr;
+    const [y, mo, da] = iso.split('-').map(n => parseInt(n, 10));
+    const d = new Date(y, mo - 1, da);
 
     if (isNaN(d.getTime())) return fechaStr;
 
@@ -120,3 +114,52 @@ export function calcularTiempoEntrenamiento(fechaStr: string | null | undefined)
     return partsStr.join(', ');
 }
 
+
+/**
+ * Resumen para mostrar en UI: `label` es el tiempo transcurrido (o el texto libre)
+ * y `desde` la fecha DD/MM/AAAA si el valor es una fecha real.
+ */
+export function describirTiempoEntrenamiento(valor: string | null | undefined): { label: string; desde?: string } {
+    const label = calcularTiempoEntrenamiento(valor);
+    return toDateInputValue(valor) ? { label, desde: formatFechaLocal(valor) } : { label };
+}
+
+/** Fecha de hoy (o de `d`) como YYYY-MM-DD en hora LOCAL. Usar para valores por defecto de <input type="date">. */
+export function hoyLocalISO(d: Date = new Date()): string {
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** YYYY-MM-DD local de un timestamp ISO guardado (ej. fecha_pago). '' si es inválido. */
+export function isoALocalInput(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : hoyLocalISO(d);
+}
+
+/**
+ * Convierte el valor de un <input type="date"> (YYYY-MM-DD) a un ISO al mediodía local,
+ * para que al guardarlo no se corra al día anterior/siguiente por la zona horaria.
+ */
+export function inputFechaAISO(yyyyMmDd: string): string {
+    const [y, m, d] = yyyyMmDd.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0, 0).toISOString();
+}
+
+/**
+ * true si la cuota está vigente: el vencimiento (columna DATE) es hoy o posterior.
+ * Compara solo la fecha (YYYY-MM-DD) para que todas las pantallas cuenten igual
+ * y un alumno que vence hoy figure al día durante todo el día.
+ */
+export function cuotaVigente(fechaVencimiento: string | null | undefined): boolean {
+    const venc = toDateInputValue(fechaVencimiento);
+    return !!venc && venc >= hoyLocalISO();
+}
+
+/** true si la fecha ISO cae en el mes (0-11) y año indicados, en hora local. */
+export function esMismoMes(iso: string | null | undefined, mes: number, anio: number): boolean {
+    if (!iso) return false;
+    const d = new Date(iso);
+    return d.getMonth() === mes && d.getFullYear() === anio;
+}

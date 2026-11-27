@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, DollarSign, Calendar, Users, Dumbbell, Edit3, FileText } from 'lucide-react';
 import { ClienteBackend, Disciplina, UnifiedPago } from '../types';
+import { hoyLocalISO, isoALocalInput, inputFechaAISO } from '../../../lib/dateUtils';
 
 export type CuotaPayload = {
     id_cliente: number;
@@ -47,7 +48,7 @@ export default function RegistroPagoModal({
     const [cuotaClienteId, setCuotaClienteId] = useState('');
     const [cuotaDisciplinaId, setCuotaDisciplinaId] = useState('');
     const [cuotaMonto, setCuotaMonto] = useState('');
-    const [cuotaFecha, setCuotaFecha] = useState(new Date().toISOString().split('T')[0]);
+    const [cuotaFecha, setCuotaFecha] = useState(hoyLocalISO());
 
     // Combobox búsqueda de alumnos
     const [clienteSearch, setClienteSearch] = useState('');
@@ -57,12 +58,12 @@ export default function RegistroPagoModal({
     // Form fields Entrada
     const [entradaConcepto, setEntradaConcepto] = useState('');
     const [entradaMonto, setEntradaMonto] = useState('');
-    const [entradaPeriodo, setEntradaPeriodo] = useState(new Date().toISOString().split('T')[0]);
+    const [entradaPeriodo, setEntradaPeriodo] = useState(hoyLocalISO());
 
     // Form fields Gasto
     const [gastoConcepto, setGastoConcepto] = useState('');
     const [gastoMonto, setGastoMonto] = useState('');
-    const [gastoPeriodo, setGastoPeriodo] = useState(new Date().toISOString().split('T')[0]);
+    const [gastoPeriodo, setGastoPeriodo] = useState(hoyLocalISO());
 
     useEffect(() => {
         if (isOpen) {
@@ -84,19 +85,21 @@ export default function RegistroPagoModal({
 
                     setCuotaDisciplinaId(matchingDiscipline?.id_disciplina?.toString() || '');
                     setCuotaMonto(initialData.monto.toString());
+                    // Mantener la fecha original del pago (si no, al guardar se pisaba con la de hoy)
+                    setCuotaFecha(isoALocalInput(initialData.fecha));
                 } else if (initialData.tipo === 'ALQUILER') {
                     setTipoPago('ENTRADA'); // Force old alquiler to display as Entrada
                     setEntradaConcepto(`Alquiler - ${initialData.disciplinaNombre || 'Generico'}`);
                     setEntradaMonto(initialData.monto.toString());
-                    setEntradaPeriodo(new Date(initialData.fecha).toISOString().split('T')[0]);
+                    setEntradaPeriodo(isoALocalInput(initialData.fecha));
                 } else if (initialData.tipo === 'ENTRADA') {
                     setEntradaConcepto(initialData.concepto.replace('[ENTRADA] ', ''));
                     setEntradaMonto(initialData.monto.toString());
-                    setEntradaPeriodo(new Date(initialData.fecha).toISOString().split('T')[0]);
+                    setEntradaPeriodo(isoALocalInput(initialData.fecha));
                 } else if (initialData.tipo === 'GASTO') {
                     setGastoConcepto(initialData.concepto);
                     setGastoMonto(initialData.monto.toString());
-                    setGastoPeriodo(new Date(initialData.fecha).toISOString().split('T')[0]);
+                    setGastoPeriodo(isoALocalInput(initialData.fecha));
                 }
             } else {
                 setTipoPago('CUOTA');
@@ -104,21 +107,22 @@ export default function RegistroPagoModal({
                 setClienteSearch('');
                 setCuotaDisciplinaId('');
                 setCuotaMonto('');
-                setCuotaFecha(new Date().toISOString().split('T')[0]);
+                setCuotaFecha(hoyLocalISO());
 
                 setEntradaConcepto('');
                 setEntradaMonto('');
-                setEntradaPeriodo(new Date().toISOString().split('T')[0]);
+                setEntradaPeriodo(hoyLocalISO());
 
                 setGastoConcepto('');
                 setGastoMonto('');
-                setGastoPeriodo(new Date().toISOString().split('T')[0]);
+                setGastoPeriodo(hoyLocalISO());
             }
         }
     }, [isOpen, initialData, clientes, disciplinas]);
 
     // Filtrar solo clientes activos
-    const clientesActivos = clientes.filter(c => c.activo === true);
+    // (memoizado: si no, es un array nuevo en cada render y los efectos de abajo se re-ejecutan siempre)
+    const clientesActivos = useMemo(() => clientes.filter(c => c.activo === true), [clientes]);
 
     // Clientes filtrados según lo que escribe el usuario en el combobox
     const filteredClientes = useMemo(() => {
@@ -130,57 +134,56 @@ export default function RegistroPagoModal({
         });
     }, [clienteSearch, clientesActivos]);
 
-    // Auto-completar disciplina si el cliente solo tiene una
+    // Auto-completar disciplina según el alumno elegido.
+    // Solo al registrar uno nuevo: al editar se respeta lo que ya estaba guardado.
     useEffect(() => {
+        if (initialData) return;
         if (tipoPago === 'CUOTA' && cuotaClienteId) {
             const cliente = clientesActivos.find(c => c.id_cliente.toString() === cuotaClienteId);
             if (cliente && cliente.id_disciplina) {
                 setCuotaDisciplinaId(cliente.id_disciplina.toString());
             }
         }
-    }, [cuotaClienteId, clientesActivos, tipoPago]);
+    }, [cuotaClienteId, clientesActivos, tipoPago, initialData]);
 
-    // Auto-completar monto sugerido en base a la disciplina
+    // Auto-completar monto sugerido en base a la disciplina (solo al registrar uno nuevo)
     useEffect(() => {
+        if (initialData) return;
         if (tipoPago === 'CUOTA' && cuotaDisciplinaId) {
             const d = disciplinas.find(x => x.id_disciplina.toString() === cuotaDisciplinaId);
             if (d && d.cuota) {
                 setCuotaMonto(d.cuota.toString());
             }
         }
-    }, [cuotaDisciplinaId, disciplinas, tipoPago]);    const handleSubmit = async (e: React.FormEvent) => {
+    }, [cuotaDisciplinaId, disciplinas, tipoPago, initialData]);    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
             if (tipoPago === 'CUOTA') {
                 if (!cuotaClienteId || !cuotaDisciplinaId || !cuotaMonto) return;
-                // Ajustar hora para evitar desfase de timezone
-                const d = new Date(cuotaFecha);
-                d.setHours(d.getHours() + 12);
+                const fecha = inputFechaAISO(cuotaFecha);
                 await onSaveCuota({
                     id_cliente: parseInt(cuotaClienteId),
                     id_disciplina: parseInt(cuotaDisciplinaId),
                     monto: parseFloat(cuotaMonto),
-                    fecha_pago: d.toISOString()
+                    fecha_pago: fecha
                 });
             } else if (tipoPago === 'ENTRADA') {
                 if (!entradaConcepto.trim() || !entradaMonto || !entradaPeriodo) return;
-                const d = new Date(entradaPeriodo);
-                d.setHours(d.getHours() + 12); // avoid timezone issues shifting to previous day
+                const fecha = inputFechaAISO(entradaPeriodo);
                 await onSaveGasto({
                     concepto: `[ENTRADA] ${entradaConcepto.trim()}`,
                     monto: parseFloat(entradaMonto),
-                    fecha_gasto: d.toISOString()
+                    fecha_gasto: fecha
                 });
             } else if (tipoPago === 'GASTO') {
                 if (!gastoConcepto.trim() || !gastoMonto || !gastoPeriodo) return;
-                const d = new Date(gastoPeriodo);
-                d.setHours(d.getHours() + 12);
+                const fecha = inputFechaAISO(gastoPeriodo);
                 await onSaveGasto({
                     concepto: gastoConcepto.trim(),
                     monto: parseFloat(gastoMonto),
-                    fecha_gasto: d.toISOString()
+                    fecha_gasto: fecha
                 });
             }
         } catch (error) {

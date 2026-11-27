@@ -6,11 +6,25 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+# Logs de build/tsc sueltos
+*_errors.txt
+*-errors.txt
+out.txt
+output.json
 
 node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
+# Variables de entorno (solo se versiona el ejemplo)
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
 
 # Editor directories and files
 .vscode/*
@@ -23,5 +37,4 @@ dist-ssr
 *.sln
 *.sw?
 .gravityrules
-.env
 .agent/
