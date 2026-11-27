@@ -1,4 +1,5 @@
 import { Button } from "../../../components/ui/Button";
+import { HeroBackgroundCarousel } from "./HeroBackgroundCarousel";
 import logoCupaTeam from "../../../assets/logos/cupa-team.webp";
 import logoAlTeam from "../../../assets/logos/al-team-tucuman.webp";
 
@@ -20,11 +21,8 @@ export function HeroSection() {
             {/* Background Image Placeholder with Overlay */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
-                <img
-                    src="https://i.imgur.com/ln8SjHz.png"
-                    alt="Lomas Fight Gym"
-                    className="w-full h-full object-cover opacity-60"
-                />
+                {/* Fotos del gimnasio pasando solas de fondo */}
+                <HeroBackgroundCarousel />
             </div>
 
             <div className="relative z-20 container mx-auto px-4 flex items-center justify-center gap-8 2xl:gap-12">
