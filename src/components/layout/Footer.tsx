@@ -1,5 +1,6 @@
 import { MapPin, Phone, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo } from "../ui/Logo";
 
 export function Footer() {
     return (
@@ -8,11 +9,8 @@ export function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     {/* Brand */}
                     <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="h-6 w-6 bg-brand-red rounded transform skew-x-[-10deg]" />
-                            <span className="text-xl font-heading font-bold text-white uppercase tracking-wider">
-                                LOMAS <span className="text-brand-red">FIGHT</span>
-                            </span>
+                        <div className="mb-4">
+                            <Logo className="h-12" />
                         </div>
                         <p className="text-sm max-w-xs">
                             El centro defensivo para los deportes de contacto. Entrena con campeones, conviértete en campeón.

@@ -1,10 +1,11 @@
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { Mail, Lock, Trophy, AlertCircle, ChevronLeft } from "lucide-react";
+import { Mail, Lock, AlertCircle, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../../services/api";
 import { AxiosError } from "axios";
+import { Logo } from "../../../components/ui/Logo";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -90,13 +91,8 @@ export default function LoginPage() {
                 <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
                     {/* Logo & Header */}
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-brand-red mb-6">
-                            <div className="bg-brand-red text-white p-2 rounded-lg">
-                                <Trophy size={28} strokeWidth={2.5} />
-                            </div>
-                            <span className="text-2xl font-heading font-bold text-black tracking-tight">
-                                LOMAS <span className="text-brand-red">FIGHT</span>
-                            </span>
+                        <div className="mb-6">
+                            <Logo variant="dark" className="h-12" />
                         </div>
                         <h2 className="text-3xl font-heading font-bold text-gray-900">
                             Iniciar Sesión

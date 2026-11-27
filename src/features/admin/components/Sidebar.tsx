@@ -1,6 +1,7 @@
 import { LayoutDashboard, Users, CreditCard, LogOut, Dumbbell, Shield, UserCheck, Calendar } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../../lib/utils"; // Assuming utils exist, or I will use clsx/tailwind-merge directly if needed
+import { Logo } from "../../../components/ui/Logo";
 
 const getNavItems = () => {
     const user = JSON.parse(localStorage.getItem('usuario') || '{}');
@@ -29,10 +30,7 @@ export function Sidebar() {
     return (
         <aside className="hidden lg:flex flex-col w-64 bg-black text-white h-screen fixed left-0 top-0 border-r border-zinc-800">
             <Link to="/" className="p-6 flex items-center gap-2 border-b border-zinc-800 hover:opacity-80 transition-opacity">
-                <div className="h-8 w-8 bg-brand-red rounded transform skew-x-[-10deg]" />
-                <span className="text-xl font-heading font-bold uppercase tracking-wider">
-                    LOMAS <span className="text-brand-red">FIGHT</span>
-                </span>
+                <Logo className="h-9" />
             </Link>
 
             {/* Navigation */}
