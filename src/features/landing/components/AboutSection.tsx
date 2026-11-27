@@ -134,7 +134,7 @@ export function AboutSection() {
                                         </h3>
                                     </div>
                                     <p className="text-brand-red font-bold text-xs tracking-[0.1em] uppercase mb-4 text-center">
-                                        INSTRUCTOR DE {profesor.disciplinas?.nombre_disciplina || 'ARTES MARCIALES'}
+                                        {profesor.disciplinas?.nombre_disciplina?.trim() || 'ARTES MARCIALES'}
                                     </p>
 
                                     <div className="w-10 h-[2px] bg-brand-red/70 mb-6 relative">
@@ -145,18 +145,6 @@ export function AboutSection() {
                                         <p className="text-gray-400 text-sm text-center leading-relaxed break-words line-clamp-4 m-0">
                                             {profesor.descripcion || "Especialista en entrenamiento de alto rendimiento. Nuestro compromiso es forjar atletas con excelente técnica y acondicionamiento físico inquebrantable."}
                                         </p>
-                                    </div>
-
-                                    <div className="flex flex-wrap justify-center gap-2 mb-10">
-                                        {profesor.disciplinas ? (
-                                            <span className="px-3 py-1.5 rounded-full bg-brand-red/10 border border-brand-red/20 text-brand-red text-[11px] font-bold tracking-wider uppercase">
-                                                {profesor.disciplinas.nombre_disciplina}
-                                            </span>
-                                        ) : (
-                                            <span className="px-3 py-1.5 rounded-full bg-brand-red/10 border border-brand-red/20 text-brand-red text-[11px] font-bold tracking-wider uppercase">
-                                                ENTRENAMIENTO
-                                            </span>
-                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-1.5 text-[#3f3f46] uppercase text-[10px] font-bold tracking-[0.2em] relative z-10">
