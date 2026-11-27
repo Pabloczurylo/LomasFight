@@ -31,6 +31,14 @@ export interface ClienteBackend {
     pagos?: any[];
 }
 
+/** Ítem de "Por qué elegir <disciplina>" en la página pública. */
+export interface Beneficio {
+    titulo: string;
+    descripcion: string;
+}
+
+export const MAX_BENEFICIOS = 6;
+
 export interface Disciplina {
     id_disciplina: number;
     nombre_disciplina: string;
@@ -39,6 +47,8 @@ export interface Disciplina {
     img_preview: string;
     cuota: number;
     numero_celular?: string | null;
+    /** null/vacío = la landing muestra los beneficios genéricos */
+    beneficios?: Beneficio[] | null;
 }
 
 // Frontend adapter type if we want to keep UI clean, but better to match backend for now
