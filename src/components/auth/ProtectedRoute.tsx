@@ -10,11 +10,15 @@ function getStoredUser(): StoredUser {
     }
 }
 
-/** true si el JWT no tiene vencimiento o ya venció (no valida la firma: eso lo hace el backend). */
+/**
+ * true si el JWT está mal formado o tiene vencimiento y ya pasó.
+ * Los tokens sin vencimiento (el default) son válidos; la firma y si el usuario
+ * sigue activo los valida el backend en cada pedido.
+ */
 function isTokenExpired(token: string): boolean {
     try {
         const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-        return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now();
+        return typeof payload.exp === "number" && payload.exp * 1000 <= Date.now();
     } catch {
         return true;
     }

@@ -44,7 +44,7 @@ export default function DisciplinaModal({ isOpen, onClose, onSave, initialData }
         e.preventDefault();
         onSave({
             id_disciplina: initialData?.id_disciplina || 0,
-            nombre_disciplina: nombre,
+            nombre_disciplina: nombre.trim(),
             descripcion,
             img_banner: imgBanner,
             img_preview: imgPreview,
