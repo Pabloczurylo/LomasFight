@@ -9,6 +9,8 @@ interface Disciplina {
     nombre_disciplina: string;
 }
 
+const PREFIJOS_SUGERIDOS = ['Sensei', 'Profe', 'Instructor', 'Coach', 'Maestro'];
+
 interface TeacherFormProps {
     isOpen: boolean; // Controla la visibilidad
     formData: {
@@ -18,6 +20,7 @@ interface TeacherFormProps {
         id_disciplina: string | number;
         presentacion: string;
         imagen: string;
+        prefijo: string;
     };
     disciplines: Disciplina[];
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
@@ -55,6 +58,29 @@ export function TeacherForm({ isOpen, formData, disciplines, onChange, onSave, o
                 {/* Body/Formulario — scrollable */}
                 <div className="px-8 pb-8 pt-4 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        {/* Campo Prefijo (texto libre con sugerencias) */}
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase tracking-widest">Prefijo</label>
+                            <Input
+                                name="prefijo"
+                                list="prefijos-sugeridos"
+                                placeholder="Ej. Sensei, Profe, Instructor..."
+                                value={formData.prefijo}
+                                onChange={onChange}
+                                maxLength={30}
+                                autoComplete="off"
+                                className="h-12 rounded-xl border-gray-200"
+                            />
+                            <datalist id="prefijos-sugeridos">
+                                {PREFIJOS_SUGERIDOS.map(p => <option key={p} value={p} />)}
+                            </datalist>
+                            <p className="text-xs text-gray-400">
+                                Se muestra en los horarios: <span className="font-semibold text-gray-500">
+                                    {formData.prefijo.trim() ? `${formData.prefijo.trim()}: ` : ''}{formData.nombre || 'Nombre'} {formData.apellido || 'Apellido'}
+                                </span>. Dejalo vacío para mostrar solo el nombre.
+                            </p>
+                        </div>
+
                         {/* Campo Nombre */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-gray-600 uppercase tracking-widest">Nombre</label>

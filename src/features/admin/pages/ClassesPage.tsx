@@ -22,6 +22,7 @@ interface HorarioBackend {
     id_disciplina: number;
     id_profesor: number;
     activo: boolean;
+    duracion_horas?: number;
     disciplinas: Disciplina;
     profesores: Profesor;
 }
@@ -50,11 +51,11 @@ export default function ClassesPage() {
                 const date = new Date(h.dia_y_hora);
                 const dayName = WEEK_DAYS[date.getDay()];
                 const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                // Construct a time range string as expected by CalendarGrid (e.g., "10:00 - 11:00")
-                // Since backend doesn't provide end time, we default to 1 hour duration
+                // Rango "10:00 - 12:00" para CalendarGrid, según la duración guardada (1 h por defecto)
+                const duracionHoras = h.duracion_horas || 1;
                 const [hours, minutes] = timeStr.split(':').map(Number);
                 const endDate = new Date(date);
-                endDate.setHours(hours + 1, minutes);
+                endDate.setHours(hours + duracionHoras, minutes);
                 const endTimeStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 const timeRange = `${timeStr} - ${endTimeStr}`;
 
@@ -73,6 +74,7 @@ export default function ClassesPage() {
                     time: timeRange,
                     discipline: h.disciplinas.nombre_disciplina,
                     instructor: h.profesores.nombre,
+                    duracionHoras,
                     variant: variantMap[h.disciplinas.nombre_disciplina.toUpperCase()] || 'default'
                 };
             });
@@ -114,7 +116,8 @@ export default function ClassesPage() {
                 const payload = {
                     dia_y_hora: combineDayAndTime(day, data.startTime),
                     id_disciplina: Number(data.discipline),
-                    id_profesor: Number(data.instructor)
+                    id_profesor: Number(data.instructor),
+                    duracion_horas: Number(data.duracionHoras) || 1
                 };
 
                 return editingClass?.id
@@ -179,6 +182,7 @@ export default function ClassesPage() {
             },
             days: [classItem.day],
             startTime: startTimeStr.trim(),
+            duracionHoras: classItem.duracionHoras || 1,
         });
         setIsAddModalOpen(true);
     };

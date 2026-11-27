@@ -3,10 +3,22 @@ import { Loader2 } from "lucide-react";
 import { api } from "../../../services/api";
 
 interface ScheduleItem {
-    time: string;
+    time: string;      // "19:00"
+    duracion: number;  // horas
+    slot: string;      // "19:00|2" -> columna "19:00 a 21:00"
     class: string;
     coach?: string;
+    coachPrefix?: string;
 }
+
+/** Ordena slots "HH:mm|duración" por hora de inicio y después por duración */
+const compararSlots = (a: string, b: string) => {
+    const [ta, da] = a.split('|');
+    const [tb, db] = b.split('|');
+    const [ah, am] = ta.split(':').map(Number);
+    const [bh, bm] = tb.split(':').map(Number);
+    return (ah * 60 + am) - (bh * 60 + bm) || Number(da) - Number(db);
+};
 
 interface ScheduleDay {
     day: string;
@@ -21,10 +33,11 @@ interface ScheduleSectionProps {
 }
 
 interface Disciplina { id_disciplina: number; nombre_disciplina: string; }
-interface Profesor { nombre: string; apellido: string; }
+interface Profesor { nombre: string; apellido: string; prefijo?: string; }
 interface HorarioBackend {
     id_horario: number;
     dia_y_hora: string;
+    duracion_horas?: number;
     disciplinas: Disciplina;
     profesores: Profesor;
 }
@@ -70,21 +83,22 @@ export function ScheduleSection({
                     const hh = String(date.getHours()).padStart(2, '0');
                     const mm = String(date.getMinutes()).padStart(2, '0');
 
+                    const duracion = h.duracion_horas || 1;
                     buckets[dayName].push({
                         time: `${hh}:${mm}`,
+                        duracion,
+                        slot: `${hh}:${mm}|${duracion}`,
                         class: h.disciplinas.nombre_disciplina,
-                        coach: `${h.profesores.nombre} ${h.profesores.apellido}`
+                        coach: `${h.profesores.nombre} ${h.profesores.apellido}`,
+                        // Prefijo elegido en el admin ("Sensei", "Profe"...); vacío = solo el nombre
+                        coachPrefix: (h.profesores.prefijo ?? 'Sensei').trim()
                     });
                 });
 
                 // Sort each day's classes by time and build the final array
                 const formatted: ScheduleDay[] = WEEK_DAYS.map(day => ({
                     day,
-                    classes: [...buckets[day]].sort((a, b) => {
-                        const [ah, am] = a.time.split(':').map(Number);
-                        const [bh, bm] = b.time.split(':').map(Number);
-                        return ah * 60 + am - (bh * 60 + bm);
-                    })
+                    classes: [...buckets[day]].sort((a, b) => compararSlots(a.slot, b.slot))
                 }));
 
                 setScheduleData(formatted);
@@ -103,12 +117,9 @@ export function ScheduleSection({
     // Collect all unique time slots sorted chronologically
     const timeSlots = useMemo(() => {
         const set = new Set<string>();
-        scheduleData.forEach(day => day.classes.forEach(c => set.add(c.time)));
-        return [...set].sort((a, b) => {
-            const [ah, am] = a.split(':').map(Number);
-            const [bh, bm] = b.split(':').map(Number);
-            return ah * 60 + am - (bh * 60 + bm);
-        });
+        // Una columna por cada combinación de inicio + duración (ej. "19:00 a 20:00" y "19:00 a 21:00")
+        scheduleData.forEach(day => day.classes.forEach(c => set.add(c.slot)));
+        return [...set].sort(compararSlots);
     }, [scheduleData]);
 
     // Build a lookup map: day -> time -> ScheduleItem
@@ -117,16 +128,17 @@ export function ScheduleSection({
         scheduleData.forEach(day => {
             map[day.day] = {};
             day.classes.forEach(c => {
-                map[day.day][c.time] = c;
+                map[day.day][c.slot] = c;
             });
         });
         return map;
     }, [scheduleData]);
 
-    // Format a time slot as a range: "17:00 a 18:00"
-    const formatTimeRange = (time: string) => {
+    // Format a slot "17:00|2" as a range: "17:00 a 19:00"
+    const formatTimeRange = (slot: string) => {
+        const [time, duracion] = slot.split('|');
         const [hh, mm] = time.split(':').map(Number);
-        const endHh = (hh + 1) % 24;
+        const endHh = (hh + (Number(duracion) || 1)) % 24;
         return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} a ${String(endHh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
     };
 
@@ -191,7 +203,9 @@ export function ScheduleSection({
                                                         <>
                                                             <span className="text-xs text-black font-bold uppercase">{item.class}</span>
                                                             {item.coach && (
-                                                                <span className="text-xs text-gray-500 mt-1">Sensei: {item.coach}</span>
+                                                                <span className="text-xs text-gray-500 mt-1">
+                                                                    {item.coachPrefix ? `${item.coachPrefix}: ` : ''}{item.coach}
+                                                                </span>
                                                             )}
                                                         </>
                                                     ) : (

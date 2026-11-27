@@ -9,6 +9,7 @@ export interface CalendarEvent {
     time: string; // "HH:mm - HH:mm"
     discipline: string;
     instructor?: string;
+    duracionHoras?: number;
     variant: "muaythai" | "kickboxing" | "boxeo" | "jiujitsu" | "mma" | "default";
 }
 
